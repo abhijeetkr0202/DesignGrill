@@ -1,0 +1,62 @@
+{
+  "architectures": [
+    {
+      "id": "ra-queue-per-channel",
+      "name": "Priority queues per channel with dedicated workers",
+      "summary": "An ingestion API writes validated requests to durable queues separated by channel and priority. Channel workers apply preferences and templates, call providers through rate limiters, and record status.",
+      "components": [
+        "Ingestion API",
+        "Priority queues per channel",
+        "Preference service with cache",
+        "Template service",
+        "Channel workers",
+        "Provider adapters",
+        "Status store",
+        "Dead-letter queue"
+      ],
+      "bestWhen": "Different channels have different providers, limits, and failure modes, and critical traffic must be isolated from bulk traffic.",
+      "drawbacks": [
+        "More queues and consumer groups to operate.",
+        "Cross-channel coordination, such as push then SMS fallback, needs an explicit orchestrator.",
+        "Priority starvation must be monitored."
+      ]
+    },
+    {
+      "id": "ra-workflow-engine",
+      "name": "Workflow orchestration for multi-step notifications",
+      "summary": "A workflow or state-machine engine drives each notification through preference check, rendering, send, wait for receipt, and fallback channel steps.",
+      "components": [
+        "Ingestion API",
+        "Workflow engine",
+        "Activity workers",
+        "Provider adapters",
+        "Status store"
+      ],
+      "bestWhen": "Notifications involve conditional logic such as escalation or fallback across channels and per-notification state is valuable.",
+      "drawbacks": [
+        "Higher per-message overhead compared with plain queues.",
+        "Engine becomes a critical dependency and scaling limit.",
+        "Harder to reason about at very high volume without batching."
+      ]
+    },
+    {
+      "id": "ra-fanout-batch",
+      "name": "Fan-out service for bulk campaigns",
+      "summary": "Campaign requests are expanded by a fan-out service that reads audience segments in pages and enqueues individual messages at a controlled rate, while transactional traffic uses a separate low-latency path.",
+      "components": [
+        "Campaign API",
+        "Audience reader",
+        "Rate-controlled fan-out",
+        "Bulk queues",
+        "Transactional path",
+        "Workers"
+      ],
+      "bestWhen": "Large campaigns dominate volume and must not interfere with transactional messages.",
+      "drawbacks": [
+        "Two code paths to maintain.",
+        "Campaign cancellation and progress tracking add complexity.",
+        "Audience changes during a long-running send need a defined policy."
+      ]
+    }
+  ]
+}

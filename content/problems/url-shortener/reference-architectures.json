@@ -1,0 +1,58 @@
+{
+  "architectures": [
+    {
+      "id": "ra-relational-cache",
+      "name": "Stateless API with relational store and cache",
+      "summary": "Load-balanced stateless API servers, a cache-aside layer in front of a replicated relational database, and a separate ID allocation component.",
+      "components": [
+        "Load balancer",
+        "API service",
+        "Cache (for example Redis)",
+        "Relational database with read replicas",
+        "ID range allocator"
+      ],
+      "bestWhen": "Traffic is moderate, the team knows relational databases well, and operational simplicity matters more than unlimited horizontal scale.",
+      "drawbacks": [
+        "Single-primary writes become a ceiling at very high creation rates.",
+        "Manual sharding is needed once the dataset or write rate outgrows one primary.",
+        "Cache and database must be kept consistent on deletion and expiry."
+      ]
+    },
+    {
+      "id": "ra-kv-partitioned",
+      "name": "Partitioned key-value store with edge caching",
+      "summary": "A distributed key-value or wide-column store keyed by short code, fronted by a CDN or edge cache for redirects, with asynchronous analytics.",
+      "components": [
+        "CDN or edge cache",
+        "API service",
+        "Distributed key-value store",
+        "Event stream for click events",
+        "Analytics store"
+      ],
+      "bestWhen": "Redirect volume is very high, multi-region latency matters, and lookups are almost exclusively by key.",
+      "drawbacks": [
+        "Edge caching delays propagation of deletion and expiry.",
+        "Secondary queries, such as listing links by owner, need an additional index or table.",
+        "Eventual consistency may surprise users who create a link and immediately visit it from another region."
+      ]
+    },
+    {
+      "id": "ra-precomputed-keys",
+      "name": "Pre-generated key pool",
+      "summary": "A background service pre-generates unique short codes into a pool; API servers claim codes from the pool, removing collision checks from the write path.",
+      "components": [
+        "Key generation service",
+        "Key pool store",
+        "API service",
+        "Primary mapping store",
+        "Cache"
+      ],
+      "bestWhen": "Write latency must be very low and codes must be non-sequential and unguessable.",
+      "drawbacks": [
+        "Needs careful handling of claimed-but-unused codes after a crash.",
+        "Adds another stateful component to operate and monitor.",
+        "Pool exhaustion becomes a new availability risk."
+      ]
+    }
+  ]
+}

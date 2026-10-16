@@ -1,0 +1,72 @@
+{
+  "scenarios": [
+    {
+      "id": "sc-provider-outage",
+      "title": "Email provider outage",
+      "description": "The primary email provider returns errors for an hour.",
+      "triggers": ["5xx responses", "Connection timeouts"],
+      "probes": [
+        "What happens to messages already in flight and those arriving during the outage?",
+        "Do you fail over to another provider, and how do you avoid duplicate sends?",
+        "How large does the queue grow and what protects other channels?"
+      ],
+      "relatedTopics": [
+        "Provider failures",
+        "Consumer lag and backpressure",
+        "Retries and idempotency"
+      ]
+    },
+    {
+      "id": "sc-campaign-burst",
+      "title": "Campaign floods the system",
+      "description": "A marketing campaign enqueues tens of millions of messages while one-time passcodes are being requested.",
+      "triggers": ["Large audience send", "Shared consumers"],
+      "probes": [
+        "How do passcodes keep their latency target?",
+        "Where is the bottleneck: queue, workers, provider limits, or the database?",
+        "How can the campaign be paused or cancelled?"
+      ],
+      "relatedTopics": ["Queue partitioning", "Rate limits", "Scheduling"]
+    },
+    {
+      "id": "sc-retry-storm",
+      "title": "Retry loop amplifies traffic",
+      "description": "A provider slows down; timeouts trigger retries from every worker, increasing load further.",
+      "triggers": ["Timeouts without backoff", "Synchronised retries"],
+      "probes": [
+        "How do backoff, jitter, and circuit breakers interact in your design?",
+        "How do you tell a retryable error from a permanent one?",
+        "What stops duplicates when a timed-out request actually succeeded?"
+      ],
+      "relatedTopics": ["Retries and idempotency", "Provider failures"]
+    },
+    {
+      "id": "sc-consumer-lag",
+      "title": "Consumer group falls behind",
+      "description": "Workers for one channel cannot keep up and queue lag grows steadily.",
+      "triggers": ["Slow provider", "Insufficient workers", "Poison messages"],
+      "probes": [
+        "How do you detect lag and what triggers scaling or load shedding?",
+        "How are stale notifications, such as an expired passcode, handled once they are finally processed?",
+        "How do poison messages avoid blocking a partition?"
+      ],
+      "relatedTopics": [
+        "Consumer lag and backpressure",
+        "Dead-letter handling",
+        "Queue partitioning"
+      ]
+    },
+    {
+      "id": "sc-optout-race",
+      "title": "Opt-out race",
+      "description": "A user unsubscribes just after a large campaign has been enqueued.",
+      "triggers": ["Preference change while messages are queued"],
+      "probes": [
+        "At what point is the preference checked?",
+        "How stale can the preference cache be, and is that legally acceptable?",
+        "How do you prove to an auditor that the user was not contacted?"
+      ],
+      "relatedTopics": ["User preferences", "Delivery guarantees"]
+    }
+  ]
+}

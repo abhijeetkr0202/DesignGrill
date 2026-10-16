@@ -1,0 +1,232 @@
+{
+  "id": "shopping-cart",
+  "version": 1,
+  "title": "Shopping Cart",
+  "difficulty": "medium",
+  "summary": "Design the cart service of an e-commerce platform that supports anonymous and signed-in shoppers across multiple devices and hands off to checkout reliably.",
+  "statement": "Design the shopping cart backend for a large e-commerce site. Shoppers add, update, and remove items, may be anonymous or signed in, and expect their cart to follow them across devices. The cart interacts with product catalog, pricing, and inventory systems and hands off to checkout. Start by clarifying requirements and estimating scale, then design the system and defend your decisions.",
+  "tags": ["consistency", "caching", "concurrency", "multi-device"],
+  "initialGuidance": [
+    "Clarify what the cart is responsible for and what belongs to catalog, pricing, inventory, and checkout.",
+    "Decide whether a cart is a promise (reserved stock and fixed prices) or only a wish list until checkout.",
+    "Estimate scale and note how much traffic is read-only cart viewing versus modification.",
+    "State your consistency expectations for concurrent updates from multiple devices."
+  ],
+  "coreFunctionalRequirements": [
+    "Create a cart and add, update, or remove items.",
+    "Persist carts for anonymous visitors and signed-in users.",
+    "Merge an anonymous cart into the user's cart on sign-in.",
+    "Show current price and availability for items.",
+    "Synchronise the cart across devices.",
+    "Hand off the cart to checkout and handle checkout failure."
+  ],
+  "requirementQuestions": [
+    {
+      "id": "q-scale",
+      "area": "Scale",
+      "question": "How many active carts and cart operations per second, including peak events such as sales?",
+      "whyItMatters": "Drives storage choice and caching, and shows how spiky the workload is."
+    },
+    {
+      "id": "q-lifetime",
+      "area": "Data",
+      "question": "How long should an anonymous cart and a signed-in cart persist?",
+      "whyItMatters": "Determines retention, storage cost, and cleanup."
+    },
+    {
+      "id": "q-consistency",
+      "area": "Consistency",
+      "question": "If a user edits the cart on two devices, what outcome is acceptable?",
+      "whyItMatters": "Selects between last-write-wins, merge semantics, or stricter concurrency control."
+    },
+    {
+      "id": "q-inventory",
+      "area": "Inventory",
+      "question": "Should adding to the cart reserve stock, or is availability checked only at checkout?",
+      "whyItMatters": "Reservation couples the cart to inventory and creates expiry and abandonment problems."
+    },
+    {
+      "id": "q-pricing",
+      "area": "Pricing",
+      "question": "When is the price fixed: at add time, at view time, or at checkout?",
+      "whyItMatters": "Affects data stored in the cart and how price changes are surfaced."
+    },
+    {
+      "id": "q-availability",
+      "area": "Availability",
+      "question": "Must the cart keep working if catalog or inventory is down?",
+      "whyItMatters": "Defines graceful degradation: stale prices, deferred validation."
+    },
+    {
+      "id": "q-identity",
+      "area": "Identity",
+      "question": "How are anonymous visitors identified and what happens on sign-in with an existing cart?",
+      "whyItMatters": "Introduces merge rules and privacy considerations."
+    },
+    {
+      "id": "q-checkout",
+      "area": "Checkout",
+      "question": "Who owns the order after handoff and what should happen if payment fails?",
+      "whyItMatters": "Defines the boundary and the compensation behaviour."
+    }
+  ],
+  "workloadAssumptions": {
+    "illustrativeNote": "All numbers below are illustrative examples for practice and are not benchmarks.",
+    "items": [
+      { "name": "Daily active shoppers", "value": "20 million", "rationale": "Large marketplace." },
+      {
+        "name": "Cart views per day",
+        "value": "200 million",
+        "rationale": "Cart is viewed repeatedly while browsing."
+      },
+      {
+        "name": "Cart modifications per day",
+        "value": "50 million",
+        "rationale": "Roughly a few per active shopper."
+      },
+      {
+        "name": "Peak multiplier",
+        "value": "10x during flash sales",
+        "rationale": "Events concentrate demand."
+      },
+      {
+        "name": "Typical cart size",
+        "value": "about 5 line items, under 2 KB",
+        "rationale": "Small documents."
+      },
+      {
+        "name": "Anonymous cart retention",
+        "value": "30 days",
+        "rationale": "Balances conversion and storage."
+      }
+    ]
+  },
+  "estimationPrompts": [
+    "How many carts exist at any time and what is the total storage?",
+    "What is the average and peak write rate?",
+    "What fraction of cart views could be served from cache?",
+    "How many cart-to-checkout handoffs happen per second at peak?"
+  ],
+  "keyDecisions": [
+    {
+      "id": "d-storage",
+      "topic": "Persistence",
+      "question": "Where is the cart stored and in what shape?",
+      "considerations": [
+        "A cart is a small document accessed by key: key-value or document stores fit naturally.",
+        "Relational storage is viable with a carts and line-items model.",
+        "Client-side storage alone loses cross-device sync."
+      ]
+    },
+    {
+      "id": "d-identity",
+      "topic": "Anonymous versus authenticated carts",
+      "question": "How are carts keyed and merged?",
+      "considerations": [
+        "Anonymous token in a cookie or device identifier.",
+        "Merge policy on sign-in: union, prefer one cart, or ask the user.",
+        "Token security and expiry."
+      ]
+    },
+    {
+      "id": "d-concurrency",
+      "topic": "Concurrent modification",
+      "question": "How are simultaneous edits handled?",
+      "considerations": [
+        "Optimistic concurrency with version numbers or ETags.",
+        "Operation-based updates (add item, change quantity) rather than whole-document overwrite.",
+        "Idempotent operations to tolerate client retries."
+      ]
+    },
+    {
+      "id": "d-product-data",
+      "topic": "Product and price data",
+      "question": "What is stored in the cart versus looked up live?",
+      "considerations": [
+        "Store product identifiers and quantities; resolve names, prices, and availability at read time.",
+        "Cache catalog and price data with bounded staleness.",
+        "Snapshot prices only at the point where a commitment is made."
+      ]
+    },
+    {
+      "id": "d-inventory",
+      "topic": "Inventory interaction",
+      "question": "Does the cart reserve stock?",
+      "considerations": [
+        "Soft availability hints versus hard reservations with expiry.",
+        "Reservation release on abandonment.",
+        "Overselling risk versus lost sales."
+      ]
+    },
+    {
+      "id": "d-cache",
+      "topic": "Caching and invalidation",
+      "question": "Is the cart cached, and how is it invalidated?",
+      "considerations": [
+        "Write-through or cache-aside for the cart document.",
+        "Consistency between cache and store after writes from another device.",
+        "Cache of derived data such as totals."
+      ]
+    },
+    {
+      "id": "d-checkout",
+      "topic": "Checkout handoff",
+      "question": "How does the cart become an order, and how are failures handled?",
+      "considerations": [
+        "Freeze the cart into an immutable snapshot for checkout.",
+        "Idempotency keys to prevent duplicate orders.",
+        "Clear policy on whether a failed payment returns the cart to editable state."
+      ]
+    }
+  ],
+  "tradeoffs": [
+    {
+      "topic": "Reservation vs no reservation",
+      "tension": "Reserving stock reduces failed checkouts but locks inventory for abandoned carts."
+    },
+    {
+      "topic": "Last-write-wins vs merge",
+      "tension": "Simple overwrite is easy but can lose edits; operation-based merging is more work but preserves intent."
+    },
+    {
+      "topic": "Stored price vs live price",
+      "tension": "Storing prices is fast but can mislead users; live lookup is accurate but couples availability to the catalog."
+    },
+    {
+      "topic": "Strong vs eventual consistency",
+      "tension": "Strong consistency across devices adds latency and cost; eventual consistency can briefly show stale carts."
+    },
+    {
+      "topic": "Cache TTL",
+      "tension": "Long TTLs reduce load but increase the chance of showing stale prices or stock."
+    }
+  ],
+  "commonMistakes": [
+    "Treating the cart as session state tied to one server.",
+    "Storing full product details and prices in the cart without a refresh strategy.",
+    "No strategy for concurrent edits from two devices.",
+    "Ignoring anonymous-to-signed-in merging.",
+    "Coupling cart availability to inventory or pricing service availability.",
+    "Assuming checkout is a single atomic step with no failure handling.",
+    "Reserving inventory on add-to-cart without addressing abandoned carts."
+  ],
+  "followUps": [
+    "What happens if the pricing service is down when a user views the cart?",
+    "How do you merge carts when a user signs in on a second device?",
+    "How would you handle a flash sale where one item is in millions of carts?",
+    "What changes if a legal requirement forces deletion of a user's cart data?",
+    "How do you make the add-to-cart API safe to retry?",
+    "How would you show the user that an item became unavailable?"
+  ],
+  "topics": [
+    "Cart creation and updates",
+    "Persistence",
+    "Anonymous and authenticated users",
+    "Multi-device synchronization",
+    "Concurrent modifications",
+    "Product and inventory interactions",
+    "Cache invalidation",
+    "Consistency requirements",
+    "Checkout handoff and failure handling"
+  ]
+}

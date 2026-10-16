@@ -1,0 +1,11 @@
+# Automatically generated - DO NOT EDIT!
+
+[[permission]]
+identifier = "allow-ai-http-request"
+description = "Enables the ai_http_request command without any pre-configured scope."
+commands.allow = ["ai_http_request"]
+
+[[permission]]
+identifier = "deny-ai-http-request"
+description = "Denies the ai_http_request command without any pre-configured scope."
+commands.deny = ["ai_http_request"]

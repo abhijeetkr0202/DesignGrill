@@ -1,0 +1,68 @@
+{
+  "scenarios": [
+    {
+      "id": "sc-two-devices",
+      "title": "Two devices edit the same cart",
+      "description": "A user changes an item quantity on a phone while removing the same item on a laptop at nearly the same time.",
+      "triggers": ["Concurrent writes", "Offline edits that sync later"],
+      "probes": [
+        "What final state does the user see and is it acceptable?",
+        "How does your design detect the conflict?",
+        "Would operation-based updates change the outcome?"
+      ],
+      "relatedTopics": [
+        "Concurrent modifications",
+        "Multi-device synchronization",
+        "Consistency requirements"
+      ]
+    },
+    {
+      "id": "sc-flash-sale",
+      "title": "Flash sale on a single product",
+      "description": "Millions of shoppers add the same limited-stock product to carts within minutes.",
+      "triggers": ["Marketing event", "Hot product"],
+      "probes": [
+        "Which component becomes the hot spot: cart store, catalog cache, or inventory?",
+        "Does adding to cart reserve stock and what happens to abandoned reservations?",
+        "How do users learn the item sold out?"
+      ],
+      "relatedTopics": ["Product and inventory interactions", "Cache invalidation"]
+    },
+    {
+      "id": "sc-pricing-down",
+      "title": "Pricing service is unavailable",
+      "description": "The pricing or catalog dependency errors while users view their carts.",
+      "triggers": ["Dependency outage", "Timeouts"],
+      "probes": [
+        "Can users still view and edit carts? What do they see for prices?",
+        "How do you prevent checkout at a wrong price?",
+        "Which timeouts, fallbacks, and circuit breakers are in place?"
+      ],
+      "relatedTopics": ["Product and inventory interactions", "Consistency requirements"]
+    },
+    {
+      "id": "sc-checkout-fail",
+      "title": "Payment fails after handoff",
+      "description": "The cart has been handed to checkout, and payment fails or times out.",
+      "triggers": ["Payment decline", "Checkout service timeout"],
+      "probes": [
+        "What state is the cart in and can the user continue editing?",
+        "How do you avoid creating two orders if the client retries?",
+        "What happens to any reserved inventory?"
+      ],
+      "relatedTopics": ["Checkout handoff and failure handling"]
+    },
+    {
+      "id": "sc-cache-stale",
+      "title": "Stale cart in cache",
+      "description": "A cart cached in one region does not reflect a change just made from another device.",
+      "triggers": ["Delayed invalidation", "Multi-region reads"],
+      "probes": [
+        "How stale can the cart be and is that acceptable?",
+        "Which invalidation strategy do you use and what happens when invalidation fails?",
+        "Does checkout read from the cache or the source of truth?"
+      ],
+      "relatedTopics": ["Cache invalidation", "Multi-device synchronization"]
+    }
+  ]
+}

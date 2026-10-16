@@ -1,0 +1,82 @@
+{
+  "scenarios": [
+    {
+      "id": "sc-viral-link",
+      "title": "One link goes viral",
+      "description": "A single short link receives a large share of total traffic within minutes after being shared by a celebrity.",
+      "triggers": [
+        "Traffic to one key grows by orders of magnitude",
+        "Cache entry for the key expires during the surge"
+      ],
+      "probes": [
+        "Where does the extra load land: cache node, database partition, or API tier?",
+        "How do you prevent many simultaneous cache misses for the same key?",
+        "Does anything in your design assume traffic is evenly distributed across keys?"
+      ],
+      "relatedTopics": ["Hot URLs", "Cache design", "Database sharding"]
+    },
+    {
+      "id": "sc-cache-down",
+      "title": "Cache layer becomes unavailable",
+      "description": "The cache cluster fails or is restarted and all lookups fall through to the database.",
+      "triggers": ["Cache outage", "Cold restart"],
+      "probes": [
+        "Can the database absorb the full redirect load? Show the calculation.",
+        "What protects the database: rate limiting, request coalescing, load shedding, or something else?",
+        "How does the system warm the cache after recovery without causing a second overload?"
+      ],
+      "relatedTopics": ["Cache design", "Redirect latency", "Read-heavy workloads"]
+    },
+    {
+      "id": "sc-primary-failure",
+      "title": "Primary database failure",
+      "description": "The node accepting writes for part of the key space becomes unavailable.",
+      "triggers": ["Hardware failure", "Network partition"],
+      "probes": [
+        "Which operations keep working: redirects, creation, deletion, analytics?",
+        "How is failover performed and what data could be lost or stale?",
+        "What does a user see while failover is in progress?"
+      ],
+      "relatedTopics": ["Database sharding", "Key collisions", "Expiration and deletion"]
+    },
+    {
+      "id": "sc-traffic-10x",
+      "title": "Ten times the traffic",
+      "description": "Sustained traffic grows tenfold over a quarter.",
+      "triggers": ["Product growth", "New integration partner"],
+      "probes": [
+        "Which component saturates first, and how do you know?",
+        "Which parts of the design scale horizontally without change and which need redesign?",
+        "How does cost change, and where would you spend effort first?"
+      ],
+      "relatedTopics": ["Read-heavy workloads", "Database sharding", "Cache design"]
+    },
+    {
+      "id": "sc-id-collision",
+      "title": "Code collision under concurrency",
+      "description": "Two API servers generate or claim the same short code at nearly the same moment.",
+      "triggers": [
+        "Hash-based generation without uniqueness enforcement",
+        "Allocator range overlap after failover"
+      ],
+      "probes": [
+        "Where is uniqueness enforced and what happens to the loser of the race?",
+        "How does this behave across multiple regions?",
+        "What is the user-visible effect of a retry?"
+      ],
+      "relatedTopics": ["ID generation", "Key collisions"]
+    },
+    {
+      "id": "sc-analytics-backlog",
+      "title": "Analytics pipeline falls behind",
+      "description": "The click-event consumer cannot keep up and the event stream backlog grows.",
+      "triggers": ["Consumer outage", "Burst of clicks"],
+      "probes": [
+        "Is redirect latency or availability affected by the backlog?",
+        "What is the backpressure strategy and what is acceptable to drop?",
+        "How are duplicate or late events handled?"
+      ],
+      "relatedTopics": ["Analytics", "Redirect latency"]
+    }
+  ]
+}

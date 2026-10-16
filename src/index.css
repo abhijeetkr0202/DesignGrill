@@ -1,0 +1,75 @@
+@import 'tailwindcss';
+@import '@xyflow/react/dist/style.css';
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+  --bg: #f6f7f9;
+  --surface: #ffffff;
+  --surface-2: #eef0f3;
+  --line: #d5d9e0;
+  --fg: #1a1d22;
+  --muted: #566070;
+  --accent: #b83a07;
+  --accent-fg: #ffffff;
+  --danger: #b42318;
+  --ok: #157a3c;
+  --warn: #8f5a00;
+  color-scheme: light;
+}
+
+.dark {
+  --bg: #0e1014;
+  --surface: #161a20;
+  --surface-2: #1e232b;
+  --line: #2c333d;
+  --fg: #e8eaee;
+  --muted: #9ba4b1;
+  --accent: #fb923c;
+  --accent-fg: #1a0f05;
+  --danger: #f97066;
+  --ok: #4ade80;
+  --warn: #fbbf24;
+  color-scheme: dark;
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-line: var(--line);
+  --color-fg: var(--fg);
+  --color-muted: var(--muted);
+  --color-accent: var(--accent);
+  --color-accent-fg: var(--accent-fg);
+  --color-danger: var(--danger);
+  --color-ok: var(--ok);
+  --color-warn: var(--warn);
+  --font-sans: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+  --font-mono: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-sans);
+  font-size: 13px;
+  line-height: 1.45;
+  -webkit-font-smoothing: antialiased;
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.react-flow {
+  --xy-background-color: var(--bg);
+}

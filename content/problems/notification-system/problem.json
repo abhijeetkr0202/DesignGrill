@@ -1,0 +1,242 @@
+{
+  "id": "notification-system",
+  "version": 1,
+  "title": "Notification System",
+  "difficulty": "medium",
+  "summary": "Design a platform that delivers email, SMS, and push notifications on behalf of many internal services, respecting user preferences and provider limits.",
+  "statement": "Design a notification platform used by multiple product teams. Services request notifications for users; the platform delivers them over email, SMS, and mobile or web push according to each user's preferences, supports scheduled delivery, and remains reliable when external providers fail or throttle. Start by clarifying requirements and estimating volume, then design the system and defend your decisions.",
+  "tags": ["asynchronous", "queues", "idempotency", "rate-limits"],
+  "initialGuidance": [
+    "Clarify which notification types exist (transactional, marketing, alerts) because they have different latency and delivery expectations.",
+    "Decide what 'delivered' means for each channel and what guarantees you will offer.",
+    "Estimate volume, including peaks caused by campaigns and incidents.",
+    "Identify who owns user preferences and how quickly changes must take effect."
+  ],
+  "coreFunctionalRequirements": [
+    "Accept notification requests from internal services through an API.",
+    "Deliver over email, SMS, and push.",
+    "Respect per-user channel and topic preferences, including opt-outs.",
+    "Support scheduled and delayed delivery.",
+    "Retry failed deliveries and report delivery status.",
+    "Support templates and localisation."
+  ],
+  "requirementQuestions": [
+    {
+      "id": "q-types",
+      "area": "Scope",
+      "question": "Which notification categories exist, and which are time-critical (for example one-time passcodes) versus bulk (marketing)?",
+      "whyItMatters": "Different priorities need isolation so bulk traffic cannot delay critical messages."
+    },
+    {
+      "id": "q-volume",
+      "area": "Scale",
+      "question": "How many notifications per day, and what is the peak rate during campaigns?",
+      "whyItMatters": "Determines queue capacity, partitioning, and provider contracts."
+    },
+    {
+      "id": "q-latency",
+      "area": "Latency",
+      "question": "What end-to-end delivery latency is acceptable per category?",
+      "whyItMatters": "Separates fast paths from best-effort paths."
+    },
+    {
+      "id": "q-guarantee",
+      "area": "Delivery",
+      "question": "Is at-least-once delivery acceptable, or must duplicates be strictly avoided?",
+      "whyItMatters": "Exactly-once across external providers is generally unattainable; the answer drives idempotency design."
+    },
+    {
+      "id": "q-prefs",
+      "area": "Preferences",
+      "question": "How quickly must an opt-out take effect, and are there legal requirements?",
+      "whyItMatters": "Preference checks must happen at send time, and compliance may require audit trails."
+    },
+    {
+      "id": "q-providers",
+      "area": "Providers",
+      "question": "Are multiple providers per channel allowed, and what rate limits and costs apply?",
+      "whyItMatters": "Failover between providers and throttling shape the sending tier."
+    },
+    {
+      "id": "q-order",
+      "area": "Ordering",
+      "question": "Does the order of notifications to one user matter?",
+      "whyItMatters": "Ordering requirements constrain partitioning and parallelism."
+    },
+    {
+      "id": "q-status",
+      "area": "Observability",
+      "question": "What delivery status and history must be exposed to senders and to support staff?",
+      "whyItMatters": "Drives the data model for status tracking and callbacks from providers."
+    },
+    {
+      "id": "q-retention",
+      "area": "Data",
+      "question": "How long must notification records and content be retained, and are there privacy constraints?",
+      "whyItMatters": "Affects storage, encryption, and deletion workflows."
+    }
+  ],
+  "workloadAssumptions": {
+    "illustrativeNote": "All numbers below are illustrative examples for practice and are not benchmarks.",
+    "items": [
+      {
+        "name": "Notifications per day",
+        "value": "100 million",
+        "rationale": "Large consumer platform."
+      },
+      {
+        "name": "Average rate",
+        "value": "about 1,200 per second",
+        "rationale": "Derived from daily volume."
+      },
+      {
+        "name": "Campaign peak",
+        "value": "50,000 per second for several minutes",
+        "rationale": "Marketing sends are bursty."
+      },
+      {
+        "name": "Channel mix",
+        "value": "70% push, 20% email, 10% SMS",
+        "rationale": "SMS is the most expensive and rate-limited channel."
+      },
+      {
+        "name": "Critical message latency target",
+        "value": "under 5 seconds",
+        "rationale": "One-time passcodes and security alerts."
+      },
+      {
+        "name": "Record retention",
+        "value": "90 days of detail",
+        "rationale": "Support and audit needs."
+      }
+    ]
+  },
+  "estimationPrompts": [
+    "How large must the queue be to absorb a campaign burst while providers are throttled?",
+    "What is the storage required for 90 days of delivery records?",
+    "How many sender workers are needed per channel at peak, given provider rate limits?",
+    "What is the monthly cost impact of the SMS share compared with push?"
+  ],
+  "keyDecisions": [
+    {
+      "id": "d-ingest",
+      "topic": "Ingestion API",
+      "question": "How do producers submit notifications and what is acknowledged?",
+      "considerations": [
+        "Acknowledge after durable enqueue, not after delivery.",
+        "Producer-supplied idempotency keys to make retries safe.",
+        "Validation and authorisation at the boundary."
+      ]
+    },
+    {
+      "id": "d-queue",
+      "topic": "Queue selection and partitioning",
+      "question": "Which messaging technology and partitioning scheme is used?",
+      "considerations": [
+        "Separate queues or topics per channel and priority.",
+        "Partition key choice: user for ordering versus random for balance.",
+        "Retention, replay, and consumer-group semantics."
+      ]
+    },
+    {
+      "id": "d-preferences",
+      "topic": "User preferences",
+      "question": "Where and when are preferences evaluated?",
+      "considerations": [
+        "Evaluate at send time to honour recent opt-outs.",
+        "Cache preferences and define maximum staleness.",
+        "Legal opt-out must be authoritative and auditable."
+      ]
+    },
+    {
+      "id": "d-retries",
+      "topic": "Retries and idempotency",
+      "question": "How are failures retried without causing duplicates or retry storms?",
+      "considerations": [
+        "Exponential backoff with jitter and bounded attempts.",
+        "Distinguish retryable from permanent failures.",
+        "Idempotency keys passed to providers where supported; deduplication store otherwise."
+      ]
+    },
+    {
+      "id": "d-provider-limits",
+      "topic": "Provider failures and rate limits",
+      "question": "How does the system behave when a provider errors or throttles?",
+      "considerations": [
+        "Per-provider rate limiters and circuit breakers.",
+        "Failover to a secondary provider and the risk of duplicate delivery.",
+        "Back-pressure to the queue rather than unbounded in-memory buffering."
+      ]
+    },
+    {
+      "id": "d-scheduling",
+      "topic": "Scheduling",
+      "question": "How are delayed and scheduled notifications stored and released?",
+      "considerations": [
+        "Time-bucketed storage and a scheduler that scans due items.",
+        "Delay queues versus database polling.",
+        "Time zone handling and quiet hours."
+      ]
+    },
+    {
+      "id": "d-dlq",
+      "topic": "Dead-letter handling",
+      "question": "What happens to notifications that exhaust retries?",
+      "considerations": [
+        "Dead-letter storage with reason codes.",
+        "Alerting thresholds and replay tooling.",
+        "Retention and privacy of stored content."
+      ]
+    }
+  ],
+  "tradeoffs": [
+    {
+      "topic": "Per-user ordering vs throughput",
+      "tension": "Partitioning by user preserves order but can create hot partitions and limit parallelism."
+    },
+    {
+      "topic": "Latency vs batching",
+      "tension": "Batching reduces provider calls and cost but increases delivery delay."
+    },
+    {
+      "topic": "Duplicate vs lost messages",
+      "tension": "Aggressive retries risk duplicates; conservative retries risk loss. The acceptable balance depends on category."
+    },
+    {
+      "topic": "Provider failover vs cost and duplicates",
+      "tension": "A secondary provider improves availability but adds integration cost and ambiguity about whether the first attempt succeeded."
+    },
+    {
+      "topic": "Preference freshness vs cache load",
+      "tension": "Checking the source of truth every time is accurate but adds latency and load."
+    }
+  ],
+  "commonMistakes": [
+    "Sending synchronously from the request path of the producing service.",
+    "A single queue shared by critical and bulk traffic.",
+    "Claiming exactly-once delivery without explaining the mechanism and its limits.",
+    "Unbounded retries without backoff, creating retry storms against a struggling provider.",
+    "Ignoring provider rate limits and daily quotas.",
+    "Evaluating user preferences only at request time instead of at send time.",
+    "No plan for messages that repeatedly fail or for operational visibility into the backlog."
+  ],
+  "followUps": [
+    "What happens to the queue and latency when a provider is down for an hour?",
+    "How do you prevent a marketing campaign from delaying one-time passcodes?",
+    "How would you add a new channel, such as in-app messages?",
+    "How do you guarantee an unsubscribed user is not contacted?",
+    "How would you test the system's behaviour under provider throttling?",
+    "How do you track delivery status when providers report it asynchronously?"
+  ],
+  "topics": [
+    "Email, SMS, and push delivery",
+    "User preferences",
+    "Scheduling",
+    "Retries and idempotency",
+    "Queue partitioning",
+    "Provider failures and rate limits",
+    "Consumer lag and backpressure",
+    "Delivery guarantees",
+    "Dead-letter handling"
+  ]
+}

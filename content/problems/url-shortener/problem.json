@@ -1,0 +1,252 @@
+{
+  "id": "url-shortener",
+  "version": 1,
+  "title": "URL Shortener",
+  "difficulty": "easy",
+  "summary": "Design a service that turns long URLs into short links and redirects visitors to the original destination.",
+  "statement": "Design a URL shortening service similar in purpose to Bitly or TinyURL. Users submit a long URL and receive a short link. When anyone visits the short link, the service redirects them to the original URL. Start by clarifying requirements and estimating scale, then design the system and defend your decisions.",
+  "tags": ["read-heavy", "id-generation", "caching", "sharding"],
+  "initialGuidance": [
+    "Clarify who creates links and who follows them before drawing anything.",
+    "Decide what is in scope: custom aliases, expiration, analytics, authentication, abuse prevention.",
+    "Estimate read and write volume; the ratio drives most architectural choices.",
+    "Write down the assumptions you make. Unstated assumptions are the most common source of weak designs."
+  ],
+  "coreFunctionalRequirements": [
+    "Create a short link for a long URL.",
+    "Redirect a short link to its original URL.",
+    "Support optional expiration of links.",
+    "Support optional user-chosen aliases.",
+    "Allow link owners to delete or disable a link.",
+    "Optionally record click analytics."
+  ],
+  "requirementQuestions": [
+    {
+      "id": "q-scale",
+      "area": "Scale",
+      "question": "How many new links are created per day, and how many redirects are served per day?",
+      "whyItMatters": "Sets the read/write ratio, storage growth, and whether a single database can serve the load."
+    },
+    {
+      "id": "q-latency",
+      "area": "Latency",
+      "question": "What redirect latency is acceptable at the median and at the tail?",
+      "whyItMatters": "Redirects are on the user's critical path and justify caching and edge placement."
+    },
+    {
+      "id": "q-availability",
+      "area": "Availability",
+      "question": "What happens to users if the service is unavailable: creation only, redirects only, or both?",
+      "whyItMatters": "Redirect availability usually matters more than creation availability, which allows asymmetric designs."
+    },
+    {
+      "id": "q-durability",
+      "area": "Durability",
+      "question": "Is it ever acceptable to lose a mapping after it has been returned to a user?",
+      "whyItMatters": "Determines replication, backup, and write acknowledgement policy."
+    },
+    {
+      "id": "q-length",
+      "area": "Data",
+      "question": "Are there constraints on short-code length or character set, and must codes be unguessable?",
+      "whyItMatters": "Drives ID generation strategy and the size of the key space."
+    },
+    {
+      "id": "q-lifetime",
+      "area": "Data",
+      "question": "Do links expire, and how long must they be retained?",
+      "whyItMatters": "Affects storage sizing, cleanup jobs, and whether codes can be recycled."
+    },
+    {
+      "id": "q-consistency",
+      "area": "Consistency",
+      "question": "After creating a link, must it be immediately resolvable from every region?",
+      "whyItMatters": "Read-your-writes expectations influence replication and cache strategy."
+    },
+    {
+      "id": "q-analytics",
+      "area": "Analytics",
+      "question": "Is click analytics required, and must it be real-time or can it be eventually consistent?",
+      "whyItMatters": "Analytics on the redirect path can hurt latency; asynchronous pipelines are usually preferable."
+    },
+    {
+      "id": "q-abuse",
+      "area": "Security",
+      "question": "How should the service handle malicious destinations, spam, and abusive clients?",
+      "whyItMatters": "Introduces validation, rate limiting, and reputation checks that affect the creation path."
+    },
+    {
+      "id": "q-cost",
+      "area": "Cost",
+      "question": "Is there a cost or operational-complexity constraint, for example a small team or a fixed budget?",
+      "whyItMatters": "Prevents over-engineering and affects the choice between managed and self-operated components."
+    }
+  ],
+  "workloadAssumptions": {
+    "illustrativeNote": "All numbers below are illustrative examples for practice. Real answers depend on the requirements the candidate negotiates.",
+    "items": [
+      {
+        "name": "New links per day",
+        "value": "10 million",
+        "rationale": "Moderate-scale public service."
+      },
+      {
+        "name": "Read:write ratio",
+        "value": "about 100:1",
+        "rationale": "Links are created once and followed many times."
+      },
+      {
+        "name": "Average redirect rate",
+        "value": "about 12,000 per second",
+        "rationale": "Derived from 1 billion redirects per day."
+      },
+      {
+        "name": "Peak multiplier",
+        "value": "3x to 10x",
+        "rationale": "Viral links create bursty traffic."
+      },
+      {
+        "name": "Record size",
+        "value": "about 500 bytes",
+        "rationale": "Code, long URL, owner, timestamps, flags."
+      },
+      {
+        "name": "Retention",
+        "value": "5 years",
+        "rationale": "Drives total storage: tens of terabytes at this scale without compression."
+      }
+    ]
+  },
+  "estimationPrompts": [
+    "How many records exist after the retention period, and how large is the dataset?",
+    "What is the average and peak redirect throughput?",
+    "How large is the hot working set, and could it fit in memory?",
+    "How many characters are needed in the short code to avoid exhausting the key space?",
+    "How much bandwidth do redirects consume compared with creation requests?"
+  ],
+  "keyDecisions": [
+    {
+      "id": "d-id-generation",
+      "topic": "ID generation",
+      "question": "How are unique short codes produced?",
+      "considerations": [
+        "Hash of the URL with collision handling versus counter-based encoding versus random codes.",
+        "Predictability and enumeration risk of sequential IDs.",
+        "Coordination cost across multiple writers (range allocation, dedicated ID service).",
+        "Whether identical long URLs should map to the same code."
+      ]
+    },
+    {
+      "id": "d-storage",
+      "topic": "Primary storage",
+      "question": "Which datastore holds the code-to-URL mapping?",
+      "considerations": [
+        "Access pattern is a point lookup by key; relational features are rarely needed.",
+        "Horizontal scalability versus operational familiarity.",
+        "Secondary lookups, for example listing links per user.",
+        "Strong versus eventual consistency on reads."
+      ]
+    },
+    {
+      "id": "d-cache",
+      "topic": "Cache design",
+      "question": "How is redirect latency kept low and the database protected?",
+      "considerations": [
+        "Cache-aside versus read-through; eviction policy and TTL.",
+        "Hot URL handling and request coalescing to avoid stampedes.",
+        "Negative caching for unknown codes.",
+        "CDN or edge caching versus application-level cache, and the effect on deletion and analytics."
+      ]
+    },
+    {
+      "id": "d-redirect",
+      "topic": "Redirect semantics",
+      "question": "Which HTTP redirect status is used and why?",
+      "considerations": [
+        "Permanent redirects are cacheable by clients and reduce load but hinder analytics and deletion.",
+        "Temporary redirects keep traffic flowing through the service."
+      ]
+    },
+    {
+      "id": "d-partitioning",
+      "topic": "Partitioning",
+      "question": "How does the data scale beyond a single node?",
+      "considerations": [
+        "Hash-based partitioning on the code gives even distribution.",
+        "Resharding strategy and consistent hashing.",
+        "Hot partitions caused by popular links."
+      ]
+    },
+    {
+      "id": "d-analytics",
+      "topic": "Analytics",
+      "question": "How are clicks recorded without slowing redirects?",
+      "considerations": [
+        "Asynchronous event publication versus synchronous counters.",
+        "Approximate versus exact counts.",
+        "Storage format and retention for click events."
+      ]
+    },
+    {
+      "id": "d-expiry",
+      "topic": "Expiration and deletion",
+      "question": "How are expired or deleted links removed and kept from being served?",
+      "considerations": [
+        "Lazy expiry check on read versus background cleanup.",
+        "Cache invalidation on deletion.",
+        "Reuse of freed codes and the abuse risk it creates."
+      ]
+    }
+  ],
+  "tradeoffs": [
+    {
+      "topic": "Hash vs counter IDs",
+      "tension": "Hashes need collision handling and are not compact; counters need coordination and may be guessable."
+    },
+    {
+      "topic": "301 vs 302 redirects",
+      "tension": "Fewer requests to the service versus control over analytics, expiry, and deletion."
+    },
+    {
+      "topic": "Cache TTL length",
+      "tension": "Higher hit rate versus slower propagation of deletions and updates."
+    },
+    {
+      "topic": "SQL vs key-value store",
+      "tension": "Familiar tooling and flexible queries versus simpler horizontal scaling for point lookups."
+    },
+    {
+      "topic": "Synchronous vs asynchronous analytics",
+      "tension": "Accurate real-time counts versus redirect latency and availability."
+    }
+  ],
+  "commonMistakes": [
+    "Designing before clarifying scope or estimating scale.",
+    "Treating reads and writes as equally important when reads dominate.",
+    "Using a single sequential counter without addressing coordination or enumeration.",
+    "Adding a cache without discussing invalidation, hot keys, or cold-start behaviour.",
+    "Placing synchronous analytics writes on the redirect path.",
+    "Proposing sharding before showing that a single node cannot cope.",
+    "Ignoring what happens when the cache or the ID generator is unavailable.",
+    "Overlooking abuse, such as phishing links and rate limiting on creation."
+  ],
+  "followUps": [
+    "What changes if the redirect volume grows tenfold?",
+    "How would you support custom aliases without collisions with generated codes?",
+    "How do you serve users in multiple regions with low latency?",
+    "How would you delete a link and ensure it stops resolving everywhere?",
+    "How would you detect and block malicious destinations?",
+    "How would you migrate to a new ID scheme without breaking existing links?"
+  ],
+  "topics": [
+    "ID generation",
+    "Key collisions",
+    "Redirect latency",
+    "Read-heavy workloads",
+    "Cache design",
+    "Hot URLs",
+    "Database sharding",
+    "Analytics",
+    "Expiration and deletion"
+  ]
+}

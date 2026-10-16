@@ -1,0 +1,58 @@
+{
+  "architectures": [
+    {
+      "id": "ra-document-store",
+      "name": "Cart service over a key-value or document store",
+      "summary": "A stateless cart service stores each cart as a small versioned document keyed by cart ID, resolves product and price details from cached catalog data at read time, and hands a frozen snapshot to checkout.",
+      "components": [
+        "API gateway",
+        "Cart service",
+        "Document or key-value store",
+        "Catalog and price cache",
+        "Checkout service"
+      ],
+      "bestWhen": "Carts are small, accessed by key, and the workload needs easy horizontal scaling.",
+      "drawbacks": [
+        "Cross-cart queries, for example finding all carts containing a product, need extra indexes.",
+        "Conditional writes are required for safe concurrent edits.",
+        "Operational maturity of the chosen store matters."
+      ]
+    },
+    {
+      "id": "ra-relational",
+      "name": "Relational cart and line-item tables with cache",
+      "summary": "Carts and line items live in a relational database with optimistic locking on the cart row, fronted by a read cache.",
+      "components": [
+        "Cart service",
+        "Relational database",
+        "Cache",
+        "Catalog client",
+        "Checkout service"
+      ],
+      "bestWhen": "The team prefers transactional guarantees and tooling, and scale fits a partitioned relational deployment.",
+      "drawbacks": [
+        "Sharding by cart or user is eventually required at large scale.",
+        "Hot rows during flash sales for shared structures like inventory reservations.",
+        "Schema changes are heavier than with schemaless stores."
+      ]
+    },
+    {
+      "id": "ra-event-sourced",
+      "name": "Event-sourced cart",
+      "summary": "Each cart is a stream of events (item added, quantity changed). Current state is derived and cached, and the event log supports multi-device merging, auditing, and analytics.",
+      "components": [
+        "Cart command service",
+        "Event store",
+        "Projection or read model",
+        "Cache",
+        "Checkout service"
+      ],
+      "bestWhen": "Auditability and merge semantics are important and the team can operate event-sourced systems.",
+      "drawbacks": [
+        "Higher conceptual and operational complexity for a small domain.",
+        "Projections add eventual consistency.",
+        "Snapshotting is needed to keep reads fast for long-lived carts."
+      ]
+    }
+  ]
+}
