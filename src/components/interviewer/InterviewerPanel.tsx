@@ -7,6 +7,7 @@ import { useSettingsStore } from '@/features/settings/settings-store';
 import { useSessionStore } from '@/store/session-store';
 import type { InterviewMode, Message } from '@/types/session';
 import { Badge, Button, Notice, Spinner, fieldClass } from '@/components/shared/ui';
+import { AiContextPreview } from './AiContextPreview';
 
 const ACTIONS: { mode: InterviewMode; label: string; hint: string }[] = [
   {
@@ -41,6 +42,7 @@ const MODE_LABELS: Record<InterviewMode, string> = {
 
 export function InterviewerPanel() {
   const doc = useSessionStore((s) => s.doc);
+  const pack = useSessionStore((s) => s.pack);
   const ai = useAiStore((s) => s.state);
   const provider = useSettingsStore((s) => s.provider);
   const model = useSettingsStore((s) => s.models[s.provider]);
@@ -112,6 +114,7 @@ export function InterviewerPanel() {
             API key never leaves the OS credential store and native layer.
           </p>
         </details>
+        <AiContextPreview doc={doc} pack={pack} isCustomEndpoint={provider === 'custom'} />
         {changes?.significant && !running && (
           <Notice
             action={
