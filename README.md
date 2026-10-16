@@ -19,7 +19,7 @@ Early development (v0.1). Below is what is implemented today versus planned.
 - Canonical, versioned session model with Zod validation; the canvas is derived from it.
 - Design decisions linked to components and requirements; decisions are flagged for re-evaluation when a linked requirement changes.
 - Local persistence in SQLite (platform app-data directory) with migrations and pre-migration backups, autosave, resume, and session deletion.
-- AI providers: OpenAI and Anthropic through a provider-independent interface. API keys are stored in the OS credential store and read only by the native layer.
+- AI providers: OpenAI, Anthropic, and any OpenAI-compatible endpoint (OpenRouter, Groq, Together, Ollama, a company gateway) through a provider-independent interface. API keys are stored in the OS credential store and read only by the native layer.
 - Interviewer modes: requirements discovery, architecture question, architecture review with structured findings, failure-scenario challenge, answer evaluation, and a session summary with a documented rubric.
 - Change tracking since the last review, outdated-response markers, bounded retry, cancellation, and validation of all model output.
 - Automated tests (Vitest and Rust) and CI for macOS and Windows.

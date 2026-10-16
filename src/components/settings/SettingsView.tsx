@@ -43,7 +43,7 @@ export function SettingsView() {
           provider, separately from any ChatGPT or Claude subscription, and a consumer subscription
           does not include API access.
         </p>
-        <div role="tablist" aria-label="Provider" className="mb-3 flex gap-1">
+        <div role="tablist" aria-label="Provider" className="mb-3 flex flex-wrap gap-1">
           {PROVIDER_IDS.map((id) => (
             <button
               key={id}
@@ -57,7 +57,7 @@ export function SettingsView() {
             </button>
           ))}
         </div>
-        <ProviderForm id={provider} />
+        <ProviderForm key={provider} id={provider} />
       </section>
 
       <section aria-labelledby="appearance-heading" className="mb-8">
@@ -107,12 +107,29 @@ function ProviderForm({ id }: { id: ProviderId }) {
   const info = PROVIDER_INFO[id];
   const state = useSettingsStore((s) => s.providers[id]);
   const model = useSettingsStore((s) => s.models[id]);
+  const savedEndpoint = useSettingsStore((s) => s.customBaseUrl);
+  const [endpoint, setEndpoint] = useState(savedEndpoint);
+  const [endpointSaved, setEndpointSaved] = useState(false);
   const [key, setKey] = useState('');
   const [saving, setSaving] = useState(false);
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
   const status = STATUS[state.status];
   const hasKey = state.status !== 'no-key' && state.status !== 'unknown';
+  const needsEndpoint = info.requiresEndpoint === true;
+  const endpointReady = !needsEndpoint || savedEndpoint !== '';
+
+  const saveEndpoint = async () => {
+    setLocalError(null);
+    try {
+      await useSettingsStore.getState().setCustomBaseUrl(endpoint);
+      setEndpoint(useSettingsStore.getState().customBaseUrl);
+      setEndpointSaved(true);
+    } catch (e) {
+      setEndpointSaved(false);
+      setLocalError(e instanceof Error ? e.message : 'Could not save the endpoint');
+    }
+  };
 
   const save = async () => {
     setSaving(true);
@@ -135,6 +152,46 @@ function ProviderForm({ id }: { id: ProviderId }) {
         <Badge tone={status.tone}>{status.label}</Badge>
         {state.status === 'testing' && <Spinner label="Testing connection" />}
       </div>
+
+      {needsEndpoint && (
+        <form
+          className="space-y-1.5"
+          onSubmit={(e) => {
+            e.preventDefault();
+            void saveEndpoint();
+          }}
+        >
+          <label className="block text-[11px] font-medium text-muted" htmlFor={`endpoint-${id}`}>
+            Endpoint URL
+          </label>
+          <div className="flex gap-2">
+            <input
+              id={`endpoint-${id}`}
+              type="url"
+              autoComplete="off"
+              spellCheck={false}
+              className={fieldClass}
+              value={endpoint}
+              maxLength={200}
+              placeholder="https://openrouter.ai/api"
+              onChange={(e) => {
+                setEndpoint(e.target.value);
+                setEndpointSaved(false);
+              }}
+            />
+            <Button type="submit" disabled={!endpoint.trim()}>
+              Save endpoint
+            </Button>
+          </div>
+          <p className="text-[11px] text-muted">
+            Any server that speaks the OpenAI chat completions API (OpenRouter, Groq, Together, a
+            company gateway, or a local server such as Ollama or LM Studio on http://localhost).
+            Enter the base URL; /v1 is added for you. Only the API key is secret. Local servers that
+            need no key still require a placeholder value here.{' '}
+            {endpointSaved && <span className="text-ok">Saved.</span>}
+          </p>
+        </form>
+      )}
 
       <form
         className="space-y-1.5"
@@ -164,8 +221,8 @@ function ProviderForm({ id }: { id: ProviderId }) {
           </Button>
         </div>
         <p className="text-[11px] text-muted">
-          The key is handed to the OS credential store and is not shown again.{' '}
-          <span>Create one in the provider console: {info.consoleUrl}</span>
+          The key is handed to the OS credential store and is not shown again.
+          {info.consoleUrl && <span> Create one in the provider console: {info.consoleUrl}</span>}
         </p>
       </form>
 
@@ -186,8 +243,10 @@ function ProviderForm({ id }: { id: ProviderId }) {
           ))}
         </datalist>
         <p className="mt-0.5 text-[11px] text-muted">
-          Model names change over time. The default may be outdated; run a connection test to list
-          the models your key can use, or type any model identifier.
+          Model names change over time.{' '}
+          {needsEndpoint
+            ? 'Enter the model identifier your endpoint expects, or run a connection test to list its models.'
+            : 'The default may be outdated; run a connection test to list the models your key can use, or type any model identifier.'}
         </p>
       </div>
 
@@ -195,7 +254,7 @@ function ProviderForm({ id }: { id: ProviderId }) {
 
       <div className="flex gap-2">
         <Button
-          disabled={!hasKey || state.status === 'testing'}
+          disabled={!hasKey || !endpointReady || state.status === 'testing'}
           onClick={() => void useSettingsStore.getState().testConnection(id)}
         >
           Test connection

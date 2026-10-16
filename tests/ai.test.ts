@@ -1,6 +1,8 @@
 import { describe, expect, it, vi } from 'vitest';
 import { AIError, classifyHttpError, fromBackendError, redact } from '@/ai/errors';
 import { extractJson } from '@/ai/json';
+import { normalizeEndpoint } from '@/ai/endpoint';
+import { createProvider } from '@/ai/provider-registry';
 import { AnthropicProvider } from '@/ai/providers/anthropic';
 import { OpenAIProvider } from '@/ai/providers/openai';
 import { withRetry } from '@/ai/retry';
@@ -180,6 +182,77 @@ describe('providers', () => {
     const provider = new AnthropicProvider(transport);
     await expect(provider.testConnection()).rejects.toMatchObject({ kind: 'invalid-credentials' });
     await expect(provider.listModels()).resolves.toEqual(['a', 'b']);
+  });
+
+  it('custom provider targets the configured endpoint with compatible parameters', async () => {
+    const transport = new FakeTransport([
+      {
+        status: 200,
+        body: JSON.stringify({
+          choices: [{ message: { content: '{"ok":true}' }, finish_reason: 'stop' }],
+        }),
+      },
+    ]);
+    const provider = createProvider('custom', transport, {
+      baseUrl: 'https://llm.example.com/api',
+    });
+    expect(provider.id).toBe('custom');
+    await provider.complete({
+      model: 'any-model',
+      system: 's',
+      messages: [{ role: 'user', content: 'hi' }],
+      maxOutputTokens: 77,
+      json: true,
+    });
+    const sent = transport.sent[0]!;
+    expect(sent).toMatchObject({
+      provider: 'custom',
+      baseUrl: 'https://llm.example.com/api',
+      path: '/v1/chat/completions',
+    });
+    expect(sent.body).toMatchObject({ model: 'any-model', max_tokens: 77 });
+    expect(sent.body).not.toHaveProperty('response_format');
+    expect(sent.body).not.toHaveProperty('max_completion_tokens');
+  });
+
+  it('custom provider refuses to send anything without an endpoint', async () => {
+    const transport = new FakeTransport([]);
+    const provider = createProvider('custom', transport);
+    await expect(provider.testConnection()).rejects.toMatchObject({ kind: 'invalid-endpoint' });
+    expect(transport.sent).toHaveLength(0);
+  });
+});
+
+describe('normalizeEndpoint', () => {
+  it('accepts https and loopback http, trimming slashes and a trailing /v1', () => {
+    expect(normalizeEndpoint(' https://openrouter.ai/api/v1/ ')).toEqual({
+      ok: true,
+      url: 'https://openrouter.ai/api',
+    });
+    expect(normalizeEndpoint('https://api.example.com')).toEqual({
+      ok: true,
+      url: 'https://api.example.com',
+    });
+    expect(normalizeEndpoint('http://localhost:11434/v1')).toEqual({
+      ok: true,
+      url: 'http://localhost:11434',
+    });
+  });
+
+  it('rejects unsafe or malformed endpoints', () => {
+    for (const bad of [
+      '',
+      'not a url',
+      'ftp://example.com',
+      'http://api.example.com',
+      'http://localhost.evil.example',
+      'https://user:pw@example.com',
+      'https://example.com/api?x=1',
+      'https://example.com/a%20b',
+      `https://example.com/${'a'.repeat(200)}`,
+    ]) {
+      expect(normalizeEndpoint(bad).ok, bad).toBe(false);
+    }
   });
 });
 

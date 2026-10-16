@@ -9,6 +9,8 @@ export interface ProviderInfo {
   // Suggested starting points. Model names change; the settings screen lists what the key can use.
   defaultModel: string;
   consoleUrl: string;
+  // The user supplies the API base URL (any OpenAI-compatible server).
+  requiresEndpoint?: boolean;
 }
 
 export const PROVIDER_INFO: Record<ProviderId, ProviderInfo> = {
@@ -24,6 +26,13 @@ export const PROVIDER_INFO: Record<ProviderId, ProviderInfo> = {
     defaultModel: 'claude-sonnet-4-5',
     consoleUrl: 'https://console.anthropic.com/settings/keys',
   },
+  custom: {
+    id: 'custom',
+    displayName: 'Custom (OpenAI-compatible)',
+    defaultModel: '',
+    consoleUrl: '',
+    requiresEndpoint: true,
+  },
 };
 
 export const PROVIDER_IDS = Object.keys(PROVIDER_INFO) as ProviderId[];
@@ -32,11 +41,21 @@ export function isProviderId(value: string | undefined): value is ProviderId {
   return value !== undefined && value in PROVIDER_INFO;
 }
 
-export function createProvider(id: ProviderId, transport: AiTransport): AIProvider {
+export function createProvider(
+  id: ProviderId,
+  transport: AiTransport,
+  options: { baseUrl?: string } = {},
+): AIProvider {
   switch (id) {
     case 'openai':
       return new OpenAIProvider(transport);
     case 'anthropic':
       return new AnthropicProvider(transport);
+    case 'custom':
+      return new OpenAIProvider(transport, {
+        id: 'custom',
+        displayName: PROVIDER_INFO.custom.displayName,
+        baseUrl: options.baseUrl,
+      });
   }
 }

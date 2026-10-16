@@ -2,6 +2,7 @@ export type AIErrorKind =
   | 'missing-key'
   | 'invalid-credentials'
   | 'unsupported-model'
+  | 'invalid-endpoint'
   | 'rate-limit'
   | 'timeout'
   | 'network'
@@ -18,6 +19,7 @@ const ACTIONABLE: Record<AIErrorKind, string> = {
   'invalid-credentials': 'The provider rejected the API key. Check or replace the key in Settings.',
   'unsupported-model':
     'The selected model is not available for this key. Choose another model in Settings.',
+  'invalid-endpoint': 'The custom endpoint URL is missing or not allowed. Check it in Settings.',
   'rate-limit': 'The provider rate limit was reached. Wait a moment and retry.',
   timeout: 'The provider did not respond in time. Retry, or try a smaller request.',
   network: 'Could not reach the provider. Check your network connection and retry.',
@@ -99,6 +101,7 @@ export function classifyHttpError(
 const BACKEND_KINDS: ReadonlySet<string> = new Set([
   'missing-key',
   'invalid-credentials',
+  'invalid-endpoint',
   'timeout',
   'network',
   'cancelled',

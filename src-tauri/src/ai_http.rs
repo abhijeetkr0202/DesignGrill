@@ -1,5 +1,6 @@
 //! Outbound HTTP to AI providers. The API key is read from the OS credential store here
-//! and never crosses into the webview. Hosts are fixed per provider; redirects are refused.
+//! and never crosses into the webview. Built-in providers use fixed hosts; the custom provider
+//! uses a user-supplied base URL that is validated here. Redirects are refused.
 
 use crate::credentials;
 use crate::error::AppError;
@@ -18,6 +19,8 @@ const MAX_TIMEOUT_MS: u64 = 300_000;
 
 pub struct ProviderSpec {
     pub base_url: &'static str,
+    // True when the base URL comes from the request instead of `base_url`.
+    custom: bool,
     auth_header: Option<&'static str>,
     extra_headers: &'static [(&'static str, &'static str)],
 }
@@ -26,16 +29,69 @@ pub fn provider_spec(provider: &str) -> Option<ProviderSpec> {
     match provider {
         "openai" => Some(ProviderSpec {
             base_url: "https://api.openai.com",
+            custom: false,
             auth_header: None,
             extra_headers: &[],
         }),
         "anthropic" => Some(ProviderSpec {
             base_url: "https://api.anthropic.com",
+            custom: false,
             auth_header: Some("x-api-key"),
             extra_headers: &[("anthropic-version", "2023-06-01")],
         }),
+        "custom" => Some(ProviderSpec {
+            base_url: "",
+            custom: true,
+            auth_header: None,
+            extra_headers: &[],
+        }),
         _ => None,
     }
+}
+
+fn is_loopback_host(host: &str) -> bool {
+    if host.eq_ignore_ascii_case("localhost") {
+        return true;
+    }
+    let bare = host.trim_start_matches('[').trim_end_matches(']');
+    bare.parse::<std::net::IpAddr>()
+        .is_ok_and(|ip| ip.is_loopback())
+}
+
+/// Returns the normalised base URL (origin plus path, no trailing slash) or an error.
+/// Plain http is accepted only for loopback hosts such as a local Ollama server.
+pub fn validate_base_url(input: &str) -> Result<String, AppError> {
+    let bad = |m: &str| ai_err("invalid-endpoint", m.to_string());
+    if input.is_empty() || input.len() > 200 {
+        return Err(bad("the endpoint URL has an invalid length"));
+    }
+    let url = reqwest::Url::parse(input).map_err(|_| bad("the endpoint URL is not valid"))?;
+    let host = url
+        .host_str()
+        .ok_or_else(|| bad("the endpoint URL has no host"))?;
+    match url.scheme() {
+        "https" => {}
+        "http" if is_loopback_host(host) => {}
+        _ => {
+            return Err(bad(
+                "the endpoint must use https (http is only allowed for localhost)",
+            ))
+        }
+    }
+    if !url.username().is_empty() || url.password().is_some() {
+        return Err(bad("the endpoint URL must not contain credentials"));
+    }
+    if url.query().is_some() || url.fragment().is_some() {
+        return Err(bad("the endpoint URL must not contain a query or fragment"));
+    }
+    let path = url.path().trim_end_matches('/');
+    let ok_chars = path
+        .chars()
+        .all(|c| c.is_ascii_alphanumeric() || matches!(c, '/' | '_' | '-' | '.' | '~'));
+    if !ok_chars || path.contains("..") || path.contains("//") {
+        return Err(bad("the endpoint URL path is not allowed"));
+    }
+    Ok(format!("{}{}", url.origin().ascii_serialization(), path))
 }
 
 pub fn validate_path(path: &str) -> Result<(), AppError> {
@@ -76,6 +132,7 @@ fn ai_err(kind: &'static str, message: impl Into<String>) -> AppError {
 #[serde(rename_all = "camelCase")]
 pub struct AiRequest {
     pub provider: String,
+    pub base_url: Option<String>,
     pub method: String,
     pub path: String,
     pub body: Option<String>,
@@ -100,7 +157,7 @@ impl AiState {
     pub fn new() -> Result<Self, AppError> {
         let client = Client::builder()
             .redirect(reqwest::redirect::Policy::none())
-            .https_only(true)
+            // Plain http is allowed by `validate_base_url` for loopback hosts only.
             .connect_timeout(Duration::from_secs(15))
             .user_agent(concat!("DesignGrill/", env!("CARGO_PKG_VERSION")))
             .build()
@@ -124,6 +181,11 @@ impl AiState {
         let spec = provider_spec(&req.provider)
             .ok_or_else(|| AppError::Invalid(format!("unknown provider '{}'", req.provider)))?;
         validate_path(&req.path)?;
+        let base_url = if spec.custom {
+            validate_base_url(req.base_url.as_deref().unwrap_or(""))?
+        } else {
+            spec.base_url.to_string()
+        };
         let method = match req.method.as_str() {
             "GET" => Method::GET,
             "POST" => Method::POST,
@@ -150,7 +212,7 @@ impl AiState {
                 .unwrap_or(DEFAULT_TIMEOUT_MS)
                 .clamp(1_000, MAX_TIMEOUT_MS),
         );
-        let url = format!("{}{}", spec.base_url, req.path);
+        let url = format!("{}{}", base_url, req.path);
         let work = self.execute(&spec, &key, method, &url, req.body);
 
         tokio::select! {
@@ -256,6 +318,7 @@ mod tests {
     fn only_known_providers_have_specs() {
         assert!(provider_spec("openai").is_some());
         assert!(provider_spec("anthropic").is_some());
+        assert!(provider_spec("custom").is_some());
         assert!(provider_spec("example").is_none());
         assert!(provider_spec("openai")
             .unwrap()
@@ -282,12 +345,66 @@ mod tests {
         assert!(validate_request_id("bad id").is_err());
     }
 
+    #[test]
+    fn base_urls_must_be_https_or_loopback_http_without_extras() {
+        assert_eq!(
+            validate_base_url("https://openrouter.ai/api/").unwrap(),
+            "https://openrouter.ai/api"
+        );
+        assert_eq!(
+            validate_base_url("https://api.example.com:8443").unwrap(),
+            "https://api.example.com:8443"
+        );
+        assert_eq!(
+            validate_base_url("http://localhost:11434").unwrap(),
+            "http://localhost:11434"
+        );
+        assert!(validate_base_url("http://127.0.0.1:1234").is_ok());
+        assert!(validate_base_url("http://[::1]:8080").is_ok());
+        assert!(validate_base_url("").is_err());
+        assert!(validate_base_url("not a url").is_err());
+        assert!(validate_base_url("http://api.example.com").is_err());
+        assert!(validate_base_url("http://localhost.evil.example").is_err());
+        assert!(validate_base_url("ftp://example.com").is_err());
+        assert!(validate_base_url("https://user:pw@example.com").is_err());
+        assert!(validate_base_url("https://example.com/api?x=1").is_err());
+        assert!(validate_base_url("https://example.com/api#frag").is_err());
+        assert!(validate_base_url("https://example.com/a%20b").is_err());
+        assert!(validate_base_url(&format!("https://example.com/{}", "a".repeat(200))).is_err());
+    }
+
+    #[tokio::test]
+    async fn custom_provider_requires_a_valid_endpoint_before_any_network_use() {
+        let state = AiState::new().unwrap();
+        for base_url in [None, Some("http://api.example.com".to_string())] {
+            let res = state
+                .request(AiRequest {
+                    provider: "custom".into(),
+                    base_url,
+                    method: "GET".into(),
+                    path: "/v1/models".into(),
+                    body: None,
+                    request_id: "r2".into(),
+                    timeout_ms: None,
+                })
+                .await;
+            assert!(matches!(
+                res,
+                Err(AppError::Ai {
+                    kind: "invalid-endpoint",
+                    ..
+                })
+            ));
+        }
+    }
+
     #[tokio::test]
     async fn rejects_disallowed_methods_before_touching_the_network() {
         let state = AiState::new().unwrap();
         let res = state
             .request(AiRequest {
                 provider: "openai".into(),
+                base_url: None,
                 method: "DELETE".into(),
                 path: "/v1/models".into(),
                 body: None,

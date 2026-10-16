@@ -46,7 +46,7 @@ Migrations live next to the Rust code (`src-tauri/migrations`) rather than in `s
 ## AI layer
 
 - `src/ai/provider-interface.ts`: provider-independent contract (connection test, model listing, completion, capabilities).
-- `src/ai/providers/*`: provider-specific request and response shapes (OpenAI Chat Completions, Anthropic Messages). They talk to an `AiTransport`.
+- `src/ai/providers/*`: provider-specific request and response shapes (OpenAI Chat Completions, Anthropic Messages). The OpenAI shape is also used for the custom provider, which targets a user-supplied base URL that the native layer validates (https, or http for localhost only). They talk to an `AiTransport`.
 - `src/ai/transport.ts`: the Tauri transport calls the native `ai_http_request` command. The native side reads the API key from the credential store, fixes the host per provider, validates the path, refuses redirects, enforces size and time limits, supports cancellation, and redacts the key from responses. The key never reaches the webview.
 - `src/ai/structured.ts`: validates model output with Zod, with one repair attempt; `src/ai/retry.ts` retries only transient errors, with bounded exponential backoff and jitter.
 - `src/ai/prompts/*.md`: version-controlled system prompt, per-mode task prompts, and the scoring rubric.

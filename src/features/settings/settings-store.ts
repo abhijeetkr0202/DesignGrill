@@ -1,8 +1,9 @@
 import { create } from 'zustand';
 import { AIError, isAIError } from '@/ai/errors';
+import { normalizeEndpoint } from '@/ai/endpoint';
 import type { ProviderId } from '@/ai/provider-interface';
 import { PROVIDER_IDS, PROVIDER_INFO, isProviderId } from '@/ai/provider-registry';
-import { getProvider } from '@/ai/runtime';
+import { getProvider, setCustomBaseUrl } from '@/ai/runtime';
 import { getRepositories } from '@/data/repositories';
 import { deleteApiKey, hasApiKey, saveApiKey } from './credentials';
 import { useUiStore, type Theme } from '@/store/ui-store';
@@ -21,9 +22,12 @@ interface SettingsState {
   provider: ProviderId;
   models: Record<ProviderId, string>;
   providers: Record<ProviderId, ProviderState>;
+  // Base URL of the custom OpenAI-compatible endpoint; not a secret, so it lives in preferences.
+  customBaseUrl: string;
   load(): Promise<void>;
   setProvider(id: ProviderId): Promise<void>;
   setModel(id: ProviderId, model: string): Promise<void>;
+  setCustomBaseUrl(url: string): Promise<void>;
   setTheme(theme: Theme): Promise<void>;
   saveKey(id: ProviderId, key: string): Promise<void>;
   removeKey(id: ProviderId): Promise<void>;
@@ -35,6 +39,7 @@ const blank = (): ProviderState => ({ status: 'unknown', error: null, availableM
 const defaultModels = (): Record<ProviderId, string> => ({
   openai: PROVIDER_INFO.openai.defaultModel,
   anthropic: PROVIDER_INFO.anthropic.defaultModel,
+  custom: PROVIDER_INFO.custom.defaultModel,
 });
 
 export const useSettingsStore = create<SettingsState>((set, get) => {
@@ -47,7 +52,8 @@ export const useSettingsStore = create<SettingsState>((set, get) => {
     loaded: false,
     provider: 'openai',
     models: defaultModels(),
-    providers: { openai: blank(), anthropic: blank() },
+    providers: { openai: blank(), anthropic: blank(), custom: blank() },
+    customBaseUrl: '',
 
     async load() {
       const values = await getRepositories()
@@ -59,9 +65,13 @@ export const useSettingsStore = create<SettingsState>((set, get) => {
         if (saved) models[id] = saved;
       }
       const provider = isProviderId(values['ai.provider']) ? values['ai.provider'] : 'openai';
+      const savedUrl = values['ai.baseUrl.custom'] ?? '';
+      const endpoint = savedUrl ? normalizeEndpoint(savedUrl) : null;
+      const customBaseUrl = endpoint?.ok ? endpoint.url : '';
+      setCustomBaseUrl(customBaseUrl || undefined);
       if (values.theme === 'light' || values.theme === 'dark')
         useUiStore.getState().setTheme(values.theme);
-      set({ loaded: true, provider, models });
+      set({ loaded: true, provider, models, customBaseUrl });
       for (const id of PROVIDER_IDS) {
         const present = await hasApiKey(id).catch(() => false);
         patchProvider(id, { status: present ? 'key-saved' : 'no-key' });
@@ -78,6 +88,15 @@ export const useSettingsStore = create<SettingsState>((set, get) => {
       if (!trimmed) return;
       set((s) => ({ models: { ...s.models, [id]: trimmed } }));
       await pref(`ai.model.${id}`, trimmed).catch(() => undefined);
+    },
+
+    async setCustomBaseUrl(url) {
+      const result = normalizeEndpoint(url);
+      if (!result.ok) throw new Error(result.error);
+      set({ customBaseUrl: result.url });
+      setCustomBaseUrl(result.url);
+      patchProvider('custom', { error: null, availableModels: [] });
+      await pref('ai.baseUrl.custom', result.url).catch(() => undefined);
     },
 
     async setTheme(theme) {

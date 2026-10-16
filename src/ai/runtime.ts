@@ -4,6 +4,11 @@ import { createProvider } from './provider-registry';
 import { TauriAiTransport, UnavailableTransport, type AiTransport } from './transport';
 
 let transport: AiTransport | null = null;
+let customBaseUrl: string | undefined;
+
+export function setCustomBaseUrl(url: string | undefined): void {
+  customBaseUrl = url;
+}
 
 export function getTransport(): AiTransport {
   transport ??= isTauri() ? new TauriAiTransport() : new UnavailableTransport();
@@ -15,5 +20,5 @@ export function setTransportForTesting(t: AiTransport | null): void {
 }
 
 export function getProvider(id: ProviderId): AIProvider {
-  return createProvider(id, getTransport());
+  return createProvider(id, getTransport(), { baseUrl: customBaseUrl });
 }

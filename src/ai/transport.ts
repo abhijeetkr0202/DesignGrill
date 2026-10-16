@@ -4,6 +4,8 @@ import type { ProviderId } from './provider-interface';
 
 export interface TransportRequest {
   provider: ProviderId;
+  // Only used by the custom provider; built-in providers have fixed hosts in the native layer.
+  baseUrl?: string;
   method: 'GET' | 'POST';
   path: string;
   body?: unknown;
@@ -40,6 +42,7 @@ export class TauriAiTransport implements AiTransport {
       const res = await invoke<BackendResponse>('ai_http_request', {
         request: {
           provider: req.provider,
+          baseUrl: req.baseUrl ?? null,
           method: req.method,
           path: req.path,
           body: req.body === undefined ? null : JSON.stringify(req.body),
