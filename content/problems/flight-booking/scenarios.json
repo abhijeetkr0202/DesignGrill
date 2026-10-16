@@ -1,0 +1,28 @@
+{
+  "scenarios": [
+    {
+      "id": "sc-1",
+      "title": "Slow supplier",
+      "description": "A major airline API responds in 20 seconds.",
+      "triggers": ["Slow supplier"],
+      "probes": ["How is the search affected?", "What do users see?"],
+      "relatedTopics": ["Search fan-out"]
+    },
+    {
+      "id": "sc-2",
+      "title": "Price changed at booking",
+      "description": "The fare rises between search and booking.",
+      "triggers": ["Price changed at booking"],
+      "probes": ["How is the user informed?", "What are the options?"],
+      "relatedTopics": ["Price changes"]
+    },
+    {
+      "id": "sc-3",
+      "title": "Ticketing failure",
+      "description": "Payment succeeded but ticket issuing failed.",
+      "triggers": ["Ticketing failure"],
+      "probes": ["How is it recovered?", "How is money protected?"],
+      "relatedTopics": ["Booking flow"]
+    }
+  ]
+}

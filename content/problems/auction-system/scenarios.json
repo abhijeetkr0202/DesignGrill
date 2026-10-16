@@ -1,0 +1,28 @@
+{
+  "scenarios": [
+    {
+      "id": "sc-1",
+      "title": "Last-second flurry",
+      "description": "Thousands of bids arrive in the final seconds of one auction.",
+      "triggers": ["Last-second flurry"],
+      "probes": ["How is order determined?", "How is the system protected?"],
+      "relatedTopics": ["Bid ordering", "Deadline handling"]
+    },
+    {
+      "id": "sc-2",
+      "title": "Timer service outage",
+      "description": "Closing events are delayed by several minutes.",
+      "triggers": ["Timer service outage"],
+      "probes": ["What happens to bids after the deadline?", "How is correctness restored?"],
+      "relatedTopics": ["Deadline handling"]
+    },
+    {
+      "id": "sc-3",
+      "title": "Partition owner failure",
+      "description": "The node owning a hot auction fails.",
+      "triggers": ["Partition owner failure"],
+      "probes": ["How is ownership moved without losing bids?", "What do bidders see?"],
+      "relatedTopics": ["Bid ordering"]
+    }
+  ]
+}

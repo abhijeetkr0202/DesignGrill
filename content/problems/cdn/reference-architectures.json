@@ -1,0 +1,26 @@
+{
+  "architectures": [
+    {
+      "id": "ra-1",
+      "name": "Tiered edge with origin shield",
+      "summary": "Edges forward misses to regional caches and a shield before the origin; a control plane distributes config and purges.",
+      "components": [
+        "Edge servers",
+        "Regional caches",
+        "Origin shield",
+        "Control plane",
+        "Routing layer"
+      ],
+      "bestWhen": "General web delivery.",
+      "drawbacks": ["Purge propagation design.", "Cost of many locations."]
+    },
+    {
+      "id": "ra-2",
+      "name": "Peering-based deployment inside ISPs",
+      "summary": "Cache appliances sit inside ISP networks for popular content.",
+      "components": ["ISP caches", "Mapping system"],
+      "bestWhen": "Very large video providers.",
+      "drawbacks": ["Operational partnerships.", "Limited to popular content."]
+    }
+  ]
+}

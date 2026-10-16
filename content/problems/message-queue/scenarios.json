@@ -1,0 +1,34 @@
+{
+  "scenarios": [
+    {
+      "id": "sc-1",
+      "title": "Broker failure",
+      "description": "A leader broker for many partitions dies.",
+      "triggers": ["Broker failure"],
+      "probes": [
+        "How is a new leader chosen without losing acknowledged messages?",
+        "What do producers see?"
+      ],
+      "relatedTopics": ["Replication"]
+    },
+    {
+      "id": "sc-2",
+      "title": "Consumer falls behind",
+      "description": "A consumer group lags by hours.",
+      "triggers": ["Consumer falls behind"],
+      "probes": ["How is lag detected and addressed?", "What if lag exceeds retention?"],
+      "relatedTopics": ["Consumption"]
+    },
+    {
+      "id": "sc-3",
+      "title": "Rebalance storm",
+      "description": "Consumers repeatedly join and leave.",
+      "triggers": ["Rebalance storm"],
+      "probes": [
+        "What happens to processing and duplicates?",
+        "How can rebalancing be made less disruptive?"
+      ],
+      "relatedTopics": ["Consumption", "Delivery semantics"]
+    }
+  ]
+}

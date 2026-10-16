@@ -1,0 +1,20 @@
+{
+  "architectures": [
+    {
+      "id": "ra-1",
+      "name": "Geo-cell index service",
+      "summary": "A read-optimised index keyed by cell serves candidate lookups, fed by the business database.",
+      "components": ["Search API", "Cell index", "Business DB", "Cache", "Index builder"],
+      "bestWhen": "Heavy reads and slow updates.",
+      "drawbacks": ["Dense cell handling.", "Index rebuild logic."]
+    },
+    {
+      "id": "ra-2",
+      "name": "Database with spatial extension",
+      "summary": "A relational database with a spatial index answers queries directly.",
+      "components": ["Search API", "Spatial database", "Read replicas"],
+      "bestWhen": "Moderate scale and quick delivery.",
+      "drawbacks": ["Scaling reads.", "Less control over ranking."]
+    }
+  ]
+}

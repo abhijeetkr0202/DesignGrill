@@ -1,0 +1,179 @@
+{
+  "id": "file-storage-sync",
+  "version": 1,
+  "title": "File Storage and Sync (Dropbox)",
+  "category": "Collaboration & storage",
+  "difficulty": "medium",
+  "summary": "Design a cloud file storage service that syncs files efficiently across devices and supports sharing.",
+  "statement": "Design a file storage and sync service like Dropbox. Users store files in the cloud, edit them on several devices, and share them. The system syncs changes efficiently, handles conflicts, and keeps storage costs low. Start by clarifying requirements and estimating scale, then design the system and defend your decisions.",
+  "tags": ["chunking", "deduplication", "sync"],
+  "initialGuidance": [
+    "Clarify the users, the main journeys, and what is explicitly out of scope before drawing anything.",
+    "Estimate read and write volume and storage growth; the numbers decide which components you need.",
+    "Name the guarantees you will offer (consistency, durability, availability) and the trade-offs behind them.",
+    "Write down assumptions as you make them and revisit them when requirements change."
+  ],
+  "coreFunctionalRequirements": [
+    "Upload and download files.",
+    "Sync changes across devices automatically.",
+    "Share files and folders.",
+    "Keep version history.",
+    "Resolve conflicting edits."
+  ],
+  "requirementQuestions": [
+    {
+      "id": "q-1",
+      "area": "Scale",
+      "question": "How many users, files, and total storage?",
+      "whyItMatters": "Sets read and write rates and storage growth, which decide whether a single node can cope."
+    },
+    {
+      "id": "q-2",
+      "area": "Latency",
+      "question": "How quickly should a change appear on another device?",
+      "whyItMatters": "Defines which paths need caching, precomputation, or regional placement."
+    },
+    {
+      "id": "q-3",
+      "area": "Durability",
+      "question": "What durability guarantee is expected for stored files?",
+      "whyItMatters": "Drives replication, backup, and write acknowledgement policy."
+    },
+    {
+      "id": "q-4",
+      "area": "Consistency",
+      "question": "How are simultaneous edits from two devices handled?",
+      "whyItMatters": "Selects between strong and eventual models and shapes conflict handling."
+    },
+    {
+      "id": "q-5",
+      "area": "Cost",
+      "question": "How is storage cost reduced for duplicates?",
+      "whyItMatters": "Prevents over-engineering and affects build-versus-buy choices."
+    },
+    {
+      "id": "q-6",
+      "area": "Security",
+      "question": "Is client-side encryption supported and how does that affect deduplication?",
+      "whyItMatters": "Introduces authentication, authorisation, and privacy constraints that affect the design."
+    }
+  ],
+  "workloadAssumptions": {
+    "illustrativeNote": "All numbers below are illustrative examples for practice and are not benchmarks. Real answers depend on the requirements the candidate negotiates.",
+    "items": [
+      {
+        "name": "Users",
+        "value": "500 million",
+        "rationale": "Consumer and business."
+      },
+      {
+        "name": "Stored data",
+        "value": "1 exabyte",
+        "rationale": "Large."
+      },
+      {
+        "name": "File changes per second",
+        "value": "200,000",
+        "rationale": "Syncing clients."
+      },
+      {
+        "name": "Average file",
+        "value": "1 MB",
+        "rationale": "Mostly documents."
+      }
+    ]
+  },
+  "estimationPrompts": [
+    "How much metadata exists and how is it sharded?",
+    "What bandwidth is saved by syncing only changed blocks?",
+    "How much storage does deduplication save?"
+  ],
+  "keyDecisions": [
+    {
+      "id": "d-1",
+      "topic": "Chunking",
+      "question": "How are files split?",
+      "considerations": [
+        "Split into fixed or content-defined blocks and hash each.",
+        "Upload only blocks that changed or are missing.",
+        "Content-defined chunking handles inserts well."
+      ]
+    },
+    {
+      "id": "d-2",
+      "topic": "Metadata service",
+      "question": "How is the file tree tracked?",
+      "considerations": [
+        "Metadata database with file to block-list mappings, sharded by user.",
+        "Block storage separate from metadata.",
+        "Strong consistency for metadata per user."
+      ]
+    },
+    {
+      "id": "d-3",
+      "topic": "Sync protocol",
+      "question": "How do devices learn about changes?",
+      "considerations": [
+        "Long polling or push notifications of change events.",
+        "Client keeps a cursor into the change log.",
+        "Delta sync downloads only new blocks."
+      ]
+    },
+    {
+      "id": "d-4",
+      "topic": "Conflict handling",
+      "question": "What if two devices edit the same file?",
+      "considerations": [
+        "Version vectors or revision IDs detect conflicts.",
+        "Create conflicted copies instead of overwriting.",
+        "Last-writer rules for simple cases."
+      ]
+    },
+    {
+      "id": "d-5",
+      "topic": "Storage and durability",
+      "question": "How are blocks stored?",
+      "considerations": [
+        "Content-addressed blocks in replicated object storage.",
+        "Deduplicate by hash across users carefully.",
+        "Cold tiering of old versions."
+      ]
+    }
+  ],
+  "tradeoffs": [
+    {
+      "topic": "Dedup across users vs privacy",
+      "tension": "Storage savings versus side-channel risks and encryption."
+    },
+    {
+      "topic": "Block size",
+      "tension": "Small blocks save transfer but increase metadata."
+    },
+    {
+      "topic": "Immediate sync vs batching",
+      "tension": "Freshness versus load."
+    }
+  ],
+  "commonMistakes": [
+    "Re-uploading whole files for small edits.",
+    "Mixing metadata and bulk data in one store.",
+    "Overwriting on conflict.",
+    "Polling the server constantly from every client."
+  ],
+  "followUps": [
+    "How do you implement sharing permissions?",
+    "How do you support selective sync?",
+    "How do you recover deleted files?",
+    "How do you design for end-to-end encryption?"
+  ],
+  "topics": [
+    "Chunking",
+    "Metadata service",
+    "Sync protocol",
+    "Conflict handling",
+    "Storage and durability",
+    "chunking",
+    "deduplication",
+    "sync"
+  ]
+}

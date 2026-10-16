@@ -1,0 +1,27 @@
+{
+  "architectures": [
+    {
+      "id": "ra-1",
+      "name": "Geo-sharded candidate service",
+      "summary": "Users are indexed by location cells; candidate queues are precomputed and swipes stored in a key-value store.",
+      "components": [
+        "Profile service",
+        "Geo index",
+        "Candidate queue",
+        "Swipe store",
+        "Match service",
+        "Notifications"
+      ],
+      "bestWhen": "Large user base with strong locality.",
+      "drawbacks": ["Cells with density differences.", "Queue freshness."]
+    },
+    {
+      "id": "ra-2",
+      "name": "On-demand query with caching",
+      "summary": "Query a geospatial database per request and cache recent results.",
+      "components": ["Geo database", "Cache", "Swipe store"],
+      "bestWhen": "Smaller scale or simpler operations.",
+      "drawbacks": ["Latency at scale.", "Heavy database load."]
+    }
+  ]
+}

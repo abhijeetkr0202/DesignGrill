@@ -1,0 +1,28 @@
+{
+  "scenarios": [
+    {
+      "id": "sc-1",
+      "title": "New release surge",
+      "description": "A hugely anticipated title launches.",
+      "triggers": ["New release surge"],
+      "probes": ["How is the origin protected?", "How are edges warmed in advance?"],
+      "relatedTopics": ["Delivery"]
+    },
+    {
+      "id": "sc-2",
+      "title": "Transcoding backlog",
+      "description": "Uploads outpace the transcoding fleet.",
+      "triggers": ["Transcoding backlog"],
+      "probes": ["What do creators see?", "How is work prioritised and scaled?"],
+      "relatedTopics": ["Transcoding pipeline"]
+    },
+    {
+      "id": "sc-3",
+      "title": "CDN region failure",
+      "description": "A CDN provider region degrades.",
+      "triggers": ["CDN region failure"],
+      "probes": ["How does traffic shift?", "What is the impact on quality?"],
+      "relatedTopics": ["Delivery", "Adaptive streaming"]
+    }
+  ]
+}

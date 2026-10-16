@@ -1,0 +1,27 @@
+{
+  "architectures": [
+    {
+      "id": "ra-1",
+      "name": "Sharded TSDB with separate alert evaluators",
+      "summary": "Collectors write to sharded time-series storage; query and alerting services read from it.",
+      "components": [
+        "Collectors",
+        "Ingest gateway",
+        "TSDB shards",
+        "Query service",
+        "Alert evaluator",
+        "Notifier"
+      ],
+      "bestWhen": "Large-scale infrastructure monitoring.",
+      "drawbacks": ["Index growth.", "Cross-shard queries."]
+    },
+    {
+      "id": "ra-2",
+      "name": "Managed SaaS ingestion",
+      "summary": "Agents ship data to a hosted backend.",
+      "components": ["Agents", "Hosted backend"],
+      "bestWhen": "Small teams without operational capacity.",
+      "drawbacks": ["Cost at scale.", "Vendor lock-in."]
+    }
+  ]
+}

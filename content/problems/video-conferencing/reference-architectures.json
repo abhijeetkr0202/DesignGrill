@@ -1,0 +1,20 @@
+{
+  "architectures": [
+    {
+      "id": "ra-1",
+      "name": "Regional SFU clusters",
+      "summary": "Participants connect to nearby SFUs; SFUs cascade for cross-region meetings.",
+      "components": ["Signalling service", "SFU clusters", "TURN servers", "Recorder"],
+      "bestWhen": "Interactive meetings at global scale.",
+      "drawbacks": ["Cascading adds complexity.", "Server-side forwarding cost."]
+    },
+    {
+      "id": "ra-2",
+      "name": "Hybrid with streaming for large events",
+      "summary": "Interactive speakers use SFU; the audience watches a streamed output.",
+      "components": ["SFU", "Transcoder", "Streaming CDN"],
+      "bestWhen": "Webinars with thousands of viewers.",
+      "drawbacks": ["Higher viewer latency.", "Two delivery stacks."]
+    }
+  ]
+}

@@ -1,0 +1,28 @@
+{
+  "scenarios": [
+    {
+      "id": "sc-1",
+      "title": "Raid surge",
+      "description": "A streamer sends 100,000 viewers to a small channel.",
+      "triggers": ["Raid surge"],
+      "probes": ["What breaks first?", "How do you absorb the spike?"],
+      "relatedTopics": ["Delivery protocol", "Live chat"]
+    },
+    {
+      "id": "sc-2",
+      "title": "Ingest node failure",
+      "description": "The ingest node for many streams fails.",
+      "triggers": ["Ingest node failure"],
+      "probes": ["How do broadcasters reconnect?", "What do viewers see?"],
+      "relatedTopics": ["Ingest"]
+    },
+    {
+      "id": "sc-3",
+      "title": "Chat flood",
+      "description": "A major event creates a message storm in one channel.",
+      "triggers": ["Chat flood"],
+      "probes": ["How do you protect the chat system and users?", "What is sampled or dropped?"],
+      "relatedTopics": ["Live chat"]
+    }
+  ]
+}

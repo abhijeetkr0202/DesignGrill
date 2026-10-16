@@ -1,0 +1,179 @@
+{
+  "id": "product-search",
+  "version": 1,
+  "title": "E-commerce Product Search",
+  "category": "Commerce & payments",
+  "difficulty": "medium",
+  "summary": "Design product search with filters, facets, relevance ranking, and fresh price and stock data.",
+  "statement": "Design the search experience for a large online store. Shoppers type queries, apply filters such as brand and price, and expect relevant, fresh results quickly. Catalogue updates from many sellers must be reflected. Start by clarifying requirements and estimating scale, then design the system and defend your decisions.",
+  "tags": ["inverted-index", "ranking", "facets"],
+  "initialGuidance": [
+    "Clarify the users, the main journeys, and what is explicitly out of scope before drawing anything.",
+    "Estimate read and write volume and storage growth; the numbers decide which components you need.",
+    "Name the guarantees you will offer (consistency, durability, availability) and the trade-offs behind them.",
+    "Write down assumptions as you make them and revisit them when requirements change."
+  ],
+  "coreFunctionalRequirements": [
+    "Full-text search over products.",
+    "Filters and facet counts.",
+    "Sort by relevance, price, and rating.",
+    "Reflect catalogue updates quickly.",
+    "Spelling tolerance and synonyms."
+  ],
+  "requirementQuestions": [
+    {
+      "id": "q-1",
+      "area": "Scale",
+      "question": "How many products, queries per second, and catalogue updates per second?",
+      "whyItMatters": "Sets read and write rates and storage growth, which decide whether a single node can cope."
+    },
+    {
+      "id": "q-2",
+      "area": "Latency",
+      "question": "What is the search response target at p99?",
+      "whyItMatters": "Defines which paths need caching, precomputation, or regional placement."
+    },
+    {
+      "id": "q-3",
+      "area": "Consistency",
+      "question": "How quickly must price and stock changes appear in results?",
+      "whyItMatters": "Selects between strong and eventual models and shapes conflict handling."
+    },
+    {
+      "id": "q-4",
+      "area": "Scope",
+      "question": "Is personalisation or sponsored ranking included?",
+      "whyItMatters": "Fixes what is in and out of the design so effort goes to what matters."
+    },
+    {
+      "id": "q-5",
+      "area": "Data",
+      "question": "How are multi-seller duplicate listings handled?",
+      "whyItMatters": "Determines the data model, retention, and storage choices."
+    },
+    {
+      "id": "q-6",
+      "area": "Availability",
+      "question": "What do shoppers see if search is degraded?",
+      "whyItMatters": "Determines redundancy and failover design, and which features may degrade instead of failing."
+    }
+  ],
+  "workloadAssumptions": {
+    "illustrativeNote": "All numbers below are illustrative examples for practice and are not benchmarks. Real answers depend on the requirements the candidate negotiates.",
+    "items": [
+      {
+        "name": "Products",
+        "value": "300 million",
+        "rationale": "Marketplace."
+      },
+      {
+        "name": "Queries per second",
+        "value": "50,000",
+        "rationale": "Peak."
+      },
+      {
+        "name": "Catalogue updates per second",
+        "value": "5,000",
+        "rationale": "Price and stock changes."
+      },
+      {
+        "name": "p99 latency target",
+        "value": "under 300 ms",
+        "rationale": "Shopper experience."
+      }
+    ]
+  },
+  "estimationPrompts": [
+    "How large is the index and how many shards does it need?",
+    "How many index updates per second must be applied?",
+    "What memory does the hot index portion need?"
+  ],
+  "keyDecisions": [
+    {
+      "id": "d-1",
+      "topic": "Index design",
+      "question": "How is the index built and sharded?",
+      "considerations": [
+        "Inverted index sharded by product with replicas for throughput.",
+        "Scatter-gather query to all shards.",
+        "Facet counts add cost."
+      ]
+    },
+    {
+      "id": "d-2",
+      "topic": "Ingestion",
+      "question": "How do catalogue changes reach the index?",
+      "considerations": [
+        "Change events from the catalogue database stream to indexers.",
+        "Partial updates for price and stock.",
+        "Backfill and reindex strategy."
+      ]
+    },
+    {
+      "id": "d-3",
+      "topic": "Ranking",
+      "question": "How are results ordered?",
+      "considerations": [
+        "Text relevance combined with popularity, conversion, and availability.",
+        "Learning-to-rank in a second stage.",
+        "Boost in-stock items."
+      ]
+    },
+    {
+      "id": "d-4",
+      "topic": "Freshness of volatile data",
+      "question": "How are price and stock kept current?",
+      "considerations": [
+        "Store volatile fields outside the main index and join at query time.",
+        "Frequent partial updates.",
+        "Verify at checkout regardless."
+      ]
+    },
+    {
+      "id": "d-5",
+      "topic": "Query understanding",
+      "question": "How are queries interpreted?",
+      "considerations": [
+        "Tokenisation, spelling correction, synonyms, and category prediction.",
+        "Typeahead suggestions.",
+        "Handling zero-result queries."
+      ]
+    }
+  ],
+  "tradeoffs": [
+    {
+      "topic": "Index freshness vs indexing load",
+      "tension": "Real-time updates cost more."
+    },
+    {
+      "topic": "Scatter-gather latency vs shard count",
+      "tension": "More shards parallelise but add tail latency."
+    },
+    {
+      "topic": "Rich ranking vs latency",
+      "tension": "Better relevance needs more computation."
+    }
+  ],
+  "commonMistakes": [
+    "Using database LIKE queries.",
+    "Rebuilding the whole index for small changes.",
+    "Trusting search results for price at checkout.",
+    "No plan for zero-result queries."
+  ],
+  "followUps": [
+    "How do you add personalised ranking?",
+    "How do you handle a sudden rush of updates from one seller?",
+    "How do you evaluate search quality?",
+    "How would you support visual search?"
+  ],
+  "topics": [
+    "Index design",
+    "Ingestion",
+    "Ranking",
+    "Freshness of volatile data",
+    "Query understanding",
+    "inverted-index",
+    "ranking",
+    "facets"
+  ]
+}

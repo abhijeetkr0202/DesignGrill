@@ -1,0 +1,27 @@
+{
+  "architectures": [
+    {
+      "id": "ra-1",
+      "name": "Orchestrated payment service with ledger",
+      "summary": "A payment orchestrator persists state, calls provider adapters, and writes ledger entries transactionally.",
+      "components": [
+        "Payment API",
+        "Orchestrator",
+        "Provider adapters",
+        "Ledger DB",
+        "Webhook handler",
+        "Reconciliation jobs"
+      ],
+      "bestWhen": "Standard multi-provider platform.",
+      "drawbacks": ["Complex state recovery.", "Ledger scaling."]
+    },
+    {
+      "id": "ra-2",
+      "name": "Event-sourced payments",
+      "summary": "Every payment change is an event; state and ledger are projections.",
+      "components": ["Event store", "Projections", "Adapters"],
+      "bestWhen": "Auditability and replay are priorities.",
+      "drawbacks": ["Operational complexity.", "Projection lag."]
+    }
+  ]
+}

@@ -1,0 +1,179 @@
+{
+  "id": "hotel-booking",
+  "version": 1,
+  "title": "Hotel Booking (Airbnb / Booking.com)",
+  "category": "Booking & delivery",
+  "difficulty": "medium",
+  "summary": "Design a hotel and rental booking platform with search by location and dates and safe reservations.",
+  "statement": "Design a booking platform. Guests search for places by location, dates, and filters, see accurate availability and prices, and book. Hosts manage calendars. Double bookings must be prevented. Start by clarifying requirements and estimating scale, then design the system and defend your decisions.",
+  "tags": ["availability-calendar", "double-booking", "search"],
+  "initialGuidance": [
+    "Clarify the users, the main journeys, and what is explicitly out of scope before drawing anything.",
+    "Estimate read and write volume and storage growth; the numbers decide which components you need.",
+    "Name the guarantees you will offer (consistency, durability, availability) and the trade-offs behind them.",
+    "Write down assumptions as you make them and revisit them when requirements change."
+  ],
+  "coreFunctionalRequirements": [
+    "Search by location, dates, and guests.",
+    "View listing details and availability.",
+    "Book a stay and pay.",
+    "Hosts manage calendars and prices.",
+    "Cancel and refund per policy."
+  ],
+  "requirementQuestions": [
+    {
+      "id": "q-1",
+      "area": "Scale",
+      "question": "How many listings, searches per second, and bookings per day?",
+      "whyItMatters": "Sets read and write rates and storage growth, which decide whether a single node can cope."
+    },
+    {
+      "id": "q-2",
+      "area": "Consistency",
+      "question": "Can the same dates be booked twice?",
+      "whyItMatters": "Selects between strong and eventual models and shapes conflict handling."
+    },
+    {
+      "id": "q-3",
+      "area": "Latency",
+      "question": "What is acceptable for search and for booking confirmation?",
+      "whyItMatters": "Defines which paths need caching, precomputation, or regional placement."
+    },
+    {
+      "id": "q-4",
+      "area": "Integration",
+      "question": "Are inventories synced from external channel managers?",
+      "whyItMatters": "Identifies external dependencies and the failure modes they bring."
+    },
+    {
+      "id": "q-5",
+      "area": "Scope",
+      "question": "Are dynamic pricing, reviews, and messaging included?",
+      "whyItMatters": "Fixes what is in and out of the design so effort goes to what matters."
+    },
+    {
+      "id": "q-6",
+      "area": "Availability",
+      "question": "What happens to booking if the payment provider is slow?",
+      "whyItMatters": "Determines redundancy and failover design, and which features may degrade instead of failing."
+    }
+  ],
+  "workloadAssumptions": {
+    "illustrativeNote": "All numbers below are illustrative examples for practice and are not benchmarks. Real answers depend on the requirements the candidate negotiates.",
+    "items": [
+      {
+        "name": "Listings",
+        "value": "10 million",
+        "rationale": "Global."
+      },
+      {
+        "name": "Searches per second",
+        "value": "20,000",
+        "rationale": "Peak."
+      },
+      {
+        "name": "Bookings per second",
+        "value": "200",
+        "rationale": "Peak."
+      },
+      {
+        "name": "Search-to-book ratio",
+        "value": "1,000 to 1",
+        "rationale": "Heavy browsing."
+      }
+    ]
+  },
+  "estimationPrompts": [
+    "How many availability checks does one search imply?",
+    "How large is the availability calendar?",
+    "What is the write rate on calendars?"
+  ],
+  "keyDecisions": [
+    {
+      "id": "d-1",
+      "topic": "Search and availability",
+      "question": "How does search stay fast with date filters?",
+      "considerations": [
+        "Search index holds listings and approximate availability.",
+        "Exact availability verified at booking.",
+        "Geo plus date filtering."
+      ]
+    },
+    {
+      "id": "d-2",
+      "topic": "Availability storage",
+      "question": "How is the calendar stored?",
+      "considerations": [
+        "Per-listing per-night rows or ranges.",
+        "Partition by listing.",
+        "Block dates atomically."
+      ]
+    },
+    {
+      "id": "d-3",
+      "topic": "Booking transaction",
+      "question": "How is double booking prevented?",
+      "considerations": [
+        "Transactional check-and-reserve on the listing calendar.",
+        "Hold, pay, then confirm.",
+        "Idempotent booking requests."
+      ]
+    },
+    {
+      "id": "d-4",
+      "topic": "External inventory sync",
+      "question": "How is outside inventory kept current?",
+      "considerations": [
+        "Webhooks and polling from channel managers.",
+        "Rate limits and eventual consistency.",
+        "Conflict handling on overbooking."
+      ]
+    },
+    {
+      "id": "d-5",
+      "topic": "Pricing",
+      "question": "How are prices determined?",
+      "considerations": [
+        "Base price plus rules by date and demand.",
+        "Cache prices with expiry.",
+        "Quote guarantees for a short time."
+      ]
+    }
+  ],
+  "tradeoffs": [
+    {
+      "topic": "Search freshness vs cost",
+      "tension": "Exact availability in search is expensive; approximate is cheap but may mislead."
+    },
+    {
+      "topic": "Instant booking vs host approval",
+      "tension": "Convenience versus host control."
+    },
+    {
+      "topic": "Overbooking policy",
+      "tension": "Occupancy versus guest trust."
+    }
+  ],
+  "commonMistakes": [
+    "Searching by scanning the booking table.",
+    "Check-then-insert booking race conditions.",
+    "Treating search results as guaranteed availability.",
+    "Ignoring time zones for check-in dates."
+  ],
+  "followUps": [
+    "How do you handle external channel managers causing overbooking?",
+    "How do you implement dynamic pricing?",
+    "How do you rank search results?",
+    "How do you shard globally?"
+  ],
+  "topics": [
+    "Search and availability",
+    "Availability storage",
+    "Booking transaction",
+    "External inventory sync",
+    "Pricing",
+    "availability-calendar",
+    "double-booking",
+    "search"
+  ]
+}

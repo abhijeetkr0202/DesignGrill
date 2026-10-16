@@ -1,0 +1,179 @@
+{
+  "id": "ad-click-aggregation",
+  "version": 1,
+  "title": "Ad Click Aggregation",
+  "category": "Search & data",
+  "difficulty": "hard",
+  "summary": "Design a pipeline that counts ad clicks accurately in near real time for billing and dashboards.",
+  "statement": "Design a system that ingests billions of ad click events per day and produces aggregated counts per ad and time window for advertiser dashboards and billing. It must be accurate, handle late and duplicate events, and be replayable. Start by clarifying requirements and estimating scale, then design the system and defend your decisions.",
+  "tags": ["stream-processing", "exactly-once", "late-data"],
+  "initialGuidance": [
+    "Clarify the users, the main journeys, and what is explicitly out of scope before drawing anything.",
+    "Estimate read and write volume and storage growth; the numbers decide which components you need.",
+    "Name the guarantees you will offer (consistency, durability, availability) and the trade-offs behind them.",
+    "Write down assumptions as you make them and revisit them when requirements change."
+  ],
+  "coreFunctionalRequirements": [
+    "Ingest click events at high volume.",
+    "Aggregate clicks per ad per minute.",
+    "Query counts for dashboards.",
+    "Deduplicate and filter fraudulent clicks.",
+    "Recompute from raw data when needed."
+  ],
+  "requirementQuestions": [
+    {
+      "id": "q-1",
+      "area": "Scale",
+      "question": "How many click events per second and how many active ads?",
+      "whyItMatters": "Sets read and write rates and storage growth, which decide whether a single node can cope."
+    },
+    {
+      "id": "q-2",
+      "area": "Consistency",
+      "question": "Must billing counts be exact, and how are duplicates defined?",
+      "whyItMatters": "Selects between strong and eventual models and shapes conflict handling."
+    },
+    {
+      "id": "q-3",
+      "area": "Latency",
+      "question": "How fresh must dashboards be?",
+      "whyItMatters": "Defines which paths need caching, precomputation, or regional placement."
+    },
+    {
+      "id": "q-4",
+      "area": "Data",
+      "question": "How late can events arrive and how long is raw data retained?",
+      "whyItMatters": "Determines the data model, retention, and storage choices."
+    },
+    {
+      "id": "q-5",
+      "area": "Abuse",
+      "question": "How is click fraud detected?",
+      "whyItMatters": "Adds validation, rate limiting, and fraud controls to the critical path."
+    },
+    {
+      "id": "q-6",
+      "area": "Availability",
+      "question": "What if the pipeline falls behind or fails?",
+      "whyItMatters": "Determines redundancy and failover design, and which features may degrade instead of failing."
+    }
+  ],
+  "workloadAssumptions": {
+    "illustrativeNote": "All numbers below are illustrative examples for practice and are not benchmarks. Real answers depend on the requirements the candidate negotiates.",
+    "items": [
+      {
+        "name": "Clicks per day",
+        "value": "5 billion",
+        "rationale": "Large ad network."
+      },
+      {
+        "name": "Peak clicks per second",
+        "value": "100,000",
+        "rationale": "Peak hours."
+      },
+      {
+        "name": "Dashboard freshness",
+        "value": "within 1 minute",
+        "rationale": "Advertiser need."
+      },
+      {
+        "name": "Raw retention",
+        "value": "30 days",
+        "rationale": "Replay window."
+      }
+    ]
+  },
+  "estimationPrompts": [
+    "What is the raw storage per day?",
+    "How many aggregate rows per day at minute granularity?",
+    "How large must stream partitions be for peak throughput?"
+  ],
+  "keyDecisions": [
+    {
+      "id": "d-1",
+      "topic": "Ingestion",
+      "question": "How are events collected?",
+      "considerations": [
+        "Stateless collectors write to a durable partitioned log.",
+        "Partition by ad ID.",
+        "Backpressure and buffering."
+      ]
+    },
+    {
+      "id": "d-2",
+      "topic": "Stream aggregation",
+      "question": "How are counts computed?",
+      "considerations": [
+        "Windowed aggregation in a stream processor.",
+        "Handle hot ads by splitting keys and merging.",
+        "State checkpointing for recovery."
+      ]
+    },
+    {
+      "id": "d-3",
+      "topic": "Late and duplicate events",
+      "question": "How is correctness ensured?",
+      "considerations": [
+        "Event-time windows with watermarks and allowed lateness.",
+        "Deduplicate by event ID.",
+        "Correct late data through reprocessing."
+      ]
+    },
+    {
+      "id": "d-4",
+      "topic": "Batch reconciliation",
+      "question": "How is billing accuracy guaranteed?",
+      "considerations": [
+        "Raw events retained so a batch job recomputes exact totals.",
+        "Compare streaming and batch results.",
+        "Lambda or Kappa style architecture."
+      ]
+    },
+    {
+      "id": "d-5",
+      "topic": "Serving",
+      "question": "How are aggregates queried?",
+      "considerations": [
+        "Pre-aggregated store optimised for time-range queries.",
+        "Rollups for larger windows.",
+        "Cache dashboard queries."
+      ]
+    }
+  ],
+  "tradeoffs": [
+    {
+      "topic": "Streaming speed vs batch exactness",
+      "tension": "Near-real-time estimates versus authoritative billing."
+    },
+    {
+      "topic": "Allowed lateness vs result stability",
+      "tension": "More late data accepted means results change longer."
+    },
+    {
+      "topic": "Hot-key splitting vs complexity",
+      "tension": "Throughput for popular ads versus merge logic."
+    }
+  ],
+  "commonMistakes": [
+    "Counting directly in a relational database row per ad.",
+    "Ignoring duplicates and retries.",
+    "Using processing time for windows.",
+    "No way to recompute from raw data."
+  ],
+  "followUps": [
+    "How do you design for exactly-once semantics?",
+    "How do you detect click fraud?",
+    "How do you support arbitrary dimension breakdowns?",
+    "How do you handle a stream processor outage?"
+  ],
+  "topics": [
+    "Ingestion",
+    "Stream aggregation",
+    "Late and duplicate events",
+    "Batch reconciliation",
+    "Serving",
+    "stream-processing",
+    "exactly-once",
+    "late-data"
+  ]
+}

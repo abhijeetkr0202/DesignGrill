@@ -1,0 +1,26 @@
+{
+  "architectures": [
+    {
+      "id": "ra-1",
+      "name": "Sharded ledger with sagas",
+      "summary": "Wallets are sharded; same-shard transfers are transactions and cross-shard ones use a saga with holds.",
+      "components": [
+        "Wallet API",
+        "Ledger shards",
+        "Saga coordinator",
+        "Fraud service",
+        "Read model"
+      ],
+      "bestWhen": "Large consumer wallet.",
+      "drawbacks": ["Cross-shard complexity.", "Compensation logic."]
+    },
+    {
+      "id": "ra-2",
+      "name": "Single strongly consistent database",
+      "summary": "One distributed SQL database provides cross-row transactions.",
+      "components": ["Wallet API", "Distributed SQL", "Read replicas"],
+      "bestWhen": "Moderate scale with simpler operations.",
+      "drawbacks": ["Throughput limits.", "Hot rows."]
+    }
+  ]
+}

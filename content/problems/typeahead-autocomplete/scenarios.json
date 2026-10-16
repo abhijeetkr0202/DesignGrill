@@ -1,0 +1,28 @@
+{
+  "scenarios": [
+    {
+      "id": "sc-1",
+      "title": "Breaking news",
+      "description": "A new term suddenly surges.",
+      "triggers": ["Breaking news"],
+      "probes": ["How quickly does it appear in suggestions?", "How is manipulation prevented?"],
+      "relatedTopics": ["Freshness"]
+    },
+    {
+      "id": "sc-2",
+      "title": "Index swap",
+      "description": "A new index version must be deployed.",
+      "triggers": ["Index swap"],
+      "probes": ["How do you swap without errors?", "How do you roll back?"],
+      "relatedTopics": ["Offline build"]
+    },
+    {
+      "id": "sc-3",
+      "title": "Cache stampede",
+      "description": "The edge cache is cold after a release.",
+      "triggers": ["Cache stampede"],
+      "probes": ["What protects the backend?", "How is load smoothed?"],
+      "relatedTopics": ["Serving"]
+    }
+  ]
+}

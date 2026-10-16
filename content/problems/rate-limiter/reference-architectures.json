@@ -1,0 +1,20 @@
+{
+  "architectures": [
+    {
+      "id": "ra-1",
+      "name": "Gateway with shared counter store",
+      "summary": "A gateway checks a shared in-memory store using atomic operations for each request.",
+      "components": ["API gateway", "Shared in-memory store", "Rule service"],
+      "bestWhen": "Accuracy across many gateway nodes matters.",
+      "drawbacks": ["Store is on the critical path.", "Cross-region latency."]
+    },
+    {
+      "id": "ra-2",
+      "name": "Local token buckets with periodic sync",
+      "summary": "Each node enforces a local share of the limit and syncs usage periodically.",
+      "components": ["Gateway with local buckets", "Coordinator"],
+      "bestWhen": "Latency is critical and small overshoot is acceptable.",
+      "drawbacks": ["Imprecise limits.", "Uneven traffic wastes quota."]
+    }
+  ]
+}

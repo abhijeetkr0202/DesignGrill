@@ -1,0 +1,27 @@
+{
+  "architectures": [
+    {
+      "id": "ra-1",
+      "name": "Search index plus per-listing transactional calendar",
+      "summary": "Search serves candidates; booking verifies the authoritative calendar transactionally.",
+      "components": [
+        "Search service",
+        "Listing DB",
+        "Calendar DB",
+        "Booking service",
+        "Payment",
+        "Sync workers"
+      ],
+      "bestWhen": "Large marketplaces.",
+      "drawbacks": ["Index and calendar can disagree briefly.", "Sync complexity."]
+    },
+    {
+      "id": "ra-2",
+      "name": "Event-driven availability",
+      "summary": "Calendar changes publish events that update search and caches.",
+      "components": ["Event bus", "Search indexer", "Cache"],
+      "bestWhen": "Frequent availability changes.",
+      "drawbacks": ["Eventual consistency.", "Event ordering."]
+    }
+  ]
+}

@@ -1,0 +1,179 @@
+{
+  "id": "payment-system",
+  "version": 1,
+  "title": "Payment System",
+  "category": "Commerce & payments",
+  "difficulty": "hard",
+  "summary": "Design a payment platform that charges customers, pays merchants, and stays correct under failures.",
+  "statement": "Design a payment system used by online merchants. It accepts payment requests, talks to external payment providers, records every movement in a ledger, supports refunds, and must never lose or duplicate a charge. Start by clarifying requirements and estimating scale, then design the system and defend your decisions.",
+  "tags": ["idempotency", "ledger", "reconciliation"],
+  "initialGuidance": [
+    "Clarify the users, the main journeys, and what is explicitly out of scope before drawing anything.",
+    "Estimate read and write volume and storage growth; the numbers decide which components you need.",
+    "Name the guarantees you will offer (consistency, durability, availability) and the trade-offs behind them.",
+    "Write down assumptions as you make them and revisit them when requirements change."
+  ],
+  "coreFunctionalRequirements": [
+    "Create and process payments.",
+    "Integrate with external payment providers.",
+    "Record every movement in a ledger.",
+    "Support refunds and payouts.",
+    "Reconcile with provider statements."
+  ],
+  "requirementQuestions": [
+    {
+      "id": "q-1",
+      "area": "Consistency",
+      "question": "Can a customer ever be charged twice or not at all, and how are such cases resolved?",
+      "whyItMatters": "Selects between strong and eventual models and shapes conflict handling."
+    },
+    {
+      "id": "q-2",
+      "area": "Scale",
+      "question": "How many transactions per second, and how spiky?",
+      "whyItMatters": "Sets read and write rates and storage growth, which decide whether a single node can cope."
+    },
+    {
+      "id": "q-3",
+      "area": "Availability",
+      "question": "What if a provider is slow or down?",
+      "whyItMatters": "Determines redundancy and failover design, and which features may degrade instead of failing."
+    },
+    {
+      "id": "q-4",
+      "area": "Security",
+      "question": "How is card data handled and which compliance rules apply?",
+      "whyItMatters": "Introduces authentication, authorisation, and privacy constraints that affect the design."
+    },
+    {
+      "id": "q-5",
+      "area": "Data",
+      "question": "How long are records kept and how are they audited?",
+      "whyItMatters": "Determines the data model, retention, and storage choices."
+    },
+    {
+      "id": "q-6",
+      "area": "Scope",
+      "question": "Which payment methods, currencies, and refund flows are supported?",
+      "whyItMatters": "Fixes what is in and out of the design so effort goes to what matters."
+    }
+  ],
+  "workloadAssumptions": {
+    "illustrativeNote": "All numbers below are illustrative examples for practice and are not benchmarks. Real answers depend on the requirements the candidate negotiates.",
+    "items": [
+      {
+        "name": "Transactions per second",
+        "value": "5,000 peak",
+        "rationale": "Large merchant base."
+      },
+      {
+        "name": "Providers",
+        "value": "5 to 10",
+        "rationale": "Redundancy and coverage."
+      },
+      {
+        "name": "Provider latency",
+        "value": "1 to 3 seconds",
+        "rationale": "External dependency."
+      },
+      {
+        "name": "Retention",
+        "value": "7 years",
+        "rationale": "Financial records."
+      }
+    ]
+  },
+  "estimationPrompts": [
+    "How many ledger entries per day?",
+    "How much capacity is needed for peak sales?",
+    "What fraction of requests need provider retries?"
+  ],
+  "keyDecisions": [
+    {
+      "id": "d-1",
+      "topic": "Idempotency",
+      "question": "How are duplicates prevented?",
+      "considerations": [
+        "Client-supplied idempotency keys stored with results.",
+        "Provider idempotency where supported.",
+        "Handling a timeout whose outcome is unknown."
+      ]
+    },
+    {
+      "id": "d-2",
+      "topic": "Payment state machine",
+      "question": "How is progress tracked?",
+      "considerations": [
+        "Explicit states persisted before and after each provider call.",
+        "Asynchronous webhooks update state.",
+        "Recovery jobs resolve stuck payments."
+      ]
+    },
+    {
+      "id": "d-3",
+      "topic": "Ledger",
+      "question": "How are money movements recorded?",
+      "considerations": [
+        "Double-entry bookkeeping in an append-only ledger.",
+        "Balances derived from entries.",
+        "Strong consistency within an account."
+      ]
+    },
+    {
+      "id": "d-4",
+      "topic": "Provider integration",
+      "question": "How are external providers used?",
+      "considerations": [
+        "Adapters per provider with circuit breakers.",
+        "Failover routing and cost-based selection.",
+        "Timeouts and uncertain outcomes."
+      ]
+    },
+    {
+      "id": "d-5",
+      "topic": "Reconciliation",
+      "question": "How is correctness verified?",
+      "considerations": [
+        "Compare internal records with provider reports daily.",
+        "Investigate mismatches.",
+        "Automated corrections with audit trail."
+      ]
+    }
+  ],
+  "tradeoffs": [
+    {
+      "topic": "Synchronous vs asynchronous confirmation",
+      "tension": "Simple UX versus resilience to slow providers."
+    },
+    {
+      "topic": "Strong consistency vs availability",
+      "tension": "Money requires correctness; some operations may be delayed."
+    },
+    {
+      "topic": "Failover between providers",
+      "tension": "Availability versus duplicate-charge risk."
+    }
+  ],
+  "commonMistakes": [
+    "Retrying a provider call without idempotency.",
+    "Storing only balances and no ledger.",
+    "Assuming a timeout means failure.",
+    "No reconciliation process."
+  ],
+  "followUps": [
+    "How do you handle partial refunds?",
+    "How do you design for PCI compliance?",
+    "How do you add a new payment method?",
+    "How do you handle chargebacks?"
+  ],
+  "topics": [
+    "Idempotency",
+    "Payment state machine",
+    "Ledger",
+    "Provider integration",
+    "Reconciliation",
+    "idempotency",
+    "ledger",
+    "reconciliation"
+  ]
+}

@@ -1,0 +1,179 @@
+{
+  "id": "distributed-job-scheduler",
+  "version": 1,
+  "title": "Distributed Job Scheduler",
+  "category": "Infrastructure",
+  "difficulty": "medium",
+  "summary": "Design a scheduler that runs delayed and recurring jobs reliably across a fleet of workers.",
+  "statement": "Design a distributed job scheduler. Teams register one-off and cron-style jobs; the system triggers them at the right time, runs them on workers, retries failures, and avoids running the same job twice unintentionally. Start by clarifying requirements and estimating scale, then design the system and defend your decisions.",
+  "tags": ["scheduling", "idempotency", "leader-election"],
+  "initialGuidance": [
+    "Clarify the users, the main journeys, and what is explicitly out of scope before drawing anything.",
+    "Estimate read and write volume and storage growth; the numbers decide which components you need.",
+    "Name the guarantees you will offer (consistency, durability, availability) and the trade-offs behind them.",
+    "Write down assumptions as you make them and revisit them when requirements change."
+  ],
+  "coreFunctionalRequirements": [
+    "Schedule one-off and recurring jobs.",
+    "Trigger jobs at the right time with bounded delay.",
+    "Run jobs on a scalable worker fleet.",
+    "Retry failures with backoff.",
+    "Show status and history."
+  ],
+  "requirementQuestions": [
+    {
+      "id": "q-1",
+      "area": "Scale",
+      "question": "How many jobs are scheduled and how many fire per second at peak?",
+      "whyItMatters": "Sets read and write rates and storage growth, which decide whether a single node can cope."
+    },
+    {
+      "id": "q-2",
+      "area": "Latency",
+      "question": "How precisely must jobs fire, and is a few seconds of delay acceptable?",
+      "whyItMatters": "Defines which paths need caching, precomputation, or regional placement."
+    },
+    {
+      "id": "q-3",
+      "area": "Delivery",
+      "question": "Is at-least-once execution acceptable, and are jobs idempotent?",
+      "whyItMatters": "Clarifies a requirement that changes the architecture."
+    },
+    {
+      "id": "q-4",
+      "area": "Availability",
+      "question": "What happens to missed triggers during an outage?",
+      "whyItMatters": "Determines redundancy and failover design, and which features may degrade instead of failing."
+    },
+    {
+      "id": "q-5",
+      "area": "Scope",
+      "question": "Are there job dependencies, priorities, or long-running jobs?",
+      "whyItMatters": "Fixes what is in and out of the design so effort goes to what matters."
+    },
+    {
+      "id": "q-6",
+      "area": "Concurrency",
+      "question": "Can a recurring job overlap with its previous run?",
+      "whyItMatters": "Reveals contention points and the need for locking, idempotency, or conflict resolution."
+    }
+  ],
+  "workloadAssumptions": {
+    "illustrativeNote": "All numbers below are illustrative examples for practice and are not benchmarks. Real answers depend on the requirements the candidate negotiates.",
+    "items": [
+      {
+        "name": "Scheduled jobs",
+        "value": "100 million",
+        "rationale": "Many tenants."
+      },
+      {
+        "name": "Triggers per second at peak",
+        "value": "20,000",
+        "rationale": "Top-of-the-hour spikes."
+      },
+      {
+        "name": "Typical run time",
+        "value": "seconds to minutes",
+        "rationale": "Varied workloads."
+      },
+      {
+        "name": "Trigger precision",
+        "value": "within 5 seconds",
+        "rationale": "Business expectation."
+      }
+    ]
+  },
+  "estimationPrompts": [
+    "How many due jobs must be found per second?",
+    "How big is the job table and how is it partitioned?",
+    "What worker capacity is needed at the top of the hour?"
+  ],
+  "keyDecisions": [
+    {
+      "id": "d-1",
+      "topic": "Job storage",
+      "question": "How are jobs stored and found when due?",
+      "considerations": [
+        "Index by next run time in a partitioned store.",
+        "Scan windows of upcoming jobs rather than everything.",
+        "Delay queues versus polling."
+      ]
+    },
+    {
+      "id": "d-2",
+      "topic": "Triggering",
+      "question": "Who fires jobs?",
+      "considerations": [
+        "Scheduler nodes own partitions of the job space.",
+        "Leader election or lease-based ownership avoids duplicates.",
+        "Failover must pick up missed triggers."
+      ]
+    },
+    {
+      "id": "d-3",
+      "topic": "Execution",
+      "question": "How do workers run jobs?",
+      "considerations": [
+        "Hand off through a queue to a worker pool.",
+        "Visibility timeouts and heartbeats detect dead workers.",
+        "Resource isolation per tenant."
+      ]
+    },
+    {
+      "id": "d-4",
+      "topic": "Exactly-once illusion",
+      "question": "How are duplicates handled?",
+      "considerations": [
+        "At-least-once execution with idempotency keys.",
+        "Fencing tokens prevent stale workers.",
+        "Overlap policy for recurring jobs."
+      ]
+    },
+    {
+      "id": "d-5",
+      "topic": "Spikes",
+      "question": "How are top-of-hour spikes handled?",
+      "considerations": [
+        "Jitter spreads load.",
+        "Priority queues and backpressure.",
+        "Autoscaling workers."
+      ]
+    }
+  ],
+  "tradeoffs": [
+    {
+      "topic": "Precision vs cost",
+      "tension": "Fine-grained polling raises load for tighter timing."
+    },
+    {
+      "topic": "At-least-once vs at-most-once",
+      "tension": "Risk of duplicates versus risk of missed runs."
+    },
+    {
+      "topic": "Central vs partitioned scheduler",
+      "tension": "Simplicity versus scalability."
+    }
+  ],
+  "commonMistakes": [
+    "Scanning the whole job table every second.",
+    "Assuming a job runs exactly once.",
+    "A single scheduler instance with no failover.",
+    "Ignoring spikes at round times."
+  ],
+  "followUps": [
+    "How do you support job dependencies as a DAG?",
+    "How do you prevent one tenant starving others?",
+    "How do you handle time zones and daylight saving?",
+    "How do you backfill missed runs after an outage?"
+  ],
+  "topics": [
+    "Job storage",
+    "Triggering",
+    "Execution",
+    "Exactly-once illusion",
+    "Spikes",
+    "scheduling",
+    "idempotency",
+    "leader-election"
+  ]
+}

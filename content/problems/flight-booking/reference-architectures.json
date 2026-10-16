@@ -1,0 +1,26 @@
+{
+  "architectures": [
+    {
+      "id": "ra-1",
+      "name": "Aggregator with streaming results and fare cache",
+      "summary": "A search service fans out to suppliers, caches results, and streams ranked options.",
+      "components": [
+        "Search API",
+        "Supplier adapters",
+        "Fare cache",
+        "Itinerary builder",
+        "Booking orchestrator"
+      ],
+      "bestWhen": "Multi-supplier travel agency.",
+      "drawbacks": ["Cache invalidation.", "Adapter maintenance."]
+    },
+    {
+      "id": "ra-2",
+      "name": "Precomputed fare index",
+      "summary": "Fares are ingested in bulk and searched locally.",
+      "components": ["Fare ingestion", "Index", "Booking"],
+      "bestWhen": "Suppliers that publish fare files.",
+      "drawbacks": ["Staleness.", "Large data volume."]
+    }
+  ]
+}

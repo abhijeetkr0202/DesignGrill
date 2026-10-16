@@ -1,0 +1,27 @@
+{
+  "architectures": [
+    {
+      "id": "ra-1",
+      "name": "Queue-based build farm with progressive delivery",
+      "summary": "Workers run builds from queues; an orchestrator drives pipelines and staged rollouts with health gates.",
+      "components": [
+        "Source trigger",
+        "Build workers",
+        "Artifact registry",
+        "Orchestrator",
+        "Deploy agents",
+        "Health analysis"
+      ],
+      "bestWhen": "Large organisations.",
+      "drawbacks": ["Platform complexity.", "Maintaining safe defaults."]
+    },
+    {
+      "id": "ra-2",
+      "name": "GitOps pull-based deploys",
+      "summary": "Clusters pull desired state from a repository and reconcile.",
+      "components": ["Git repository", "Cluster controllers"],
+      "bestWhen": "Declarative infrastructure teams.",
+      "drawbacks": ["Slower feedback.", "Controller operations."]
+    }
+  ]
+}

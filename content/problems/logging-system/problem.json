@@ -1,0 +1,179 @@
+{
+  "id": "logging-system",
+  "version": 1,
+  "title": "Centralised Logging System",
+  "category": "Search & data",
+  "difficulty": "medium",
+  "summary": "Design a platform that collects, stores, searches, and retains logs from thousands of services.",
+  "statement": "Design a centralised logging system like the ELK stack or Splunk. Services emit logs; the platform ships, indexes, and stores them so engineers can search by time, service, and text, with retention and access control. Start by clarifying requirements and estimating scale, then design the system and defend your decisions.",
+  "tags": ["ingestion", "search", "retention"],
+  "initialGuidance": [
+    "Clarify the users, the main journeys, and what is explicitly out of scope before drawing anything.",
+    "Estimate read and write volume and storage growth; the numbers decide which components you need.",
+    "Name the guarantees you will offer (consistency, durability, availability) and the trade-offs behind them.",
+    "Write down assumptions as you make them and revisit them when requirements change."
+  ],
+  "coreFunctionalRequirements": [
+    "Collect logs from services and hosts.",
+    "Search by time, fields, and text.",
+    "Live tail recent logs.",
+    "Retain and expire by policy.",
+    "Control access per team."
+  ],
+  "requirementQuestions": [
+    {
+      "id": "q-1",
+      "area": "Scale",
+      "question": "How many log lines per second and what total volume per day?",
+      "whyItMatters": "Sets read and write rates and storage growth, which decide whether a single node can cope."
+    },
+    {
+      "id": "q-2",
+      "area": "Latency",
+      "question": "How quickly must logs become searchable?",
+      "whyItMatters": "Defines which paths need caching, precomputation, or regional placement."
+    },
+    {
+      "id": "q-3",
+      "area": "Durability",
+      "question": "Can logs be lost under load, and which logs are critical?",
+      "whyItMatters": "Drives replication, backup, and write acknowledgement policy."
+    },
+    {
+      "id": "q-4",
+      "area": "Data",
+      "question": "What retention and compliance requirements exist, and is PII present?",
+      "whyItMatters": "Determines the data model, retention, and storage choices."
+    },
+    {
+      "id": "q-5",
+      "area": "Cost",
+      "question": "What storage budget exists and how is it enforced?",
+      "whyItMatters": "Prevents over-engineering and affects build-versus-buy choices."
+    },
+    {
+      "id": "q-6",
+      "area": "Scope",
+      "question": "Structured versus free-text logs, and metrics or traces integration?",
+      "whyItMatters": "Fixes what is in and out of the design so effort goes to what matters."
+    }
+  ],
+  "workloadAssumptions": {
+    "illustrativeNote": "All numbers below are illustrative examples for practice and are not benchmarks. Real answers depend on the requirements the candidate negotiates.",
+    "items": [
+      {
+        "name": "Log volume",
+        "value": "50 TB per day",
+        "rationale": "Large fleet."
+      },
+      {
+        "name": "Lines per second",
+        "value": "2 million",
+        "rationale": "Average."
+      },
+      {
+        "name": "Searchable delay",
+        "value": "under 30 seconds",
+        "rationale": "Incident response."
+      },
+      {
+        "name": "Hot retention",
+        "value": "7 days",
+        "rationale": "Fast search tier."
+      }
+    ]
+  },
+  "estimationPrompts": [
+    "How much storage do 30 days at replication need?",
+    "How much indexing CPU does 2 million lines per second need?",
+    "What cost savings come from tiering?"
+  ],
+  "keyDecisions": [
+    {
+      "id": "d-1",
+      "topic": "Shipping",
+      "question": "How do logs leave the hosts?",
+      "considerations": [
+        "Local agents buffer and ship with backpressure.",
+        "Durable queue between agents and indexers.",
+        "Drop policy under overload."
+      ]
+    },
+    {
+      "id": "d-2",
+      "topic": "Indexing and storage",
+      "question": "How are logs made searchable?",
+      "considerations": [
+        "Time-partitioned indices with inverted indexes on selected fields.",
+        "Index only what is needed to save cost.",
+        "Hot, warm, and cold tiers."
+      ]
+    },
+    {
+      "id": "d-3",
+      "topic": "Search and tail",
+      "question": "How are queries served?",
+      "considerations": [
+        "Time-bounded queries prune partitions.",
+        "Live tail through a stream rather than search.",
+        "Query limits and timeouts."
+      ]
+    },
+    {
+      "id": "d-4",
+      "topic": "Retention and cost",
+      "question": "How is cost controlled?",
+      "considerations": [
+        "TTL per index or tenant.",
+        "Sampling for noisy logs.",
+        "Cold storage in object stores with on-demand search."
+      ]
+    },
+    {
+      "id": "d-5",
+      "topic": "Security",
+      "question": "How is access protected?",
+      "considerations": [
+        "Per-tenant or per-team permissions.",
+        "Redact secrets and PII at source or ingestion.",
+        "Audit access."
+      ]
+    }
+  ],
+  "tradeoffs": [
+    {
+      "topic": "Full-text indexing vs cost",
+      "tension": "Fast search versus storage and CPU."
+    },
+    {
+      "topic": "Loss tolerance vs queue size",
+      "tension": "Durability of logs under bursts."
+    },
+    {
+      "topic": "Sampling vs fidelity",
+      "tension": "Cost savings versus missing events."
+    }
+  ],
+  "commonMistakes": [
+    "Writing logs directly to the search cluster from services.",
+    "Indexing every field of every line.",
+    "No retention policy.",
+    "Logging secrets and personal data."
+  ],
+  "followUps": [
+    "How do you correlate logs with traces?",
+    "How do you handle an incident that multiplies log volume?",
+    "How do you make historical logs cheap but searchable?",
+    "How do you support multi-tenant quotas?"
+  ],
+  "topics": [
+    "Shipping",
+    "Indexing and storage",
+    "Search and tail",
+    "Retention and cost",
+    "Security",
+    "ingestion",
+    "search",
+    "retention"
+  ]
+}

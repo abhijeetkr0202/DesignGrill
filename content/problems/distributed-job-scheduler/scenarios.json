@@ -1,0 +1,28 @@
+{
+  "scenarios": [
+    {
+      "id": "sc-1",
+      "title": "Scheduler node dies",
+      "description": "A shard owner fails right before a busy minute.",
+      "triggers": ["Scheduler node dies"],
+      "probes": ["How soon does another node take over?", "How are missed triggers recovered?"],
+      "relatedTopics": ["Triggering"]
+    },
+    {
+      "id": "sc-2",
+      "title": "Worker crashes mid-job",
+      "description": "A worker dies halfway through a payment job.",
+      "triggers": ["Worker crashes mid-job"],
+      "probes": ["How is the job detected and retried?", "How are duplicate effects avoided?"],
+      "relatedTopics": ["Execution", "Exactly-once illusion"]
+    },
+    {
+      "id": "sc-3",
+      "title": "Top-of-hour spike",
+      "description": "Millions of jobs are due at 00:00.",
+      "triggers": ["Top-of-hour spike"],
+      "probes": ["What happens to queue depth and latency?", "How can the spike be flattened?"],
+      "relatedTopics": ["Spikes"]
+    }
+  ]
+}

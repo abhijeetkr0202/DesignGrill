@@ -7,6 +7,7 @@ export const ProblemSchema = z.object({
   id: z.string().regex(/^[a-z0-9-]+$/),
   version: z.number().int().positive(),
   title: text(200),
+  category: text(60).default('General'),
   difficulty: z.enum(['easy', 'medium', 'hard']),
   summary: text(600),
   statement: text(4000),

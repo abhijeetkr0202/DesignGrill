@@ -1,0 +1,27 @@
+{
+  "architectures": [
+    {
+      "id": "ra-1",
+      "name": "City-sharded geo index with dispatch service",
+      "summary": "Location updates populate an in-memory cell index per region; a dispatch service matches requests and manages trip state.",
+      "components": [
+        "Location gateway",
+        "Geo index",
+        "Dispatch service",
+        "Trip service",
+        "Pricing",
+        "Payments"
+      ],
+      "bestWhen": "Standard ride hailing.",
+      "drawbacks": ["Hot cells in dense areas.", "Cross-city boundaries."]
+    },
+    {
+      "id": "ra-2",
+      "name": "Batch matching windows",
+      "summary": "Requests and drivers are collected for a couple of seconds and matched globally.",
+      "components": ["Matching batch", "ETA service"],
+      "bestWhen": "Optimising total wait time.",
+      "drawbacks": ["Added latency.", "More compute per cycle."]
+    }
+  ]
+}

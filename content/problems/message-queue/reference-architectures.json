@@ -1,0 +1,25 @@
+{
+  "architectures": [
+    {
+      "id": "ra-1",
+      "name": "Partitioned replicated log",
+      "summary": "Brokers store partition logs replicated to followers; consumers pull by offset.",
+      "components": [
+        "Brokers",
+        "Partition leaders and followers",
+        "Metadata controller",
+        "Consumer groups"
+      ],
+      "bestWhen": "High throughput and replay are required.",
+      "drawbacks": ["Operational complexity.", "Ordering only within a partition."]
+    },
+    {
+      "id": "ra-2",
+      "name": "Per-message broker with acknowledgements",
+      "summary": "A broker holds queues and removes messages after acknowledgement.",
+      "components": ["Broker cluster", "Queues", "Dead-letter queue"],
+      "bestWhen": "Task distribution with rich routing is the goal.",
+      "drawbacks": ["Harder to replay.", "Lower throughput at scale."]
+    }
+  ]
+}

@@ -1,0 +1,26 @@
+{
+  "architectures": [
+    {
+      "id": "ra-1",
+      "name": "Precomputed prefix store with edge cache",
+      "summary": "Offline jobs write prefix to top-k mappings to a key-value store; CDN and memory caches serve them.",
+      "components": [
+        "Log pipeline",
+        "Aggregator",
+        "Prefix KV store",
+        "Edge cache",
+        "Suggestion API"
+      ],
+      "bestWhen": "Very high read volume with slow-changing data.",
+      "drawbacks": ["Storage for many prefixes.", "Delay in trend reflection."]
+    },
+    {
+      "id": "ra-2",
+      "name": "In-memory trie service",
+      "summary": "Each server holds a trie with top-k per node, rebuilt periodically.",
+      "components": ["Trie servers", "Builder", "Router"],
+      "bestWhen": "Smaller vocabularies and quick updates.",
+      "drawbacks": ["Memory use.", "Rolling rebuilds."]
+    }
+  ]
+}

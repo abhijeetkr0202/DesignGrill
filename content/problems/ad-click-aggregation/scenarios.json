@@ -1,0 +1,28 @@
+{
+  "scenarios": [
+    {
+      "id": "sc-1",
+      "title": "Processor falls behind",
+      "description": "The aggregator lags by an hour.",
+      "triggers": ["Processor falls behind"],
+      "probes": ["What do advertisers see?", "How is it caught up?"],
+      "relatedTopics": ["Stream aggregation"]
+    },
+    {
+      "id": "sc-2",
+      "title": "Duplicate burst",
+      "description": "A client bug retries events massively.",
+      "triggers": ["Duplicate burst"],
+      "probes": ["How are duplicates removed?", "How is billing protected?"],
+      "relatedTopics": ["Late and duplicate events"]
+    },
+    {
+      "id": "sc-3",
+      "title": "Hot ad",
+      "description": "One ad receives a large share of clicks.",
+      "triggers": ["Hot ad"],
+      "probes": ["What happens to its partition?", "How is load spread?"],
+      "relatedTopics": ["Stream aggregation"]
+    }
+  ]
+}

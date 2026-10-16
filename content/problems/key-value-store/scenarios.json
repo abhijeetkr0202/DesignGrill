@@ -1,0 +1,31 @@
+{
+  "scenarios": [
+    {
+      "id": "sc-1",
+      "title": "Node failure",
+      "description": "A node holding replicas fails permanently.",
+      "triggers": ["Node failure"],
+      "probes": [
+        "How is data restored to the replication factor?",
+        "What happens to requests meanwhile?"
+      ],
+      "relatedTopics": ["Failure handling", "Replication"]
+    },
+    {
+      "id": "sc-2",
+      "title": "Network partition",
+      "description": "The cluster splits into two groups.",
+      "triggers": ["Network partition"],
+      "probes": ["Which side accepts writes?", "How are conflicts resolved after healing?"],
+      "relatedTopics": ["Conflict handling"]
+    },
+    {
+      "id": "sc-3",
+      "title": "Hot key",
+      "description": "A single key receives a large share of traffic.",
+      "triggers": ["Hot key"],
+      "probes": ["Which node is overloaded?", "How can load be spread safely?"],
+      "relatedTopics": ["Partitioning"]
+    }
+  ]
+}

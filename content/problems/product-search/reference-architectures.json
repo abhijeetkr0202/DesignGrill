@@ -1,0 +1,27 @@
+{
+  "architectures": [
+    {
+      "id": "ra-1",
+      "name": "Search cluster fed by a change stream",
+      "summary": "Catalogue changes flow via a log into a sharded search cluster; a ranking service reorders results.",
+      "components": [
+        "Catalogue DB",
+        "Change stream",
+        "Indexers",
+        "Search shards",
+        "Ranker",
+        "Query service"
+      ],
+      "bestWhen": "Large catalogue with frequent updates.",
+      "drawbacks": ["Eventual consistency of the index.", "Operational weight of the cluster."]
+    },
+    {
+      "id": "ra-2",
+      "name": "Managed search with batch indexing",
+      "summary": "A hosted search product receives periodic bulk updates.",
+      "components": ["Hosted search", "Batch jobs"],
+      "bestWhen": "Smaller catalogues and teams.",
+      "drawbacks": ["Staleness.", "Less control over ranking."]
+    }
+  ]
+}

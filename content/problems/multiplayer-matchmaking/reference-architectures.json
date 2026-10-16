@@ -1,0 +1,26 @@
+{
+  "architectures": [
+    {
+      "id": "ra-1",
+      "name": "Pool-based matcher with fleet manager",
+      "summary": "Tickets enter regional pools; a matcher forms matches in cycles and requests servers.",
+      "components": [
+        "Ticket service",
+        "Matcher workers",
+        "Ticket store",
+        "Fleet manager",
+        "Game servers"
+      ],
+      "bestWhen": "Competitive modes with skill and latency constraints.",
+      "drawbacks": ["Tuning match quality.", "Fleet forecasting."]
+    },
+    {
+      "id": "ra-2",
+      "name": "Lobby-based matching",
+      "summary": "Players join open lobbies that fill by criteria.",
+      "components": ["Lobby service", "Browser", "Servers"],
+      "bestWhen": "Casual games with simple rules.",
+      "drawbacks": ["Poorer balance.", "Lobby management."]
+    }
+  ]
+}

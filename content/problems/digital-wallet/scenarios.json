@@ -1,0 +1,28 @@
+{
+  "scenarios": [
+    {
+      "id": "sc-1",
+      "title": "Cross-shard failure",
+      "description": "A transfer debits one shard and the other shard is unavailable.",
+      "triggers": ["Cross-shard failure"],
+      "probes": ["How is the money protected?", "How does the saga recover?"],
+      "relatedTopics": ["Transfer atomicity"]
+    },
+    {
+      "id": "sc-2",
+      "title": "Hot merchant",
+      "description": "A merchant wallet receives massive traffic during a sale.",
+      "triggers": ["Hot merchant"],
+      "probes": ["Where is the contention?", "How do you spread it?"],
+      "relatedTopics": ["Sharding"]
+    },
+    {
+      "id": "sc-3",
+      "title": "Duplicate request",
+      "description": "A client retries a transfer after a timeout.",
+      "triggers": ["Duplicate request"],
+      "probes": ["How is double transfer prevented?", "What does the user see?"],
+      "relatedTopics": ["Transfer atomicity"]
+    }
+  ]
+}

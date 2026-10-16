@@ -1,0 +1,27 @@
+{
+  "architectures": [
+    {
+      "id": "ra-1",
+      "name": "Order orchestrator with dispatch and ETA services",
+      "summary": "An order service drives a state machine; dispatch and ETA services consume order and location events.",
+      "components": [
+        "Catalogue",
+        "Order service",
+        "Dispatch",
+        "ETA service",
+        "Tracking",
+        "Payments"
+      ],
+      "bestWhen": "Full three-sided marketplace.",
+      "drawbacks": ["Many interacting services.", "Model maintenance."]
+    },
+    {
+      "id": "ra-2",
+      "name": "Restaurant-managed delivery",
+      "summary": "Restaurants employ couriers; the platform handles ordering only.",
+      "components": ["Catalogue", "Order service", "Restaurant console"],
+      "bestWhen": "Early stage or simpler scope.",
+      "drawbacks": ["Less control of experience.", "Limited efficiency."]
+    }
+  ]
+}

@@ -9,6 +9,7 @@ export function buildCustomPack(title: string): ProblemPack {
       id: CUSTOM_PROBLEM_ID,
       version: 1,
       title,
+      category: 'Custom',
       difficulty: 'medium',
       summary: 'A problem you defined yourself.',
       statement: '',

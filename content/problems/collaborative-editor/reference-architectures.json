@@ -1,0 +1,20 @@
+{
+  "architectures": [
+    {
+      "id": "ra-1",
+      "name": "OT with per-document server",
+      "summary": "A server instance per active document orders and transforms operations and fans out updates.",
+      "components": ["Gateway", "Document servers", "Operation log", "Snapshot store", "Presence"],
+      "bestWhen": "Classic centralised collaboration.",
+      "drawbacks": ["Hot documents.", "Server affinity management."]
+    },
+    {
+      "id": "ra-2",
+      "name": "CRDT-based sync",
+      "summary": "Clients exchange CRDT updates through a relay that stores and forwards them.",
+      "components": ["Relay servers", "Update log", "Snapshots"],
+      "bestWhen": "Offline-first and peer-friendly editing.",
+      "drawbacks": ["Metadata growth.", "Garbage collection."]
+    }
+  ]
+}

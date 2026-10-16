@@ -2,6 +2,7 @@
   "id": "url-shortener",
   "version": 1,
   "title": "URL Shortener",
+  "category": "Infrastructure",
   "difficulty": "easy",
   "summary": "Design a service that turns long URLs into short links and redirects visitors to the original destination.",
   "statement": "Design a URL shortening service similar in purpose to Bitly or TinyURL. Users submit a long URL and receive a short link. When anyone visits the short link, the service redirects them to the original URL. Start by clarifying requirements and estimating scale, then design the system and defend your decisions.",

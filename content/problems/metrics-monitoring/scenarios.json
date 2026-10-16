@@ -1,0 +1,28 @@
+{
+  "scenarios": [
+    {
+      "id": "sc-1",
+      "title": "Cardinality explosion",
+      "description": "A deployment adds a per-request label.",
+      "triggers": ["Cardinality explosion"],
+      "probes": ["What happens to ingestion and memory?", "How is it contained?"],
+      "relatedTopics": ["Cardinality and retention"]
+    },
+    {
+      "id": "sc-2",
+      "title": "Monitoring outage",
+      "description": "The monitoring system itself loses a region.",
+      "triggers": ["Monitoring outage"],
+      "probes": ["How do you know?", "How do alerts continue?"],
+      "relatedTopics": ["Alerting"]
+    },
+    {
+      "id": "sc-3",
+      "title": "Expensive query",
+      "description": "A dashboard query scans a year of data.",
+      "triggers": ["Expensive query"],
+      "probes": ["How is the cluster protected?", "What is the fallback?"],
+      "relatedTopics": ["Query engine"]
+    }
+  ]
+}

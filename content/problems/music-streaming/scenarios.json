@@ -1,0 +1,28 @@
+{
+  "scenarios": [
+    {
+      "id": "sc-1",
+      "title": "Album drop",
+      "description": "A superstar releases an album and traffic spikes on a few tracks.",
+      "triggers": ["Album drop"],
+      "probes": ["What is the cache behaviour?", "How does search and playback hold up?"],
+      "relatedTopics": ["Audio delivery"]
+    },
+    {
+      "id": "sc-2",
+      "title": "Event pipeline lag",
+      "description": "The play-event pipeline falls behind.",
+      "triggers": ["Event pipeline lag"],
+      "probes": ["Does playback break?", "How do royalties stay correct?"],
+      "relatedTopics": ["Play accounting"]
+    },
+    {
+      "id": "sc-3",
+      "title": "Playlist conflict",
+      "description": "Two devices edit the same playlist offline.",
+      "triggers": ["Playlist conflict"],
+      "probes": ["How are edits merged?", "What does the user see?"],
+      "relatedTopics": ["Playlists and sync"]
+    }
+  ]
+}

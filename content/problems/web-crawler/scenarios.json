@@ -1,0 +1,28 @@
+{
+  "scenarios": [
+    {
+      "id": "sc-1",
+      "title": "Crawler trap",
+      "description": "A site generates infinite unique URLs.",
+      "triggers": ["Crawler trap"],
+      "probes": ["How is the trap detected?", "How is the crawl protected?"],
+      "relatedTopics": ["Deduplication"]
+    },
+    {
+      "id": "sc-2",
+      "title": "Fetcher node loss",
+      "description": "A fetcher with in-flight URLs dies.",
+      "triggers": ["Fetcher node loss"],
+      "probes": ["How are URLs recovered?", "How are duplicates avoided?"],
+      "relatedTopics": ["URL frontier"]
+    },
+    {
+      "id": "sc-3",
+      "title": "Site blocks you",
+      "description": "A major site starts returning errors due to your rate.",
+      "triggers": ["Site blocks you"],
+      "probes": ["How is this detected?", "How do you adapt?"],
+      "relatedTopics": ["Politeness"]
+    }
+  ]
+}

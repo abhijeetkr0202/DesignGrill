@@ -1,0 +1,179 @@
+{
+  "id": "pastebin",
+  "version": 1,
+  "title": "Pastebin",
+  "category": "Infrastructure",
+  "difficulty": "easy",
+  "summary": "Design a service where users paste text, get a link, and share it with others for a limited or unlimited time.",
+  "statement": "Design a text-sharing service similar to Pastebin. Users submit text and receive a unique URL; anyone with the URL can read the paste. Pastes may expire, be private, or be deleted by the owner. Start by clarifying requirements and estimating scale, then design the system and defend your decisions.",
+  "tags": ["object-storage", "expiration", "read-heavy"],
+  "initialGuidance": [
+    "Clarify the users, the main journeys, and what is explicitly out of scope before drawing anything.",
+    "Estimate read and write volume and storage growth; the numbers decide which components you need.",
+    "Name the guarantees you will offer (consistency, durability, availability) and the trade-offs behind them.",
+    "Write down assumptions as you make them and revisit them when requirements change."
+  ],
+  "coreFunctionalRequirements": [
+    "Create a paste and receive a unique link.",
+    "Read a paste by link.",
+    "Set an optional expiration time.",
+    "Support private pastes and owner deletion.",
+    "Enforce a maximum paste size."
+  ],
+  "requirementQuestions": [
+    {
+      "id": "q-1",
+      "area": "Scale",
+      "question": "How many pastes are created and read per day, and how skewed is read popularity?",
+      "whyItMatters": "Sets read and write rates and storage growth, which decide whether a single node can cope."
+    },
+    {
+      "id": "q-2",
+      "area": "Data",
+      "question": "What is the maximum paste size and how long should pastes be retained?",
+      "whyItMatters": "Determines the data model, retention, and storage choices."
+    },
+    {
+      "id": "q-3",
+      "area": "Security",
+      "question": "Are private pastes needed, and must links be unguessable?",
+      "whyItMatters": "Introduces authentication, authorisation, and privacy constraints that affect the design."
+    },
+    {
+      "id": "q-4",
+      "area": "Abuse",
+      "question": "How do you handle spam, malware, and illegal content?",
+      "whyItMatters": "Adds validation, rate limiting, and fraud controls to the critical path."
+    },
+    {
+      "id": "q-5",
+      "area": "Latency",
+      "question": "What read latency is acceptable, and are pastes served globally?",
+      "whyItMatters": "Defines which paths need caching, precomputation, or regional placement."
+    },
+    {
+      "id": "q-6",
+      "area": "Scope",
+      "question": "Do users have accounts, edit history, or syntax highlighting?",
+      "whyItMatters": "Fixes what is in and out of the design so effort goes to what matters."
+    }
+  ],
+  "workloadAssumptions": {
+    "illustrativeNote": "All numbers below are illustrative examples for practice and are not benchmarks. Real answers depend on the requirements the candidate negotiates.",
+    "items": [
+      {
+        "name": "Pastes per day",
+        "value": "1 million",
+        "rationale": "Moderate public service."
+      },
+      {
+        "name": "Read:write ratio",
+        "value": "about 5:1",
+        "rationale": "Many pastes are never read again."
+      },
+      {
+        "name": "Average paste size",
+        "value": "about 10 KB",
+        "rationale": "Mostly code and logs."
+      },
+      {
+        "name": "Retention",
+        "value": "1 year default",
+        "rationale": "Drives total storage."
+      }
+    ]
+  },
+  "estimationPrompts": [
+    "How much storage does one year of pastes need, and how much is hot?",
+    "What is the peak read rate for a viral paste?",
+    "How many characters does the link need to avoid collisions?"
+  ],
+  "keyDecisions": [
+    {
+      "id": "d-1",
+      "topic": "Content storage",
+      "question": "Where does paste text live?",
+      "considerations": [
+        "Object storage is cheap and scales; a database row is simpler for small text.",
+        "Metadata (owner, expiry, visibility) belongs in a database.",
+        "Large pastes may need streaming reads."
+      ]
+    },
+    {
+      "id": "d-2",
+      "topic": "Link generation",
+      "question": "How are unique, unguessable links produced?",
+      "considerations": [
+        "Random codes with a uniqueness check versus a pre-allocated key pool.",
+        "Private pastes need higher entropy.",
+        "Collision handling under concurrency."
+      ]
+    },
+    {
+      "id": "d-3",
+      "topic": "Expiration",
+      "question": "How are expired pastes removed?",
+      "considerations": [
+        "Check expiry on read so correctness never depends on cleanup.",
+        "Background sweeps reclaim storage.",
+        "Time-bucketed storage makes bulk deletion cheap."
+      ]
+    },
+    {
+      "id": "d-4",
+      "topic": "Caching and CDN",
+      "question": "How are popular pastes served cheaply?",
+      "considerations": [
+        "Pastes are immutable, so they cache well.",
+        "Invalidation on deletion or moderation takedowns.",
+        "Edge caching versus control of private content."
+      ]
+    },
+    {
+      "id": "d-5",
+      "topic": "Abuse prevention",
+      "question": "How is misuse limited?",
+      "considerations": [
+        "Per-IP and per-account rate limits.",
+        "Content scanning and reporting workflow.",
+        "Size limits and quotas."
+      ]
+    }
+  ],
+  "tradeoffs": [
+    {
+      "topic": "Database vs object storage for content",
+      "tension": "Simplicity versus cost and scalability at larger sizes."
+    },
+    {
+      "topic": "Long cache TTL vs fast takedown",
+      "tension": "Hit rate versus how quickly removed content disappears."
+    },
+    {
+      "topic": "Sequential vs random IDs",
+      "tension": "Compact and easy versus guessable."
+    }
+  ],
+  "commonMistakes": [
+    "Storing large text in a hot relational table without considering size.",
+    "Relying on a cleanup job for correctness of expiry.",
+    "Ignoring unguessable links for private pastes.",
+    "No abuse or size controls."
+  ],
+  "followUps": [
+    "How would you support paste editing with version history?",
+    "How do you take down illegal content everywhere quickly?",
+    "What changes if pastes can be 100 MB?",
+    "How would you add search over public pastes?"
+  ],
+  "topics": [
+    "Content storage",
+    "Link generation",
+    "Expiration",
+    "Caching and CDN",
+    "Abuse prevention",
+    "object-storage",
+    "expiration",
+    "read-heavy"
+  ]
+}

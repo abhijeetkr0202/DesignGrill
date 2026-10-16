@@ -1,0 +1,179 @@
+{
+  "id": "ticket-booking",
+  "version": 1,
+  "title": "Ticket Booking (Ticketmaster)",
+  "category": "Booking & delivery",
+  "difficulty": "hard",
+  "summary": "Design an event ticketing platform where huge crowds compete for a limited set of specific seats.",
+  "statement": "Design a system for selling tickets to concerts and sports events. Users browse events, view seat maps, hold seats while paying, and complete purchases. Popular on-sales draw millions of users for thousands of seats. Start by clarifying requirements and estimating scale, then design the system and defend your decisions.",
+  "tags": ["seat-reservation", "contention", "queues"],
+  "initialGuidance": [
+    "Clarify the users, the main journeys, and what is explicitly out of scope before drawing anything.",
+    "Estimate read and write volume and storage growth; the numbers decide which components you need.",
+    "Name the guarantees you will offer (consistency, durability, availability) and the trade-offs behind them.",
+    "Write down assumptions as you make them and revisit them when requirements change."
+  ],
+  "coreFunctionalRequirements": [
+    "Browse events and seat maps.",
+    "Hold selected seats temporarily.",
+    "Pay and receive tickets.",
+    "Never sell the same seat twice.",
+    "Release expired holds."
+  ],
+  "requirementQuestions": [
+    {
+      "id": "q-1",
+      "area": "Scale",
+      "question": "How many users attend a popular on-sale and how many seats exist?",
+      "whyItMatters": "Sets read and write rates and storage growth, which decide whether a single node can cope."
+    },
+    {
+      "id": "q-2",
+      "area": "Consistency",
+      "question": "Is double-selling a seat ever acceptable?",
+      "whyItMatters": "Selects between strong and eventual models and shapes conflict handling."
+    },
+    {
+      "id": "q-3",
+      "area": "Latency",
+      "question": "How quickly must seat availability and holds respond?",
+      "whyItMatters": "Defines which paths need caching, precomputation, or regional placement."
+    },
+    {
+      "id": "q-4",
+      "area": "Scope",
+      "question": "Reserved seating, general admission, or both? Resale?",
+      "whyItMatters": "Fixes what is in and out of the design so effort goes to what matters."
+    },
+    {
+      "id": "q-5",
+      "area": "Abuse",
+      "question": "How are bots and scalpers controlled?",
+      "whyItMatters": "Adds validation, rate limiting, and fraud controls to the critical path."
+    },
+    {
+      "id": "q-6",
+      "area": "Availability",
+      "question": "Should the site shed load with a waiting room during peaks?",
+      "whyItMatters": "Determines redundancy and failover design, and which features may degrade instead of failing."
+    }
+  ],
+  "workloadAssumptions": {
+    "illustrativeNote": "All numbers below are illustrative examples for practice and are not benchmarks. Real answers depend on the requirements the candidate negotiates.",
+    "items": [
+      {
+        "name": "Users at a hot on-sale",
+        "value": "3 million",
+        "rationale": "Major tour."
+      },
+      {
+        "name": "Seats",
+        "value": "60,000",
+        "rationale": "Stadium."
+      },
+      {
+        "name": "Hold duration",
+        "value": "8 minutes",
+        "rationale": "Time to pay."
+      },
+      {
+        "name": "Seat map reads per second",
+        "value": "200,000",
+        "rationale": "Peak browsing."
+      }
+    ]
+  },
+  "estimationPrompts": [
+    "What fraction of users can possibly succeed?",
+    "How many hold attempts per second target the same section?",
+    "How many active holds exist at once?"
+  ],
+  "keyDecisions": [
+    {
+      "id": "d-1",
+      "topic": "Waiting room",
+      "question": "How is the surge controlled?",
+      "considerations": [
+        "Virtual queue admits users in batches.",
+        "Static assets from CDN.",
+        "Per-user admission tokens."
+      ]
+    },
+    {
+      "id": "d-2",
+      "topic": "Seat holds",
+      "question": "How are seats locked during checkout?",
+      "considerations": [
+        "Atomic conditional update from available to held with an expiry.",
+        "Row-level locking at the seat is fine because contention is per seat.",
+        "Expire holds with timers or lazy expiry on read."
+      ]
+    },
+    {
+      "id": "d-3",
+      "topic": "Inventory model",
+      "question": "How is availability stored and read?",
+      "considerations": [
+        "Seat state in a transactional store, cached views for map display.",
+        "Cached maps may be slightly stale; final check on hold.",
+        "Partition by event."
+      ]
+    },
+    {
+      "id": "d-4",
+      "topic": "Checkout and payment",
+      "question": "How is the purchase completed?",
+      "considerations": [
+        "Payment with idempotency while the hold is valid.",
+        "Extend hold during payment processing.",
+        "Compensate on failure."
+      ]
+    },
+    {
+      "id": "d-5",
+      "topic": "Bot defence",
+      "question": "How are bots limited?",
+      "considerations": [
+        "Verified accounts and CAPTCHA.",
+        "Per-account purchase limits.",
+        "Anomaly detection on queue behaviour."
+      ]
+    }
+  ],
+  "tradeoffs": [
+    {
+      "topic": "Fresh seat map vs load",
+      "tension": "Accurate availability versus cost of serving it."
+    },
+    {
+      "topic": "Hold time length",
+      "tension": "Fewer abandoned seats versus buyer stress."
+    },
+    {
+      "topic": "Strict fairness vs throughput",
+      "tension": "Queue order versus user experience."
+    }
+  ],
+  "commonMistakes": [
+    "No queue, letting the database absorb all arrivals.",
+    "Check-then-update seat selection that races.",
+    "Showing seat availability from a stale cache as final truth.",
+    "Holds that never expire."
+  ],
+  "followUps": [
+    "How do you support best available seat selection?",
+    "How do you handle payment failure after a hold?",
+    "How do you support resale and transfers?",
+    "How do you handle multiple events on sale at once?"
+  ],
+  "topics": [
+    "Waiting room",
+    "Seat holds",
+    "Inventory model",
+    "Checkout and payment",
+    "Bot defence",
+    "seat-reservation",
+    "contention",
+    "queues"
+  ]
+}

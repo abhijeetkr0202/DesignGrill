@@ -2,6 +2,7 @@
   "id": "notification-system",
   "version": 1,
   "title": "Notification System",
+  "category": "Social & messaging",
   "difficulty": "medium",
   "summary": "Design a platform that delivers email, SMS, and push notifications on behalf of many internal services, respecting user preferences and provider limits.",
   "statement": "Design a notification platform used by multiple product teams. Services request notifications for users; the platform delivers them over email, SMS, and mobile or web push according to each user's preferences, supports scheduled delivery, and remains reliable when external providers fail or throttle. Start by clarifying requirements and estimating volume, then design the system and defend your decisions.",

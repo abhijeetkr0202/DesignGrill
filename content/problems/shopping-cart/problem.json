@@ -2,6 +2,7 @@
   "id": "shopping-cart",
   "version": 1,
   "title": "Shopping Cart",
+  "category": "Commerce & payments",
   "difficulty": "medium",
   "summary": "Design the cart service of an e-commerce platform that supports anonymous and signed-in shoppers across multiple devices and hands off to checkout reliably.",
   "statement": "Design the shopping cart backend for a large e-commerce site. Shoppers add, update, and remove items, may be anonymous or signed in, and expect their cart to follow them across devices. The cart interacts with product catalog, pricing, and inventory systems and hands off to checkout. Start by clarifying requirements and estimating scale, then design the system and defend your decisions.",

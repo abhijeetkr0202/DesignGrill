@@ -1,0 +1,28 @@
+{
+  "scenarios": [
+    {
+      "id": "sc-1",
+      "title": "Inbound flood",
+      "description": "A spam campaign multiplies inbound traffic.",
+      "triggers": ["Inbound flood"],
+      "probes": ["Which stage saturates?", "How is legitimate mail protected?"],
+      "relatedTopics": ["Inbound pipeline", "Spam and abuse"]
+    },
+    {
+      "id": "sc-2",
+      "title": "Shard failure",
+      "description": "A mailbox shard becomes unavailable.",
+      "triggers": ["Shard failure"],
+      "probes": ["What do affected users see?", "How do inbound messages behave meanwhile?"],
+      "relatedTopics": ["Mailbox storage"]
+    },
+    {
+      "id": "sc-3",
+      "title": "Index lag",
+      "description": "The search indexer falls behind by hours.",
+      "triggers": ["Index lag"],
+      "probes": ["What do users experience?", "How do you catch up?"],
+      "relatedTopics": ["Search"]
+    }
+  ]
+}

@@ -1,0 +1,179 @@
+{
+  "id": "dating-matching",
+  "version": 1,
+  "title": "Dating App Matching (Tinder)",
+  "category": "Social & messaging",
+  "difficulty": "medium",
+  "summary": "Design a location-aware matching app with swipes, mutual matches, and profile recommendations.",
+  "statement": "Design a dating app. Users create profiles, see nearby recommended profiles, swipe left or right, and are notified when both swipe right. Recommendations should respect distance and preferences and avoid repeats. Start by clarifying requirements and estimating scale, then design the system and defend your decisions.",
+  "tags": ["geo-search", "recommendations", "consistency"],
+  "initialGuidance": [
+    "Clarify the users, the main journeys, and what is explicitly out of scope before drawing anything.",
+    "Estimate read and write volume and storage growth; the numbers decide which components you need.",
+    "Name the guarantees you will offer (consistency, durability, availability) and the trade-offs behind them.",
+    "Write down assumptions as you make them and revisit them when requirements change."
+  ],
+  "coreFunctionalRequirements": [
+    "Create and edit profiles.",
+    "Recommend nearby profiles matching preferences.",
+    "Record swipes and detect mutual matches.",
+    "Notify both users of a match and enable chat.",
+    "Never show the same profile twice."
+  ],
+  "requirementQuestions": [
+    {
+      "id": "q-1",
+      "area": "Scale",
+      "question": "How many users, swipes per day, and matches per day?",
+      "whyItMatters": "Sets read and write rates and storage growth, which decide whether a single node can cope."
+    },
+    {
+      "id": "q-2",
+      "area": "Latency",
+      "question": "How quickly must the next profile card appear?",
+      "whyItMatters": "Defines which paths need caching, precomputation, or regional placement."
+    },
+    {
+      "id": "q-3",
+      "area": "Consistency",
+      "question": "How quickly must a mutual match be detected and shown?",
+      "whyItMatters": "Selects between strong and eventual models and shapes conflict handling."
+    },
+    {
+      "id": "q-4",
+      "area": "Data",
+      "question": "How are location and preferences updated, and how fresh must they be?",
+      "whyItMatters": "Determines the data model, retention, and storage choices."
+    },
+    {
+      "id": "q-5",
+      "area": "Abuse",
+      "question": "How are fake accounts and harassment handled?",
+      "whyItMatters": "Adds validation, rate limiting, and fraud controls to the critical path."
+    },
+    {
+      "id": "q-6",
+      "area": "Scope",
+      "question": "Is ranking by attractiveness or activity part of the system?",
+      "whyItMatters": "Fixes what is in and out of the design so effort goes to what matters."
+    }
+  ],
+  "workloadAssumptions": {
+    "illustrativeNote": "All numbers below are illustrative examples for practice and are not benchmarks. Real answers depend on the requirements the candidate negotiates.",
+    "items": [
+      {
+        "name": "Daily active users",
+        "value": "30 million",
+        "rationale": "Popular app."
+      },
+      {
+        "name": "Swipes per day",
+        "value": "2 billion",
+        "rationale": "About 70 per user."
+      },
+      {
+        "name": "Match rate",
+        "value": "about 1%",
+        "rationale": "Few swipes become matches."
+      },
+      {
+        "name": "Profile photos",
+        "value": "5 per user",
+        "rationale": "Media heavy."
+      }
+    ]
+  },
+  "estimationPrompts": [
+    "How many swipe writes per second at peak?",
+    "How large is the seen-profiles set per user and how is it stored?",
+    "How many candidate profiles must be generated per second?"
+  ],
+  "keyDecisions": [
+    {
+      "id": "d-1",
+      "topic": "Candidate generation",
+      "question": "How are nearby profiles found?",
+      "considerations": [
+        "Geospatial indexes (geohash, quadtrees, or cells) by location.",
+        "Filter by preferences and exclude seen profiles.",
+        "Precompute candidate queues per user."
+      ]
+    },
+    {
+      "id": "d-2",
+      "topic": "Swipe storage",
+      "question": "How are swipes recorded?",
+      "considerations": [
+        "Write-heavy store keyed by swiper and target.",
+        "Check the reverse swipe to detect a match.",
+        "Atomicity to avoid missing simultaneous swipes."
+      ]
+    },
+    {
+      "id": "d-3",
+      "topic": "Match detection",
+      "question": "How is a mutual match found reliably?",
+      "considerations": [
+        "On each right swipe, look up the other direction.",
+        "Handle the race of both swiping simultaneously.",
+        "Idempotent match creation."
+      ]
+    },
+    {
+      "id": "d-4",
+      "topic": "Seen-set tracking",
+      "question": "How are repeats avoided?",
+      "considerations": [
+        "Per-user seen sets can be large; use Bloom filters or time-bounded sets.",
+        "Approximate filters tolerate rare repeats.",
+        "Reset policies."
+      ]
+    },
+    {
+      "id": "d-5",
+      "topic": "Ranking and fairness",
+      "question": "How are candidates ordered?",
+      "considerations": [
+        "Activity, preferences, and mutual interest signals.",
+        "Avoid concentrating attention on a few profiles.",
+        "Cold-start for new users."
+      ]
+    }
+  ],
+  "tradeoffs": [
+    {
+      "topic": "Precomputed vs on-demand candidates",
+      "tension": "Fast cards versus staleness of location and preferences."
+    },
+    {
+      "topic": "Bloom filter vs exact set",
+      "tension": "Memory savings versus occasional false positives."
+    },
+    {
+      "topic": "Strict match consistency vs speed",
+      "tension": "Handling races correctly adds coordination."
+    }
+  ],
+  "commonMistakes": [
+    "Querying all users and filtering by distance in the database.",
+    "Missing matches when two swipes race.",
+    "Unbounded seen lists per user.",
+    "Ignoring privacy of precise location."
+  ],
+  "followUps": [
+    "How do you protect users from location triangulation?",
+    "How do you detect bots and fake profiles?",
+    "How would you add boosting for paid users?",
+    "How would you shard users globally?"
+  ],
+  "topics": [
+    "Candidate generation",
+    "Swipe storage",
+    "Match detection",
+    "Seen-set tracking",
+    "Ranking and fairness",
+    "geo-search",
+    "recommendations",
+    "consistency"
+  ]
+}

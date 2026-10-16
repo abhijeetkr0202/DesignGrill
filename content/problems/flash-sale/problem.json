@@ -1,0 +1,179 @@
+{
+  "id": "flash-sale",
+  "version": 1,
+  "title": "Flash Sale System",
+  "category": "Commerce & payments",
+  "difficulty": "hard",
+  "summary": "Design a system that sells a small stock of items to millions of simultaneous buyers without overselling.",
+  "statement": "Design the backend for a flash sale where a limited number of discounted items go on sale at a fixed time and millions of users arrive at once. Prevent overselling, keep the site responsive, and be fair to buyers. Start by clarifying requirements and estimating scale, then design the system and defend your decisions.",
+  "tags": ["inventory", "contention", "load-shedding"],
+  "initialGuidance": [
+    "Clarify the users, the main journeys, and what is explicitly out of scope before drawing anything.",
+    "Estimate read and write volume and storage growth; the numbers decide which components you need.",
+    "Name the guarantees you will offer (consistency, durability, availability) and the trade-offs behind them.",
+    "Write down assumptions as you make them and revisit them when requirements change."
+  ],
+  "coreFunctionalRequirements": [
+    "Open the sale at a precise time.",
+    "Reserve stock for buyers atomically.",
+    "Never sell more than the available inventory.",
+    "Allow a short window to complete payment.",
+    "Release unpaid reservations back to stock."
+  ],
+  "requirementQuestions": [
+    {
+      "id": "q-1",
+      "area": "Scale",
+      "question": "How many users arrive at the start and how many items are for sale?",
+      "whyItMatters": "Sets read and write rates and storage growth, which decide whether a single node can cope."
+    },
+    {
+      "id": "q-2",
+      "area": "Consistency",
+      "question": "Is overselling ever acceptable, even with compensation?",
+      "whyItMatters": "Selects between strong and eventual models and shapes conflict handling."
+    },
+    {
+      "id": "q-3",
+      "area": "Latency",
+      "question": "What response time is expected during the peak seconds?",
+      "whyItMatters": "Defines which paths need caching, precomputation, or regional placement."
+    },
+    {
+      "id": "q-4",
+      "area": "Scope",
+      "question": "Is fairness (queueing) required, or first come first served?",
+      "whyItMatters": "Fixes what is in and out of the design so effort goes to what matters."
+    },
+    {
+      "id": "q-5",
+      "area": "Abuse",
+      "question": "How are bots and scalpers handled?",
+      "whyItMatters": "Adds validation, rate limiting, and fraud controls to the critical path."
+    },
+    {
+      "id": "q-6",
+      "area": "Availability",
+      "question": "Is it acceptable to turn most users away quickly to protect the system?",
+      "whyItMatters": "Determines redundancy and failover design, and which features may degrade instead of failing."
+    }
+  ],
+  "workloadAssumptions": {
+    "illustrativeNote": "All numbers below are illustrative examples for practice and are not benchmarks. Real answers depend on the requirements the candidate negotiates.",
+    "items": [
+      {
+        "name": "Users at sale start",
+        "value": "5 million",
+        "rationale": "Marketing driven."
+      },
+      {
+        "name": "Items for sale",
+        "value": "10,000",
+        "rationale": "Scarce stock."
+      },
+      {
+        "name": "Requests per second at peak",
+        "value": "1 million",
+        "rationale": "First seconds."
+      },
+      {
+        "name": "Payment window",
+        "value": "10 minutes",
+        "rationale": "Hold on reservations."
+      }
+    ]
+  },
+  "estimationPrompts": [
+    "What fraction of requests can succeed given the stock?",
+    "How many writes per second hit inventory for one hot product?",
+    "How many reservations are active at once?"
+  ],
+  "keyDecisions": [
+    {
+      "id": "d-1",
+      "topic": "Traffic shaping",
+      "question": "How is the initial surge absorbed?",
+      "considerations": [
+        "Static pages and the countdown served from CDN.",
+        "Virtual waiting room or queue admits users at a controlled rate.",
+        "Reject excess requests early and cheaply."
+      ]
+    },
+    {
+      "id": "d-2",
+      "topic": "Inventory control",
+      "question": "How is stock decremented safely?",
+      "considerations": [
+        "A single-writer counter in memory (for example Redis) with atomic decrement.",
+        "Database row locks do not scale for one hot key.",
+        "Split stock into buckets to spread contention."
+      ]
+    },
+    {
+      "id": "d-3",
+      "topic": "Reservation and order",
+      "question": "How are reservations created and confirmed?",
+      "considerations": [
+        "Reserve stock, then create an order asynchronously through a queue.",
+        "Expire unpaid reservations.",
+        "Idempotent order creation."
+      ]
+    },
+    {
+      "id": "d-4",
+      "topic": "Consistency with the source of truth",
+      "question": "How does the fast path stay correct?",
+      "considerations": [
+        "Reconcile in-memory counts with the database.",
+        "Recover counters after failure.",
+        "Audit sold quantity against stock."
+      ]
+    },
+    {
+      "id": "d-5",
+      "topic": "Bot defence",
+      "question": "How is fairness enforced?",
+      "considerations": [
+        "Per-user limits and CAPTCHA or proof of work.",
+        "Account and payment verification.",
+        "Randomised admission from the waiting room."
+      ]
+    }
+  ],
+  "tradeoffs": [
+    {
+      "topic": "Fairness vs simplicity",
+      "tension": "Queues and lotteries are fairer but add machinery."
+    },
+    {
+      "topic": "Speed vs strict consistency",
+      "tension": "In-memory counters are fast but need reconciliation."
+    },
+    {
+      "topic": "Rejecting early vs serving all",
+      "tension": "Protecting the system versus user frustration."
+    }
+  ],
+  "commonMistakes": [
+    "Row-level locking on a single hot inventory row.",
+    "No waiting room so the database falls over at T+0.",
+    "Letting reservations hold stock forever.",
+    "Ignoring bots."
+  ],
+  "followUps": [
+    "How do you handle a payment failure after reservation?",
+    "How do you prevent one person buying all the stock via many accounts?",
+    "How do you run this across regions?",
+    "How do you test it before the sale?"
+  ],
+  "topics": [
+    "Traffic shaping",
+    "Inventory control",
+    "Reservation and order",
+    "Consistency with the source of truth",
+    "Bot defence",
+    "inventory",
+    "contention",
+    "load-shedding"
+  ]
+}

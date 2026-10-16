@@ -1,0 +1,179 @@
+{
+  "id": "video-conferencing",
+  "version": 1,
+  "title": "Video Conferencing (Zoom)",
+  "category": "Social & messaging",
+  "difficulty": "hard",
+  "summary": "Design a video meeting service with low-latency audio and video for small and very large meetings.",
+  "statement": "Design a video conferencing system. Users join meetings, share audio, video, and screens, and chat. It must keep latency low, adapt to bad networks, and scale from two participants to thousands of viewers. Start by clarifying requirements and estimating scale, then design the system and defend your decisions.",
+  "tags": ["webrtc", "media-routing", "real-time"],
+  "initialGuidance": [
+    "Clarify the users, the main journeys, and what is explicitly out of scope before drawing anything.",
+    "Estimate read and write volume and storage growth; the numbers decide which components you need.",
+    "Name the guarantees you will offer (consistency, durability, availability) and the trade-offs behind them.",
+    "Write down assumptions as you make them and revisit them when requirements change."
+  ],
+  "coreFunctionalRequirements": [
+    "Create and join meetings.",
+    "Stream audio and video in real time.",
+    "Share screens.",
+    "Support in-meeting chat.",
+    "Optionally record meetings."
+  ],
+  "requirementQuestions": [
+    {
+      "id": "q-1",
+      "area": "Scale",
+      "question": "How many concurrent meetings and participants per meeting?",
+      "whyItMatters": "Sets read and write rates and storage growth, which decide whether a single node can cope."
+    },
+    {
+      "id": "q-2",
+      "area": "Latency",
+      "question": "What end-to-end latency is acceptable for interactive speech?",
+      "whyItMatters": "Defines which paths need caching, precomputation, or regional placement."
+    },
+    {
+      "id": "q-3",
+      "area": "Availability",
+      "question": "How should quality degrade on poor networks?",
+      "whyItMatters": "Determines redundancy and failover design, and which features may degrade instead of failing."
+    },
+    {
+      "id": "q-4",
+      "area": "Scope",
+      "question": "Are recordings, transcription, and breakout rooms required?",
+      "whyItMatters": "Fixes what is in and out of the design so effort goes to what matters."
+    },
+    {
+      "id": "q-5",
+      "area": "Security",
+      "question": "Is end-to-end encryption required?",
+      "whyItMatters": "Introduces authentication, authorisation, and privacy constraints that affect the design."
+    },
+    {
+      "id": "q-6",
+      "area": "Cost",
+      "question": "How is bandwidth cost controlled across regions?",
+      "whyItMatters": "Prevents over-engineering and affects build-versus-buy choices."
+    }
+  ],
+  "workloadAssumptions": {
+    "illustrativeNote": "All numbers below are illustrative examples for practice and are not benchmarks. Real answers depend on the requirements the candidate negotiates.",
+    "items": [
+      {
+        "name": "Concurrent meetings",
+        "value": "1 million",
+        "rationale": "Peak business hours."
+      },
+      {
+        "name": "Typical meeting size",
+        "value": "6 participants",
+        "rationale": "Most meetings are small."
+      },
+      {
+        "name": "Large events",
+        "value": "up to 10,000 viewers",
+        "rationale": "Webinars."
+      },
+      {
+        "name": "Video bitrate",
+        "value": "1 to 3 Mbps per stream",
+        "rationale": "Depends on quality."
+      }
+    ]
+  },
+  "estimationPrompts": [
+    "What aggregate bandwidth does a 6-person meeting need under each topology?",
+    "How many media servers are needed for 1 million meetings?",
+    "What storage do recordings consume?"
+  ],
+  "keyDecisions": [
+    {
+      "id": "d-1",
+      "topic": "Topology",
+      "question": "How is media routed?",
+      "considerations": [
+        "Peer-to-peer mesh works only for very small calls.",
+        "An SFU forwards streams without mixing and scales well.",
+        "An MCU mixes streams, saving client bandwidth at server cost."
+      ]
+    },
+    {
+      "id": "d-2",
+      "topic": "Signalling and joining",
+      "question": "How do participants connect?",
+      "considerations": [
+        "Signalling service negotiates sessions (ICE, SDP).",
+        "TURN relays for restrictive networks.",
+        "Select a nearby media server."
+      ]
+    },
+    {
+      "id": "d-3",
+      "topic": "Quality adaptation",
+      "question": "How is quality adapted?",
+      "considerations": [
+        "Simulcast or layered coding lets the SFU pick a layer per receiver.",
+        "Congestion control and bitrate adaptation.",
+        "Prefer audio over video under stress."
+      ]
+    },
+    {
+      "id": "d-4",
+      "topic": "Large events",
+      "question": "How are very large audiences served?",
+      "considerations": [
+        "Cascade media servers.",
+        "Viewers receive via CDN-style streaming with higher latency.",
+        "Only a few active speakers publish."
+      ]
+    },
+    {
+      "id": "d-5",
+      "topic": "Recording",
+      "question": "How are meetings recorded?",
+      "considerations": [
+        "A server-side recorder joins as a participant.",
+        "Post-processing and storage.",
+        "Consent and compliance."
+      ]
+    }
+  ],
+  "tradeoffs": [
+    {
+      "topic": "SFU vs MCU",
+      "tension": "Server compute and flexibility versus client load."
+    },
+    {
+      "topic": "Latency vs scale for webinars",
+      "tension": "Interactive latency versus CDN-scale delivery."
+    },
+    {
+      "topic": "Quality vs bandwidth",
+      "tension": "Higher bitrates cost network and server capacity."
+    }
+  ],
+  "commonMistakes": [
+    "Using a full mesh for large meetings.",
+    "Routing all media through a single region.",
+    "No fallback relay for restrictive networks.",
+    "Ignoring adaptation to changing bandwidth."
+  ],
+  "followUps": [
+    "How would you add live captions?",
+    "How do you support end-to-end encryption with an SFU?",
+    "How do you handle a media server crash mid-meeting?",
+    "How do you pick a media server for a global meeting?"
+  ],
+  "topics": [
+    "Topology",
+    "Signalling and joining",
+    "Quality adaptation",
+    "Large events",
+    "Recording",
+    "webrtc",
+    "media-routing",
+    "real-time"
+  ]
+}

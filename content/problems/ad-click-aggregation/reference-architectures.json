@@ -1,0 +1,27 @@
+{
+  "architectures": [
+    {
+      "id": "ra-1",
+      "name": "Log plus stream processor with batch backfill",
+      "summary": "Events go to a log; a stream job aggregates windows; a batch job recomputes exact totals from raw storage.",
+      "components": [
+        "Collectors",
+        "Event log",
+        "Stream processor",
+        "Raw store",
+        "Batch jobs",
+        "Aggregate store"
+      ],
+      "bestWhen": "Billing-grade accuracy with fast dashboards.",
+      "drawbacks": ["Two code paths.", "Reconciliation effort."]
+    },
+    {
+      "id": "ra-2",
+      "name": "Stream-only with replay",
+      "summary": "One streaming pipeline is the source of truth and can replay from the log.",
+      "components": ["Log", "Stream processor", "Serving store"],
+      "bestWhen": "Simpler architecture with strong replay.",
+      "drawbacks": ["Needs exactly-once support.", "Longer replays."]
+    }
+  ]
+}

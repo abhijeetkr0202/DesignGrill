@@ -1,0 +1,20 @@
+{
+  "architectures": [
+    {
+      "id": "ra-1",
+      "name": "Per-auction owner with timer service",
+      "summary": "Each auction is owned by one partition that serialises bids and schedules its own closing.",
+      "components": ["Bid API", "Auction partitions", "Timer service", "Pub/sub", "Bid log"],
+      "bestWhen": "Correct ordering for contended auctions.",
+      "drawbacks": ["Hot partition risk.", "Ownership failover."]
+    },
+    {
+      "id": "ra-2",
+      "name": "Database with optimistic concurrency",
+      "summary": "Bids are conditional updates on the auction row.",
+      "components": ["Bid API", "Database", "Scheduler"],
+      "bestWhen": "Moderate load and simpler operations.",
+      "drawbacks": ["Contention on hot rows.", "Slow under heavy sniping."]
+    }
+  ]
+}

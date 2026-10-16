@@ -1,0 +1,28 @@
+{
+  "scenarios": [
+    {
+      "id": "sc-1",
+      "title": "Dinner rush",
+      "description": "Order volume triples in 10 minutes in one city.",
+      "triggers": ["Dinner rush"],
+      "probes": ["What scales and what saturates?", "How is quality of service preserved?"],
+      "relatedTopics": ["Order lifecycle", "Courier dispatch"]
+    },
+    {
+      "id": "sc-2",
+      "title": "Restaurant offline",
+      "description": "A restaurant stops acknowledging orders.",
+      "triggers": ["Restaurant offline"],
+      "probes": ["How is it detected?", "What happens to affected customers?"],
+      "relatedTopics": ["Order lifecycle"]
+    },
+    {
+      "id": "sc-3",
+      "title": "Courier unavailable",
+      "description": "A courier cancels after pickup.",
+      "triggers": ["Courier unavailable"],
+      "probes": ["How is the order reassigned?", "What does the customer see?"],
+      "relatedTopics": ["Courier dispatch"]
+    }
+  ]
+}

@@ -1,0 +1,27 @@
+{
+  "architectures": [
+    {
+      "id": "ra-1",
+      "name": "Queue with sandbox worker fleet",
+      "summary": "Submissions go to priority queues; elastic workers run sandboxed executions and report verdicts.",
+      "components": [
+        "API",
+        "Queues",
+        "Workers with sandboxes",
+        "Test data store",
+        "Verdict store",
+        "Leaderboard"
+      ],
+      "bestWhen": "Standard judge architecture.",
+      "drawbacks": ["Sandbox hardening.", "Capacity planning for contests."]
+    },
+    {
+      "id": "ra-2",
+      "name": "Serverless execution",
+      "summary": "Each run executes in an ephemeral function environment.",
+      "components": ["API", "Function runtime", "Storage"],
+      "bestWhen": "Spiky load with managed isolation.",
+      "drawbacks": ["Cold starts.", "Limited timing control."]
+    }
+  ]
+}

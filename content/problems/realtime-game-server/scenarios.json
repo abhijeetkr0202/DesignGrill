@@ -1,0 +1,28 @@
+{
+  "scenarios": [
+    {
+      "id": "sc-1",
+      "title": "Server crash mid-match",
+      "description": "A game server process dies during a ranked match.",
+      "triggers": ["Server crash mid-match"],
+      "probes": ["What do players experience?", "How are ratings and rewards handled?"],
+      "relatedTopics": ["Failure and reconnect"]
+    },
+    {
+      "id": "sc-2",
+      "title": "DDoS on a server",
+      "description": "A match server is flooded with traffic.",
+      "triggers": ["DDoS on a server"],
+      "probes": ["How is the match protected?", "What infrastructure helps?"],
+      "relatedTopics": ["Server placement"]
+    },
+    {
+      "id": "sc-3",
+      "title": "Cheating wave",
+      "description": "A new exploit spreads quickly.",
+      "triggers": ["Cheating wave"],
+      "probes": ["How is it detected and mitigated?", "What can be patched server-side?"],
+      "relatedTopics": ["Persistence and anti-cheat"]
+    }
+  ]
+}

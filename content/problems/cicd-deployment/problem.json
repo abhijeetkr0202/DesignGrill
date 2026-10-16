@@ -1,0 +1,179 @@
+{
+  "id": "cicd-deployment",
+  "version": 1,
+  "title": "CI/CD and Code Deployment System",
+  "category": "Developer tools",
+  "difficulty": "medium",
+  "summary": "Design a platform that builds, tests, and safely rolls out code to thousands of services.",
+  "statement": "Design a CI/CD and deployment system. Engineers push code; the platform builds artifacts, runs tests, and deploys to production in stages with health checks and automatic rollback, across many services and regions. Start by clarifying requirements and estimating scale, then design the system and defend your decisions.",
+  "tags": ["pipelines", "rollouts", "artifacts"],
+  "initialGuidance": [
+    "Clarify the users, the main journeys, and what is explicitly out of scope before drawing anything.",
+    "Estimate read and write volume and storage growth; the numbers decide which components you need.",
+    "Name the guarantees you will offer (consistency, durability, availability) and the trade-offs behind them.",
+    "Write down assumptions as you make them and revisit them when requirements change."
+  ],
+  "coreFunctionalRequirements": [
+    "Trigger builds on commits.",
+    "Run tests in parallel.",
+    "Store build artifacts.",
+    "Deploy progressively to environments and regions.",
+    "Roll back automatically on failure."
+  ],
+  "requirementQuestions": [
+    {
+      "id": "q-1",
+      "area": "Scale",
+      "question": "How many builds per day and how many services and deploys?",
+      "whyItMatters": "Sets read and write rates and storage growth, which decide whether a single node can cope."
+    },
+    {
+      "id": "q-2",
+      "area": "Latency",
+      "question": "What build and deploy time targets exist?",
+      "whyItMatters": "Defines which paths need caching, precomputation, or regional placement."
+    },
+    {
+      "id": "q-3",
+      "area": "Availability",
+      "question": "What happens to deploys if the platform is down: can production still be changed in an emergency?",
+      "whyItMatters": "Determines redundancy and failover design, and which features may degrade instead of failing."
+    },
+    {
+      "id": "q-4",
+      "area": "Security",
+      "question": "How are secrets, provenance, and approvals handled?",
+      "whyItMatters": "Introduces authentication, authorisation, and privacy constraints that affect the design."
+    },
+    {
+      "id": "q-5",
+      "area": "Scope",
+      "question": "Which deployment strategies (canary, blue-green) are needed?",
+      "whyItMatters": "Fixes what is in and out of the design so effort goes to what matters."
+    },
+    {
+      "id": "q-6",
+      "area": "Consistency",
+      "question": "How are builds made reproducible?",
+      "whyItMatters": "Selects between strong and eventual models and shapes conflict handling."
+    }
+  ],
+  "workloadAssumptions": {
+    "illustrativeNote": "All numbers below are illustrative examples for practice and are not benchmarks. Real answers depend on the requirements the candidate negotiates.",
+    "items": [
+      {
+        "name": "Builds per day",
+        "value": "100,000",
+        "rationale": "Large engineering org."
+      },
+      {
+        "name": "Services",
+        "value": "5,000",
+        "rationale": "Microservices."
+      },
+      {
+        "name": "Deploys per day",
+        "value": "10,000",
+        "rationale": "Continuous delivery."
+      },
+      {
+        "name": "Build duration target",
+        "value": "under 10 minutes",
+        "rationale": "Developer feedback."
+      }
+    ]
+  },
+  "estimationPrompts": [
+    "How many build executors are needed at peak?",
+    "How much artifact storage grows per day?",
+    "How many concurrent rollouts must be coordinated?"
+  ],
+  "keyDecisions": [
+    {
+      "id": "d-1",
+      "topic": "Build execution",
+      "question": "How do builds run?",
+      "considerations": [
+        "Ephemeral workers pull jobs from queues.",
+        "Remote caching of dependencies and build outputs.",
+        "Hermetic builds for reproducibility."
+      ]
+    },
+    {
+      "id": "d-2",
+      "topic": "Pipeline orchestration",
+      "question": "How are stages sequenced?",
+      "considerations": [
+        "Pipeline definitions as code translated to a DAG.",
+        "State machine persists progress.",
+        "Retries and manual gates."
+      ]
+    },
+    {
+      "id": "d-3",
+      "topic": "Artifact management",
+      "question": "How are artifacts stored and promoted?",
+      "considerations": [
+        "Immutable versioned artifacts in a registry.",
+        "Promote the same artifact across environments.",
+        "Retention and garbage collection."
+      ]
+    },
+    {
+      "id": "d-4",
+      "topic": "Rollout strategy",
+      "question": "How are releases made safe?",
+      "considerations": [
+        "Canary and staged region rollouts with automated health analysis.",
+        "Automatic rollback on error budget burn.",
+        "Feature flags to decouple deploy from release."
+      ]
+    },
+    {
+      "id": "d-5",
+      "topic": "Security and compliance",
+      "question": "How is the supply chain protected?",
+      "considerations": [
+        "Signed artifacts and provenance.",
+        "Short-lived credentials for deploy.",
+        "Audit logs and approvals."
+      ]
+    }
+  ],
+  "tradeoffs": [
+    {
+      "topic": "Speed vs safety of rollouts",
+      "tension": "Faster releases versus longer canary stages."
+    },
+    {
+      "topic": "Remote caching vs correctness",
+      "tension": "Faster builds versus risk of stale outputs."
+    },
+    {
+      "topic": "Central platform vs team autonomy",
+      "tension": "Consistency versus flexibility."
+    }
+  ],
+  "commonMistakes": [
+    "Rebuilding artifacts per environment.",
+    "Deploying everywhere at once with no canary.",
+    "No rollback automation.",
+    "Long-lived credentials in the pipeline."
+  ],
+  "followUps": [
+    "How do you handle a deploy that is half rolled out when the platform fails?",
+    "How do you deploy database migrations safely?",
+    "How do you prevent a bad config push?",
+    "How do you build a monorepo efficiently?"
+  ],
+  "topics": [
+    "Build execution",
+    "Pipeline orchestration",
+    "Artifact management",
+    "Rollout strategy",
+    "Security and compliance",
+    "pipelines",
+    "rollouts",
+    "artifacts"
+  ]
+}

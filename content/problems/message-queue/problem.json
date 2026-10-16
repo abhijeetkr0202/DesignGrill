@@ -1,0 +1,179 @@
+{
+  "id": "message-queue",
+  "version": 1,
+  "title": "Distributed Message Queue",
+  "category": "Infrastructure",
+  "difficulty": "hard",
+  "summary": "Design a durable, high-throughput message queue or log like Kafka that decouples producers from consumers.",
+  "statement": "Design a distributed messaging system. Producers publish messages to topics; consumers read them with their own offsets. It must be durable, scalable, ordered within a partition, and support consumer groups. Start by clarifying requirements and estimating scale, then design the system and defend your decisions.",
+  "tags": ["logs", "ordering", "delivery-guarantees"],
+  "initialGuidance": [
+    "Clarify the users, the main journeys, and what is explicitly out of scope before drawing anything.",
+    "Estimate read and write volume and storage growth; the numbers decide which components you need.",
+    "Name the guarantees you will offer (consistency, durability, availability) and the trade-offs behind them.",
+    "Write down assumptions as you make them and revisit them when requirements change."
+  ],
+  "coreFunctionalRequirements": [
+    "Publish messages to topics.",
+    "Consume messages with consumer groups.",
+    "Preserve order within a partition.",
+    "Retain messages for a configured period.",
+    "Support at-least-once delivery with offset management."
+  ],
+  "requirementQuestions": [
+    {
+      "id": "q-1",
+      "area": "Scale",
+      "question": "What are the message rate, size, and number of topics and partitions?",
+      "whyItMatters": "Sets read and write rates and storage growth, which decide whether a single node can cope."
+    },
+    {
+      "id": "q-2",
+      "area": "Durability",
+      "question": "Can any acknowledged message be lost?",
+      "whyItMatters": "Drives replication, backup, and write acknowledgement policy."
+    },
+    {
+      "id": "q-3",
+      "area": "Ordering",
+      "question": "Is ordering required globally, per key, or not at all?",
+      "whyItMatters": "Ordering guarantees constrain partitioning and parallelism."
+    },
+    {
+      "id": "q-4",
+      "area": "Latency",
+      "question": "What end-to-end latency is acceptable?",
+      "whyItMatters": "Defines which paths need caching, precomputation, or regional placement."
+    },
+    {
+      "id": "q-5",
+      "area": "Delivery",
+      "question": "At-least-once, at-most-once, or exactly-once expectations?",
+      "whyItMatters": "Clarifies a requirement that changes the architecture."
+    },
+    {
+      "id": "q-6",
+      "area": "Scope",
+      "question": "Is replay of old messages required?",
+      "whyItMatters": "Fixes what is in and out of the design so effort goes to what matters."
+    }
+  ],
+  "workloadAssumptions": {
+    "illustrativeNote": "All numbers below are illustrative examples for practice and are not benchmarks. Real answers depend on the requirements the candidate negotiates.",
+    "items": [
+      {
+        "name": "Messages per second",
+        "value": "2 million",
+        "rationale": "Platform-wide event stream."
+      },
+      {
+        "name": "Average message size",
+        "value": "1 KB",
+        "rationale": "Typical event."
+      },
+      {
+        "name": "Retention",
+        "value": "7 days",
+        "rationale": "Replay window."
+      },
+      {
+        "name": "Replication factor",
+        "value": "3",
+        "rationale": "Durability baseline."
+      }
+    ]
+  },
+  "estimationPrompts": [
+    "How much disk is needed for retention with replication?",
+    "How many partitions are needed for target throughput and consumer parallelism?",
+    "What network bandwidth does replication add?"
+  ],
+  "keyDecisions": [
+    {
+      "id": "d-1",
+      "topic": "Storage model",
+      "question": "How are messages stored?",
+      "considerations": [
+        "Append-only partitioned log with sequential disk writes.",
+        "Segment files and index for offset lookups.",
+        "Retention by time or size."
+      ]
+    },
+    {
+      "id": "d-2",
+      "topic": "Partitioning",
+      "question": "How are messages assigned to partitions?",
+      "considerations": [
+        "Key hashing preserves per-key order.",
+        "Partition count limits consumer parallelism.",
+        "Repartitioning is disruptive."
+      ]
+    },
+    {
+      "id": "d-3",
+      "topic": "Replication",
+      "question": "How is durability achieved?",
+      "considerations": [
+        "Leader and follower replicas with in-sync set.",
+        "Acknowledgement levels trade latency for safety.",
+        "Leader election after failure."
+      ]
+    },
+    {
+      "id": "d-4",
+      "topic": "Consumption",
+      "question": "How do consumers track progress?",
+      "considerations": [
+        "Offsets committed by consumer groups.",
+        "Rebalancing when consumers join or leave.",
+        "Commit timing determines duplicates versus loss."
+      ]
+    },
+    {
+      "id": "d-5",
+      "topic": "Delivery semantics",
+      "question": "What guarantees are offered?",
+      "considerations": [
+        "At-least-once with idempotent consumers is common.",
+        "Idempotent producers and transactions enable stronger guarantees.",
+        "Exactly-once has scope limits."
+      ]
+    }
+  ],
+  "tradeoffs": [
+    {
+      "topic": "Acks all vs acks leader",
+      "tension": "Durability versus write latency."
+    },
+    {
+      "topic": "More partitions vs overhead",
+      "tension": "Parallelism versus metadata and recovery cost."
+    },
+    {
+      "topic": "Batching vs latency",
+      "tension": "Throughput versus delivery delay."
+    }
+  ],
+  "commonMistakes": [
+    "Claiming exactly-once across arbitrary systems without limits.",
+    "Ignoring consumer rebalancing and duplicate handling.",
+    "Treating the queue like a database for random access.",
+    "Choosing too few partitions to scale later."
+  ],
+  "followUps": [
+    "How do you handle a poison message?",
+    "How do you scale consumers beyond partition count?",
+    "How do you replicate across regions?",
+    "How do you handle a slow consumer?"
+  ],
+  "topics": [
+    "Storage model",
+    "Partitioning",
+    "Replication",
+    "Consumption",
+    "Delivery semantics",
+    "logs",
+    "ordering",
+    "delivery-guarantees"
+  ]
+}

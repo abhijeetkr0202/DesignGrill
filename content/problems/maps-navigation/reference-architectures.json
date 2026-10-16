@@ -1,0 +1,26 @@
+{
+  "architectures": [
+    {
+      "id": "ra-1",
+      "name": "Tile CDN plus partitioned routing service",
+      "summary": "Tiles are pre-built and cached; regional routing servers hold preprocessed graphs with a traffic overlay.",
+      "components": [
+        "Tile storage and CDN",
+        "Routing service",
+        "Traffic pipeline",
+        "Geocoder",
+        "Navigation service"
+      ],
+      "bestWhen": "Planet-scale consumer maps.",
+      "drawbacks": ["Graph partitioning complexity.", "Traffic data pipeline."]
+    },
+    {
+      "id": "ra-2",
+      "name": "On-demand vector tiles",
+      "summary": "Vector tiles are generated from a spatial database and cached.",
+      "components": ["Tile server", "Spatial DB", "CDN"],
+      "bestWhen": "Frequently changing custom map data.",
+      "drawbacks": ["Compute on cache misses.", "Database load."]
+    }
+  ]
+}

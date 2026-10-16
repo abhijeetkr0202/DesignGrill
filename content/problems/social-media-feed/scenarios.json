@@ -1,0 +1,31 @@
+{
+  "scenarios": [
+    {
+      "id": "sc-1",
+      "title": "Celebrity posts",
+      "description": "An account with 50 million followers posts.",
+      "triggers": ["Celebrity posts"],
+      "probes": ["What happens under fan-out on write?", "How is delivery latency bounded?"],
+      "relatedTopics": ["Fan-out strategy"]
+    },
+    {
+      "id": "sc-2",
+      "title": "Timeline cache loss",
+      "description": "The cache holding timelines is flushed.",
+      "triggers": ["Timeline cache loss"],
+      "probes": [
+        "How are feeds rebuilt without overloading storage?",
+        "What do users see meanwhile?"
+      ],
+      "relatedTopics": ["Feed storage"]
+    },
+    {
+      "id": "sc-3",
+      "title": "Ranking outage",
+      "description": "The ranking service times out.",
+      "triggers": ["Ranking outage"],
+      "probes": ["What fallback feed is shown?", "How is the dependency isolated?"],
+      "relatedTopics": ["Ranking"]
+    }
+  ]
+}

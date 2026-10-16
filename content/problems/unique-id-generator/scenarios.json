@@ -1,0 +1,28 @@
+{
+  "scenarios": [
+    {
+      "id": "sc-1",
+      "title": "Clock moves backwards",
+      "description": "NTP corrects a node clock by several hundred milliseconds.",
+      "triggers": ["Clock moves backwards"],
+      "probes": ["How do you avoid duplicate IDs?", "What does the caller experience?"],
+      "relatedTopics": ["Clock handling"]
+    },
+    {
+      "id": "sc-2",
+      "title": "Node restarts",
+      "description": "A node crashes and restarts with the same machine ID.",
+      "triggers": ["Node restarts"],
+      "probes": ["Can it issue duplicates?", "What state must be persisted?"],
+      "relatedTopics": ["Node identity"]
+    },
+    {
+      "id": "sc-3",
+      "title": "Traffic spike",
+      "description": "A node must issue more IDs per millisecond than its sequence allows.",
+      "triggers": ["Traffic spike"],
+      "probes": ["What is the behaviour under overflow?", "How do callers cope?"],
+      "relatedTopics": ["Sequence overflow"]
+    }
+  ]
+}

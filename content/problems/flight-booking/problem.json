@@ -1,0 +1,179 @@
+{
+  "id": "flight-booking",
+  "version": 1,
+  "title": "Flight Search and Booking",
+  "category": "Booking & delivery",
+  "difficulty": "hard",
+  "summary": "Design a flight search and booking engine that aggregates fares from many airlines and books reliably.",
+  "statement": "Design an online travel agency flight service. It searches fares across airlines and distribution systems, shows combinable itineraries, then books and ticket. External systems are slow, rate limited, and prices change constantly. Start by clarifying requirements and estimating scale, then design the system and defend your decisions.",
+  "tags": ["aggregation", "caching", "external-apis"],
+  "initialGuidance": [
+    "Clarify the users, the main journeys, and what is explicitly out of scope before drawing anything.",
+    "Estimate read and write volume and storage growth; the numbers decide which components you need.",
+    "Name the guarantees you will offer (consistency, durability, availability) and the trade-offs behind them.",
+    "Write down assumptions as you make them and revisit them when requirements change."
+  ],
+  "coreFunctionalRequirements": [
+    "Search flights with flexible dates.",
+    "Aggregate fares from many suppliers.",
+    "Price and hold an itinerary.",
+    "Book and issue tickets.",
+    "Handle changes and cancellations."
+  ],
+  "requirementQuestions": [
+    {
+      "id": "q-1",
+      "area": "Scale",
+      "question": "How many searches per second and how many suppliers are queried?",
+      "whyItMatters": "Sets read and write rates and storage growth, which decide whether a single node can cope."
+    },
+    {
+      "id": "q-2",
+      "area": "Latency",
+      "question": "How long may a search take and are results streamed as they arrive?",
+      "whyItMatters": "Defines which paths need caching, precomputation, or regional placement."
+    },
+    {
+      "id": "q-3",
+      "area": "Consistency",
+      "question": "How stale may fares be and what happens when a price changes at booking?",
+      "whyItMatters": "Selects between strong and eventual models and shapes conflict handling."
+    },
+    {
+      "id": "q-4",
+      "area": "Integration",
+      "question": "What rate limits and costs do supplier APIs impose?",
+      "whyItMatters": "Identifies external dependencies and the failure modes they bring."
+    },
+    {
+      "id": "q-5",
+      "area": "Scope",
+      "question": "Round trips, multi-city, ancillaries, and loyalty?",
+      "whyItMatters": "Fixes what is in and out of the design so effort goes to what matters."
+    },
+    {
+      "id": "q-6",
+      "area": "Availability",
+      "question": "How are slow or failing suppliers handled?",
+      "whyItMatters": "Determines redundancy and failover design, and which features may degrade instead of failing."
+    }
+  ],
+  "workloadAssumptions": {
+    "illustrativeNote": "All numbers below are illustrative examples for practice and are not benchmarks. Real answers depend on the requirements the candidate negotiates.",
+    "items": [
+      {
+        "name": "Searches per second",
+        "value": "10,000",
+        "rationale": "Peak."
+      },
+      {
+        "name": "Suppliers per search",
+        "value": "30",
+        "rationale": "Fan-out."
+      },
+      {
+        "name": "Supplier latency",
+        "value": "1 to 5 seconds",
+        "rationale": "External."
+      },
+      {
+        "name": "Book-to-look ratio",
+        "value": "1 in 1,000",
+        "rationale": "Mostly browsing."
+      }
+    ]
+  },
+  "estimationPrompts": [
+    "How many supplier calls per second would naive fan-out create?",
+    "What cache hit rate keeps supplier cost acceptable?",
+    "How many itinerary combinations are generated per search?"
+  ],
+  "keyDecisions": [
+    {
+      "id": "d-1",
+      "topic": "Search fan-out",
+      "question": "How are suppliers queried?",
+      "considerations": [
+        "Parallel calls with timeouts and partial results.",
+        "Stream results as suppliers respond.",
+        "Circuit breakers for slow suppliers."
+      ]
+    },
+    {
+      "id": "d-2",
+      "topic": "Fare caching",
+      "question": "How is cost reduced?",
+      "considerations": [
+        "Cache recent search results with short TTL by route and date.",
+        "Precompute popular routes.",
+        "Revalidate price before booking."
+      ]
+    },
+    {
+      "id": "d-3",
+      "topic": "Itinerary construction",
+      "question": "How are options combined?",
+      "considerations": [
+        "Combine outbound and return legs and connections.",
+        "Rules for minimum connection times.",
+        "Rank by price and convenience."
+      ]
+    },
+    {
+      "id": "d-4",
+      "topic": "Booking flow",
+      "question": "How is booking made reliable?",
+      "considerations": [
+        "Revalidate price, hold, payment, then ticket issuing.",
+        "Saga with compensation for partial failure.",
+        "Idempotency on supplier calls."
+      ]
+    },
+    {
+      "id": "d-5",
+      "topic": "Price changes",
+      "question": "How are changes handled?",
+      "considerations": [
+        "Inform the user of fare changes at booking.",
+        "Price lock for a short window if supported.",
+        "Avoid stale-price complaints."
+      ]
+    }
+  ],
+  "tradeoffs": [
+    {
+      "topic": "Cache freshness vs supplier cost",
+      "tension": "Accuracy versus API fees."
+    },
+    {
+      "topic": "Waiting for all suppliers vs speed",
+      "tension": "Completeness versus latency."
+    },
+    {
+      "topic": "Hold and pay order",
+      "tension": "Risk of charging without a ticket versus ticketing without payment."
+    }
+  ],
+  "commonMistakes": [
+    "Synchronously calling every supplier and waiting for all.",
+    "Treating cached fares as bookable truth.",
+    "No compensation if ticketing fails after payment.",
+    "Ignoring supplier rate limits."
+  ],
+  "followUps": [
+    "How do you handle a supplier outage?",
+    "How do you support price alerts?",
+    "How do you handle schedule changes after booking?",
+    "How do you combine fares from different airlines?"
+  ],
+  "topics": [
+    "Search fan-out",
+    "Fare caching",
+    "Itinerary construction",
+    "Booking flow",
+    "Price changes",
+    "aggregation",
+    "caching",
+    "external-apis"
+  ]
+}

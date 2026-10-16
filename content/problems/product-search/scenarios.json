@@ -1,0 +1,28 @@
+{
+  "scenarios": [
+    {
+      "id": "sc-1",
+      "title": "Update flood",
+      "description": "A seller uploads millions of changes at once.",
+      "triggers": ["Update flood"],
+      "probes": ["How do you protect the index?", "What is prioritised?"],
+      "relatedTopics": ["Ingestion"]
+    },
+    {
+      "id": "sc-2",
+      "title": "Shard failure",
+      "description": "A search shard is unavailable.",
+      "triggers": ["Shard failure"],
+      "probes": ["Do queries fail or return partial results?", "How is correctness communicated?"],
+      "relatedTopics": ["Index design"]
+    },
+    {
+      "id": "sc-3",
+      "title": "Stale price",
+      "description": "Search shows an old price.",
+      "triggers": ["Stale price"],
+      "probes": ["How is the discrepancy handled at checkout?", "How fast should prices converge?"],
+      "relatedTopics": ["Freshness of volatile data"]
+    }
+  ]
+}

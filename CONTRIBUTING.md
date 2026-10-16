@@ -41,6 +41,7 @@ Create `content/problems/<id>/` with `problem.json`, `knowledge.md`, `reference-
 - Write original content. Do not copy articles, paid interview material, or third-party solution repositories unless their license allows it and you attribute them.
 - Label workload numbers as illustrative.
 - Present several valid alternatives; the pack must not imply a single mandatory solution.
+- Set `category` in `problem.json` (for example "Streaming & media") so the problem appears under the library filters.
 
 ## Changing prompts
 

@@ -1,0 +1,179 @@
+{
+  "id": "food-delivery",
+  "version": 1,
+  "title": "Food Delivery (DoorDash)",
+  "category": "Booking & delivery",
+  "difficulty": "hard",
+  "summary": "Design a food delivery platform connecting customers, restaurants, and couriers with real-time tracking.",
+  "statement": "Design a food delivery service. Customers browse restaurants and order; restaurants accept and prepare; couriers are dispatched to pick up and deliver. The system must estimate delivery times and handle peaks around meal times. Start by clarifying requirements and estimating scale, then design the system and defend your decisions.",
+  "tags": ["three-sided-marketplace", "dispatch", "eta"],
+  "initialGuidance": [
+    "Clarify the users, the main journeys, and what is explicitly out of scope before drawing anything.",
+    "Estimate read and write volume and storage growth; the numbers decide which components you need.",
+    "Name the guarantees you will offer (consistency, durability, availability) and the trade-offs behind them.",
+    "Write down assumptions as you make them and revisit them when requirements change."
+  ],
+  "coreFunctionalRequirements": [
+    "Browse nearby restaurants and menus.",
+    "Place and pay for orders.",
+    "Restaurants accept and update order status.",
+    "Assign couriers and optimise batching.",
+    "Track the order in real time."
+  ],
+  "requirementQuestions": [
+    {
+      "id": "q-1",
+      "area": "Scale",
+      "question": "How many restaurants, orders per day, and peak orders per second at lunch and dinner?",
+      "whyItMatters": "Sets read and write rates and storage growth, which decide whether a single node can cope."
+    },
+    {
+      "id": "q-2",
+      "area": "Latency",
+      "question": "How accurate must delivery ETAs be?",
+      "whyItMatters": "Defines which paths need caching, precomputation, or regional placement."
+    },
+    {
+      "id": "q-3",
+      "area": "Consistency",
+      "question": "How are menu and availability changes (sold out) reflected?",
+      "whyItMatters": "Selects between strong and eventual models and shapes conflict handling."
+    },
+    {
+      "id": "q-4",
+      "area": "Scope",
+      "question": "Courier batching, scheduled orders, and promotions?",
+      "whyItMatters": "Fixes what is in and out of the design so effort goes to what matters."
+    },
+    {
+      "id": "q-5",
+      "area": "Availability",
+      "question": "What if a restaurant tablet is offline?",
+      "whyItMatters": "Determines redundancy and failover design, and which features may degrade instead of failing."
+    },
+    {
+      "id": "q-6",
+      "area": "Integration",
+      "question": "How do restaurants receive orders (tablet, POS integration)?",
+      "whyItMatters": "Identifies external dependencies and the failure modes they bring."
+    }
+  ],
+  "workloadAssumptions": {
+    "illustrativeNote": "All numbers below are illustrative examples for practice and are not benchmarks. Real answers depend on the requirements the candidate negotiates.",
+    "items": [
+      {
+        "name": "Orders per day",
+        "value": "10 million",
+        "rationale": "National service."
+      },
+      {
+        "name": "Peak orders per second",
+        "value": "800",
+        "rationale": "Meal rush."
+      },
+      {
+        "name": "Active couriers",
+        "value": "500,000",
+        "rationale": "Peak."
+      },
+      {
+        "name": "Restaurants",
+        "value": "1 million",
+        "rationale": "Menu data."
+      }
+    ]
+  },
+  "estimationPrompts": [
+    "How many menu reads per second at peak?",
+    "How many courier location updates per second?",
+    "How many orders are in flight at the dinner peak?"
+  ],
+  "keyDecisions": [
+    {
+      "id": "d-1",
+      "topic": "Discovery and menus",
+      "question": "How are restaurants found and menus served?",
+      "considerations": [
+        "Geospatial search plus ranking by distance, rating, and ETA.",
+        "Menu cache with fast availability overlays.",
+        "Read-heavy; cache aggressively."
+      ]
+    },
+    {
+      "id": "d-2",
+      "topic": "Order lifecycle",
+      "question": "How is an order tracked end to end?",
+      "considerations": [
+        "State machine across customer, restaurant, and courier.",
+        "Idempotent transitions and timeouts.",
+        "Handling a restaurant that never accepts."
+      ]
+    },
+    {
+      "id": "d-3",
+      "topic": "Courier dispatch",
+      "question": "How are couriers assigned?",
+      "considerations": [
+        "Match by proximity and food readiness time.",
+        "Batch multiple orders along a route.",
+        "Delay dispatch until food is nearly ready."
+      ]
+    },
+    {
+      "id": "d-4",
+      "topic": "ETA estimation",
+      "question": "How is delivery time predicted?",
+      "considerations": [
+        "Prep time plus travel time with models using history.",
+        "Update as conditions change.",
+        "Communicate uncertainty."
+      ]
+    },
+    {
+      "id": "d-5",
+      "topic": "Real-time tracking",
+      "question": "How does the customer see progress?",
+      "considerations": [
+        "Courier location streamed through pub/sub.",
+        "Throttle updates to the app.",
+        "Push notifications on state changes."
+      ]
+    }
+  ],
+  "tradeoffs": [
+    {
+      "topic": "Early vs late dispatch",
+      "tension": "Courier idle time versus cold food."
+    },
+    {
+      "topic": "Batching orders vs speed",
+      "tension": "Efficiency versus delivery time per order."
+    },
+    {
+      "topic": "ETA padding",
+      "tension": "Under-promise safely versus lower conversion."
+    }
+  ],
+  "commonMistakes": [
+    "Dispatching couriers the moment an order is placed regardless of prep time.",
+    "Single shared database for menus, orders, and location.",
+    "No handling of restaurants that fail to respond.",
+    "Ignoring meal-time spikes."
+  ],
+  "followUps": [
+    "How would you add scheduled orders?",
+    "How do you handle a courier cancelling mid-delivery?",
+    "How do you reconcile payments among customer, restaurant, and courier?",
+    "How do you rank restaurants on the home page?"
+  ],
+  "topics": [
+    "Discovery and menus",
+    "Order lifecycle",
+    "Courier dispatch",
+    "ETA estimation",
+    "Real-time tracking",
+    "three-sided-marketplace",
+    "dispatch",
+    "eta"
+  ]
+}

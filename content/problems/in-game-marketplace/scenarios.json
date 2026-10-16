@@ -1,0 +1,28 @@
+{
+  "scenarios": [
+    {
+      "id": "sc-1",
+      "title": "Double purchase race",
+      "description": "Two buyers click buy on the same listing at the same time.",
+      "triggers": ["Double purchase race"],
+      "probes": ["How does only one succeed?", "What does the loser see?"],
+      "relatedTopics": ["Atomic purchase"]
+    },
+    {
+      "id": "sc-2",
+      "title": "Duplication exploit",
+      "description": "A retry bug duplicates items.",
+      "triggers": ["Duplication exploit"],
+      "probes": ["How is it detected and rolled back?", "How do you prevent recurrence?"],
+      "relatedTopics": ["Inventory ownership"]
+    },
+    {
+      "id": "sc-3",
+      "title": "Search index lag",
+      "description": "The index shows listings that were already sold.",
+      "triggers": ["Search index lag"],
+      "probes": ["What does the buyer experience?", "How is stale data handled?"],
+      "relatedTopics": ["Listing storage and search"]
+    }
+  ]
+}

@@ -1,0 +1,28 @@
+{
+  "scenarios": [
+    {
+      "id": "sc-1",
+      "title": "Top-of-hour reminders",
+      "description": "Millions of reminders are due at 09:00.",
+      "triggers": ["Top-of-hour reminders"],
+      "probes": ["How is the spike handled?", "What if delivery is late?"],
+      "relatedTopics": ["Reminders"]
+    },
+    {
+      "id": "sc-2",
+      "title": "Time zone rule change",
+      "description": "A country changes its daylight saving rules.",
+      "triggers": ["Time zone rule change"],
+      "probes": ["How are existing events affected?", "How do you roll out the change?"],
+      "relatedTopics": ["Time zones"]
+    },
+    {
+      "id": "sc-3",
+      "title": "Series edit conflict",
+      "description": "Two attendees edit the same series simultaneously.",
+      "triggers": ["Series edit conflict"],
+      "probes": ["How are conflicts resolved?", "Who wins?"],
+      "relatedTopics": ["Sharing and invitations"]
+    }
+  ]
+}

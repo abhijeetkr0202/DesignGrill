@@ -1,0 +1,31 @@
+{
+  "scenarios": [
+    {
+      "id": "sc-1",
+      "title": "Provider timeout",
+      "description": "The provider call times out and the outcome is unknown.",
+      "triggers": ["Provider timeout"],
+      "probes": [
+        "How do you determine whether the charge happened?",
+        "How do you avoid a double charge?"
+      ],
+      "relatedTopics": ["Idempotency", "Payment state machine"]
+    },
+    {
+      "id": "sc-2",
+      "title": "Service crash mid-payment",
+      "description": "The orchestrator crashes after the provider charged.",
+      "triggers": ["Service crash mid-payment"],
+      "probes": ["How is state recovered?", "How does the ledger remain correct?"],
+      "relatedTopics": ["Payment state machine"]
+    },
+    {
+      "id": "sc-3",
+      "title": "Reconciliation mismatch",
+      "description": "A provider report lists a charge your system does not know.",
+      "triggers": ["Reconciliation mismatch"],
+      "probes": ["How is it investigated?", "How is it corrected?"],
+      "relatedTopics": ["Reconciliation"]
+    }
+  ]
+}

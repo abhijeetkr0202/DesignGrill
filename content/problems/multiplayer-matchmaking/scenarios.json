@@ -1,0 +1,28 @@
+{
+  "scenarios": [
+    {
+      "id": "sc-1",
+      "title": "Evening peak",
+      "description": "Queue sizes triple in one region.",
+      "triggers": ["Evening peak"],
+      "probes": ["What happens to wait times?", "How does capacity scale ahead of demand?"],
+      "relatedTopics": ["Pool partitioning", "Server allocation"]
+    },
+    {
+      "id": "sc-2",
+      "title": "Double assignment",
+      "description": "A player is placed in two matches by racing workers.",
+      "triggers": ["Double assignment"],
+      "probes": ["How is this prevented?", "How is it repaired if it occurs?"],
+      "relatedTopics": ["State and reliability"]
+    },
+    {
+      "id": "sc-3",
+      "title": "Matchmaker crash",
+      "description": "The matcher service restarts mid-cycle.",
+      "triggers": ["Matchmaker crash"],
+      "probes": ["What happens to tickets?", "Can players keep their place?"],
+      "relatedTopics": ["State and reliability"]
+    }
+  ]
+}

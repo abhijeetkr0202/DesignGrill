@@ -1,0 +1,179 @@
+{
+  "id": "collaborative-editor",
+  "version": 1,
+  "title": "Collaborative Document Editor (Google Docs)",
+  "category": "Collaboration & storage",
+  "difficulty": "hard",
+  "summary": "Design a real-time collaborative editor where many users edit the same document simultaneously.",
+  "statement": "Design a Google Docs-style editor. Multiple users edit one document at once, see each other cursors and changes within a fraction of a second, and the document converges to the same state for everyone, with history and offline edits. Start by clarifying requirements and estimating scale, then design the system and defend your decisions.",
+  "tags": ["ot-crdt", "real-time", "conflict-resolution"],
+  "initialGuidance": [
+    "Clarify the users, the main journeys, and what is explicitly out of scope before drawing anything.",
+    "Estimate read and write volume and storage growth; the numbers decide which components you need.",
+    "Name the guarantees you will offer (consistency, durability, availability) and the trade-offs behind them.",
+    "Write down assumptions as you make them and revisit them when requirements change."
+  ],
+  "coreFunctionalRequirements": [
+    "Multiple users edit the same document.",
+    "Show live cursors and presence.",
+    "Converge to a consistent document.",
+    "Maintain version history.",
+    "Support offline editing and sync."
+  ],
+  "requirementQuestions": [
+    {
+      "id": "q-1",
+      "area": "Scale",
+      "question": "How many documents, and how many simultaneous editors per document?",
+      "whyItMatters": "Sets read and write rates and storage growth, which decide whether a single node can cope."
+    },
+    {
+      "id": "q-2",
+      "area": "Latency",
+      "question": "How quickly must remote edits appear?",
+      "whyItMatters": "Defines which paths need caching, precomputation, or regional placement."
+    },
+    {
+      "id": "q-3",
+      "area": "Consistency",
+      "question": "What convergence guarantee is needed for concurrent edits?",
+      "whyItMatters": "Selects between strong and eventual models and shapes conflict handling."
+    },
+    {
+      "id": "q-4",
+      "area": "Scope",
+      "question": "Rich text, comments, and permissions?",
+      "whyItMatters": "Fixes what is in and out of the design so effort goes to what matters."
+    },
+    {
+      "id": "q-5",
+      "area": "Availability",
+      "question": "Should editing continue offline?",
+      "whyItMatters": "Determines redundancy and failover design, and which features may degrade instead of failing."
+    },
+    {
+      "id": "q-6",
+      "area": "Data",
+      "question": "How is history retained and how large can documents be?",
+      "whyItMatters": "Determines the data model, retention, and storage choices."
+    }
+  ],
+  "workloadAssumptions": {
+    "illustrativeNote": "All numbers below are illustrative examples for practice and are not benchmarks. Real answers depend on the requirements the candidate negotiates.",
+    "items": [
+      {
+        "name": "Concurrent documents being edited",
+        "value": "5 million",
+        "rationale": "Peak."
+      },
+      {
+        "name": "Editors per document",
+        "value": "typically 1 to 5, up to 100",
+        "rationale": "Skewed."
+      },
+      {
+        "name": "Operations per second per document",
+        "value": "a few to dozens",
+        "rationale": "Typing bursts."
+      },
+      {
+        "name": "Remote update latency",
+        "value": "under 200 ms",
+        "rationale": "Feels live."
+      }
+    ]
+  },
+  "estimationPrompts": [
+    "How many operation messages per second across the platform?",
+    "How large is the operation log per document?",
+    "How many connections must each server hold?"
+  ],
+  "keyDecisions": [
+    {
+      "id": "d-1",
+      "topic": "Concurrency control",
+      "question": "How are concurrent edits merged?",
+      "considerations": [
+        "Operational Transformation with a central server ordering operations.",
+        "CRDTs allow merging without central ordering at metadata cost.",
+        "Both converge but differ in complexity and overhead."
+      ]
+    },
+    {
+      "id": "d-2",
+      "topic": "Session routing",
+      "question": "How are collaborators connected?",
+      "considerations": [
+        "All editors of a document connect to the same server instance or shard.",
+        "Route by document ID with consistent hashing.",
+        "Failover and reconnection with state catch-up."
+      ]
+    },
+    {
+      "id": "d-3",
+      "topic": "Persistence",
+      "question": "How is the document stored?",
+      "considerations": [
+        "Append operation log and periodic snapshots.",
+        "Rebuild state from the latest snapshot plus recent operations.",
+        "Version history from the log."
+      ]
+    },
+    {
+      "id": "d-4",
+      "topic": "Presence and cursors",
+      "question": "How are cursors shared?",
+      "considerations": [
+        "Lightweight ephemeral messages not stored durably.",
+        "Throttle updates.",
+        "Scoped to the document session."
+      ]
+    },
+    {
+      "id": "d-5",
+      "topic": "Offline and reconnect",
+      "question": "How is offline editing merged?",
+      "considerations": [
+        "Queue local operations and rebase on reconnect.",
+        "CRDTs make offline merges natural.",
+        "Conflict-friendly UX."
+      ]
+    }
+  ],
+  "tradeoffs": [
+    {
+      "topic": "OT vs CRDT",
+      "tension": "Central server simplicity versus decentralised flexibility and memory overhead."
+    },
+    {
+      "topic": "Snapshot frequency",
+      "tension": "Faster loads versus storage and compute."
+    },
+    {
+      "topic": "Co-locating editors on one server",
+      "tension": "Simple ordering versus hot document limits."
+    }
+  ],
+  "commonMistakes": [
+    "Last-write-wins for the whole document.",
+    "Locking the document or paragraphs for one editor.",
+    "Persisting every keystroke as a separate database write.",
+    "No plan for server failure mid-session."
+  ],
+  "followUps": [
+    "How do you support comments and suggestions?",
+    "How do you scale a document with 10,000 viewers?",
+    "How do you do undo in a collaborative setting?",
+    "How do you migrate a document between servers?"
+  ],
+  "topics": [
+    "Concurrency control",
+    "Session routing",
+    "Persistence",
+    "Presence and cursors",
+    "Offline and reconnect",
+    "ot-crdt",
+    "real-time",
+    "conflict-resolution"
+  ]
+}

@@ -1,0 +1,179 @@
+{
+  "id": "auction-system",
+  "version": 1,
+  "title": "Online Auction System",
+  "category": "Commerce & payments",
+  "difficulty": "medium",
+  "summary": "Design an online auction platform where many users bid in real time and the highest bid wins at the deadline.",
+  "statement": "Design an auction system like eBay. Sellers list items with an end time; buyers place bids that must beat the current price; the system picks a winner at the deadline and handles last-second bidding fairly. Start by clarifying requirements and estimating scale, then design the system and defend your decisions.",
+  "tags": ["concurrency", "real-time", "timers"],
+  "initialGuidance": [
+    "Clarify the users, the main journeys, and what is explicitly out of scope before drawing anything.",
+    "Estimate read and write volume and storage growth; the numbers decide which components you need.",
+    "Name the guarantees you will offer (consistency, durability, availability) and the trade-offs behind them.",
+    "Write down assumptions as you make them and revisit them when requirements change."
+  ],
+  "coreFunctionalRequirements": [
+    "List items with an auction end time.",
+    "Place bids higher than the current bid.",
+    "Show live current price to watchers.",
+    "Close auctions at the deadline and pick a winner.",
+    "Notify bidders of outbid and win events."
+  ],
+  "requirementQuestions": [
+    {
+      "id": "q-1",
+      "area": "Consistency",
+      "question": "Must bid ordering be strict, and what decides ties?",
+      "whyItMatters": "Selects between strong and eventual models and shapes conflict handling."
+    },
+    {
+      "id": "q-2",
+      "area": "Scale",
+      "question": "How many active auctions, bids per second, and watchers per hot auction?",
+      "whyItMatters": "Sets read and write rates and storage growth, which decide whether a single node can cope."
+    },
+    {
+      "id": "q-3",
+      "area": "Latency",
+      "question": "How quickly must price updates reach watchers?",
+      "whyItMatters": "Defines which paths need caching, precomputation, or regional placement."
+    },
+    {
+      "id": "q-4",
+      "area": "Scope",
+      "question": "Are auto-bids (proxy bidding) and anti-sniping extensions supported?",
+      "whyItMatters": "Fixes what is in and out of the design so effort goes to what matters."
+    },
+    {
+      "id": "q-5",
+      "area": "Abuse",
+      "question": "How are shill bidding and fake bids detected?",
+      "whyItMatters": "Adds validation, rate limiting, and fraud controls to the critical path."
+    },
+    {
+      "id": "q-6",
+      "area": "Data",
+      "question": "What proof of bids is required for disputes?",
+      "whyItMatters": "Determines the data model, retention, and storage choices."
+    }
+  ],
+  "workloadAssumptions": {
+    "illustrativeNote": "All numbers below are illustrative examples for practice and are not benchmarks. Real answers depend on the requirements the candidate negotiates.",
+    "items": [
+      {
+        "name": "Active auctions",
+        "value": "20 million",
+        "rationale": "Large marketplace."
+      },
+      {
+        "name": "Bids per second",
+        "value": "5,000",
+        "rationale": "Peaks near deadlines."
+      },
+      {
+        "name": "Watchers per hot auction",
+        "value": "50,000",
+        "rationale": "Popular items."
+      },
+      {
+        "name": "Final-minute share of bids",
+        "value": "about 40%",
+        "rationale": "Bid sniping."
+      }
+    ]
+  },
+  "estimationPrompts": [
+    "What is the bid rate for one hot auction at the deadline?",
+    "How many price update pushes per second does this create?",
+    "How many timers must fire per second at peak?"
+  ],
+  "keyDecisions": [
+    {
+      "id": "d-1",
+      "topic": "Bid ordering",
+      "question": "How are concurrent bids ordered?",
+      "considerations": [
+        "Serialise bids per auction through a single partition owner.",
+        "Conditional update on current price.",
+        "Sequence numbers decide ties."
+      ]
+    },
+    {
+      "id": "d-2",
+      "topic": "Deadline handling",
+      "question": "How are auctions closed reliably?",
+      "considerations": [
+        "Timers or scheduled jobs trigger closing.",
+        "A bid arriving at the boundary uses server time.",
+        "Anti-sniping extensions add complexity."
+      ]
+    },
+    {
+      "id": "d-3",
+      "topic": "Real-time updates",
+      "question": "How do watchers see changes?",
+      "considerations": [
+        "Pub/sub with push over WebSockets or server-sent events.",
+        "Fan-out per auction channel.",
+        "Coalesce updates under load."
+      ]
+    },
+    {
+      "id": "d-4",
+      "topic": "Proxy bidding",
+      "question": "How are automatic bids handled?",
+      "considerations": [
+        "Store maximum bids server-side and increment minimally.",
+        "Re-evaluate on every incoming bid.",
+        "Privacy of maximums."
+      ]
+    },
+    {
+      "id": "d-5",
+      "topic": "Integrity",
+      "question": "How is fairness proven?",
+      "considerations": [
+        "Immutable bid log with timestamps.",
+        "Detect collusion patterns.",
+        "Audit trail for disputes."
+      ]
+    }
+  ],
+  "tradeoffs": [
+    {
+      "topic": "Strict serialisation vs throughput",
+      "tension": "Per-auction ordering limits parallelism for hot items."
+    },
+    {
+      "topic": "Anti-sniping vs predictability",
+      "tension": "Fairness versus fixed end times."
+    },
+    {
+      "topic": "Push every update vs coalescing",
+      "tension": "Freshness versus fan-out cost."
+    }
+  ],
+  "commonMistakes": [
+    "Read-then-write bid validation that races.",
+    "Using client time for deadlines.",
+    "Closing auctions with a once-per-minute scan.",
+    "No durable record of every bid."
+  ],
+  "followUps": [
+    "How do you handle a hot auction with 100,000 watchers?",
+    "How do you prevent shill bidding?",
+    "How do you implement a Dutch auction?",
+    "How would you handle seller cancellation?"
+  ],
+  "topics": [
+    "Bid ordering",
+    "Deadline handling",
+    "Real-time updates",
+    "Proxy bidding",
+    "Integrity",
+    "concurrency",
+    "real-time",
+    "timers"
+  ]
+}

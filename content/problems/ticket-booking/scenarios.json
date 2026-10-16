@@ -1,0 +1,28 @@
+{
+  "scenarios": [
+    {
+      "id": "sc-1",
+      "title": "On-sale surge",
+      "description": "Three million users arrive at the start time.",
+      "triggers": ["On-sale surge"],
+      "probes": ["How is the backend protected?", "What does a user see while waiting?"],
+      "relatedTopics": ["Waiting room"]
+    },
+    {
+      "id": "sc-2",
+      "title": "Abandoned holds",
+      "description": "Thousands of holds expire at the same moment.",
+      "triggers": ["Abandoned holds"],
+      "probes": ["How do seats return to inventory?", "How is the thundering herd avoided?"],
+      "relatedTopics": ["Seat holds"]
+    },
+    {
+      "id": "sc-3",
+      "title": "Payment outage",
+      "description": "The payment provider is down mid-on-sale.",
+      "triggers": ["Payment outage"],
+      "probes": ["What happens to held seats?", "How do you communicate to buyers?"],
+      "relatedTopics": ["Checkout and payment"]
+    }
+  ]
+}

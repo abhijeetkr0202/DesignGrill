@@ -1,0 +1,28 @@
+{
+  "scenarios": [
+    {
+      "id": "sc-1",
+      "title": "Slow shard",
+      "description": "One shard responds slowly and slows every query.",
+      "triggers": ["Slow shard"],
+      "probes": ["How is the tail latency bounded?", "What do you return?"],
+      "relatedTopics": ["Query execution", "Resilience"]
+    },
+    {
+      "id": "sc-2",
+      "title": "Breaking news",
+      "description": "A major event produces millions of new pages in minutes.",
+      "triggers": ["Breaking news"],
+      "probes": ["How is fresh content indexed quickly?", "How is ranking adapted?"],
+      "relatedTopics": ["Indexing pipeline"]
+    },
+    {
+      "id": "sc-3",
+      "title": "Bad index release",
+      "description": "A new index version degrades quality.",
+      "triggers": ["Bad index release"],
+      "probes": ["How do you detect and roll back?", "How is the rollout staged?"],
+      "relatedTopics": ["Resilience"]
+    }
+  ]
+}

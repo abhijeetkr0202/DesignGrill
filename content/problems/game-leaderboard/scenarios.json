@@ -1,0 +1,28 @@
+{
+  "scenarios": [
+    {
+      "id": "sc-1",
+      "title": "Event spike",
+      "description": "A tournament causes a burst of score updates.",
+      "triggers": ["Event spike"],
+      "probes": ["Where is the write bottleneck?", "How is it smoothed?"],
+      "relatedTopics": ["Ranking structure", "Sharding"]
+    },
+    {
+      "id": "sc-2",
+      "title": "Board node loss",
+      "description": "The node holding the sorted set dies.",
+      "triggers": ["Board node loss"],
+      "probes": ["How is it rebuilt and how long does it take?", "What do players see?"],
+      "relatedTopics": ["Durability"]
+    },
+    {
+      "id": "sc-3",
+      "title": "Cheated score",
+      "description": "A player submits an impossible score.",
+      "triggers": ["Cheated score"],
+      "probes": ["Where is it caught?", "How is the board corrected?"],
+      "relatedTopics": ["Ranking structure"]
+    }
+  ]
+}

@@ -1,0 +1,28 @@
+{
+  "scenarios": [
+    {
+      "id": "sc-1",
+      "title": "Document server crash",
+      "description": "The server holding a busy document dies.",
+      "triggers": ["Document server crash"],
+      "probes": ["How do editors recover without losing edits?", "How is ordering preserved?"],
+      "relatedTopics": ["Session routing"]
+    },
+    {
+      "id": "sc-2",
+      "title": "Offline for hours",
+      "description": "A user edits offline while others continue.",
+      "triggers": ["Offline for hours"],
+      "probes": ["How are changes merged?", "What conflicts may appear?"],
+      "relatedTopics": ["Offline and reconnect"]
+    },
+    {
+      "id": "sc-3",
+      "title": "Very large document",
+      "description": "A document grows to millions of characters.",
+      "triggers": ["Very large document"],
+      "probes": ["What is slow?", "How do you keep editing responsive?"],
+      "relatedTopics": ["Persistence"]
+    }
+  ]
+}

@@ -1,0 +1,179 @@
+{
+  "id": "distributed-cache",
+  "version": 1,
+  "title": "Distributed Cache",
+  "category": "Infrastructure",
+  "difficulty": "medium",
+  "summary": "Design a distributed in-memory cache used by many services to reduce database load and latency.",
+  "statement": "Design a distributed cache cluster like Memcached or Redis used by many application teams. It should provide sub-millisecond reads, scale out, survive node failures, and offer sensible eviction and invalidation. Start by clarifying requirements and estimating scale, then design the system and defend your decisions.",
+  "tags": ["caching", "eviction", "consistency"],
+  "initialGuidance": [
+    "Clarify the users, the main journeys, and what is explicitly out of scope before drawing anything.",
+    "Estimate read and write volume and storage growth; the numbers decide which components you need.",
+    "Name the guarantees you will offer (consistency, durability, availability) and the trade-offs behind them.",
+    "Write down assumptions as you make them and revisit them when requirements change."
+  ],
+  "coreFunctionalRequirements": [
+    "Get, set, and delete keys with TTL.",
+    "Scale capacity and throughput horizontally.",
+    "Evict entries when memory is full.",
+    "Tolerate node failure without catastrophic load on backends.",
+    "Provide observability such as hit rate."
+  ],
+  "requirementQuestions": [
+    {
+      "id": "q-1",
+      "area": "Scale",
+      "question": "What is the total dataset, request rate, and value size distribution?",
+      "whyItMatters": "Sets read and write rates and storage growth, which decide whether a single node can cope."
+    },
+    {
+      "id": "q-2",
+      "area": "Latency",
+      "question": "What read latency is required and what network topology is assumed?",
+      "whyItMatters": "Defines which paths need caching, precomputation, or regional placement."
+    },
+    {
+      "id": "q-3",
+      "area": "Consistency",
+      "question": "How stale may cached data be, and who owns invalidation?",
+      "whyItMatters": "Selects between strong and eventual models and shapes conflict handling."
+    },
+    {
+      "id": "q-4",
+      "area": "Availability",
+      "question": "Can the cache lose data on node failure, or must it be persistent?",
+      "whyItMatters": "Determines redundancy and failover design, and which features may degrade instead of failing."
+    },
+    {
+      "id": "q-5",
+      "area": "Scope",
+      "question": "Is it a pure cache, or does it support data structures and atomic operations?",
+      "whyItMatters": "Fixes what is in and out of the design so effort goes to what matters."
+    },
+    {
+      "id": "q-6",
+      "area": "Security",
+      "question": "Is the cache multi-tenant, and how is isolation enforced?",
+      "whyItMatters": "Introduces authentication, authorisation, and privacy constraints that affect the design."
+    }
+  ],
+  "workloadAssumptions": {
+    "illustrativeNote": "All numbers below are illustrative examples for practice and are not benchmarks. Real answers depend on the requirements the candidate negotiates.",
+    "items": [
+      {
+        "name": "Dataset",
+        "value": "5 TB in memory",
+        "rationale": "Hot working set of a large platform."
+      },
+      {
+        "name": "Requests per second",
+        "value": "2 million",
+        "rationale": "Read-heavy."
+      },
+      {
+        "name": "Target hit rate",
+        "value": "95%",
+        "rationale": "Protects the databases."
+      },
+      {
+        "name": "Value size",
+        "value": "about 2 KB",
+        "rationale": "Typical object."
+      }
+    ]
+  },
+  "estimationPrompts": [
+    "How many nodes hold 5 TB with headroom?",
+    "What backend load results from a 95% versus 90% hit rate?",
+    "How much traffic hits the database after losing one node?"
+  ],
+  "keyDecisions": [
+    {
+      "id": "d-1",
+      "topic": "Sharding",
+      "question": "How are keys distributed?",
+      "considerations": [
+        "Consistent hashing limits remapping when nodes change.",
+        "Client-side versus proxy routing.",
+        "Hot key mitigation by replication or local caching."
+      ]
+    },
+    {
+      "id": "d-2",
+      "topic": "Eviction",
+      "question": "Which entries are removed first?",
+      "considerations": [
+        "LRU, LFU, or TTL-based policies fit different workloads.",
+        "Memory accounting and fragmentation.",
+        "Admission control for one-hit wonders."
+      ]
+    },
+    {
+      "id": "d-3",
+      "topic": "Cache pattern",
+      "question": "How do applications populate and update the cache?",
+      "considerations": [
+        "Cache-aside is common and simple.",
+        "Write-through and write-behind trade consistency and latency.",
+        "Request coalescing prevents stampedes."
+      ]
+    },
+    {
+      "id": "d-4",
+      "topic": "Replication and failure",
+      "question": "What happens when a node fails?",
+      "considerations": [
+        "Replicas allow failover but cost memory.",
+        "Without replicas, misses spike on the database.",
+        "Gradual warm-up and rate limiting."
+      ]
+    },
+    {
+      "id": "d-5",
+      "topic": "Invalidation",
+      "question": "How is stale data removed?",
+      "considerations": [
+        "TTLs bound staleness.",
+        "Explicit invalidation on writes can race with reads.",
+        "Versioned keys avoid some races."
+      ]
+    }
+  ],
+  "tradeoffs": [
+    {
+      "topic": "Replication vs memory cost",
+      "tension": "Resilience of the hot set versus the capacity it consumes."
+    },
+    {
+      "topic": "Short vs long TTL",
+      "tension": "Freshness versus hit rate."
+    },
+    {
+      "topic": "Client-side vs proxy routing",
+      "tension": "Latency versus operational control."
+    }
+  ],
+  "commonMistakes": [
+    "Treating the cache as the source of truth.",
+    "Ignoring cache stampedes on popular key expiry.",
+    "Modulo hashing that remaps most keys on resize.",
+    "No plan for a node loss spiking database load."
+  ],
+  "followUps": [
+    "How do you prevent a stampede when a hot key expires?",
+    "How do you warm a new node?",
+    "How do you keep cache and database consistent on updates?",
+    "How would multi-region caching work?"
+  ],
+  "topics": [
+    "Sharding",
+    "Eviction",
+    "Cache pattern",
+    "Replication and failure",
+    "Invalidation",
+    "caching",
+    "eviction",
+    "consistency"
+  ]
+}

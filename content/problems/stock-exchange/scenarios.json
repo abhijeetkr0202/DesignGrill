@@ -1,0 +1,28 @@
+{
+  "scenarios": [
+    {
+      "id": "sc-1",
+      "title": "Engine failure",
+      "description": "The primary engine for a symbol crashes mid-session.",
+      "triggers": ["Engine failure"],
+      "probes": ["How fast does the standby take over?", "Can any acknowledged order be lost?"],
+      "relatedTopics": ["Replication and recovery"]
+    },
+    {
+      "id": "sc-2",
+      "title": "Hot symbol",
+      "description": "A stock suddenly receives 100 times normal order flow.",
+      "triggers": ["Hot symbol"],
+      "probes": ["What is the bottleneck?", "How is the engine protected?"],
+      "relatedTopics": ["Matching engine"]
+    },
+    {
+      "id": "sc-3",
+      "title": "Erroneous orders",
+      "description": "A trader floods the market with mistaken orders.",
+      "triggers": ["Erroneous orders"],
+      "probes": ["Where are they stopped?", "How are trades reversed or halted?"],
+      "relatedTopics": ["Risk and gateways"]
+    }
+  ]
+}

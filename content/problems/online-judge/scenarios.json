@@ -1,0 +1,28 @@
+{
+  "scenarios": [
+    {
+      "id": "sc-1",
+      "title": "Contest start",
+      "description": "Thousands of participants submit in the first minute.",
+      "triggers": ["Contest start"],
+      "probes": ["What scales first?", "How do verdict times stay acceptable?"],
+      "relatedTopics": ["Submission pipeline"]
+    },
+    {
+      "id": "sc-2",
+      "title": "Sandbox escape attempt",
+      "description": "A submission tries to access the network or host.",
+      "triggers": ["Sandbox escape attempt"],
+      "probes": ["What blocks it?", "How is it detected and contained?"],
+      "relatedTopics": ["Sandboxing"]
+    },
+    {
+      "id": "sc-3",
+      "title": "Worker crash",
+      "description": "A worker dies while running a submission.",
+      "triggers": ["Worker crash"],
+      "probes": ["How is the job retried safely?", "How do you avoid duplicate verdicts?"],
+      "relatedTopics": ["Submission pipeline"]
+    }
+  ]
+}

@@ -1,0 +1,34 @@
+{
+  "scenarios": [
+    {
+      "id": "sc-1",
+      "title": "A paste goes viral",
+      "description": "A single paste receives a huge burst of reads.",
+      "triggers": ["A paste goes viral"],
+      "probes": [
+        "Where does the load land and what absorbs it?",
+        "How is a cache miss storm avoided?"
+      ],
+      "relatedTopics": ["Caching and CDN"]
+    },
+    {
+      "id": "sc-2",
+      "title": "Illegal content is reported",
+      "description": "Moderators must remove a paste immediately.",
+      "triggers": ["Illegal content is reported"],
+      "probes": [
+        "How fast does removal propagate through caches?",
+        "How do you prevent re-upload?"
+      ],
+      "relatedTopics": ["Abuse prevention", "Caching and CDN"]
+    },
+    {
+      "id": "sc-3",
+      "title": "Storage backend outage",
+      "description": "The object store becomes unavailable for an hour.",
+      "triggers": ["Storage backend outage"],
+      "probes": ["Which operations still work?", "How do writes behave and what is retried?"],
+      "relatedTopics": ["Content storage"]
+    }
+  ]
+}

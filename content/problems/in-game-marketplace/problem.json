@@ -1,0 +1,179 @@
+{
+  "id": "in-game-marketplace",
+  "version": 1,
+  "title": "In-Game Item Marketplace",
+  "category": "Gaming",
+  "difficulty": "medium",
+  "summary": "Design a marketplace where players list, buy, and trade virtual items safely and fairly.",
+  "statement": "Design an in-game marketplace. Players list items for sale, browse and search listings, and buy with in-game or real currency. Transactions must be atomic, inventories consistent, and fraud and duplication prevented. Start by clarifying requirements and estimating scale, then design the system and defend your decisions.",
+  "tags": ["transactions", "inventory", "fraud"],
+  "initialGuidance": [
+    "Clarify the users, the main journeys, and what is explicitly out of scope before drawing anything.",
+    "Estimate read and write volume and storage growth; the numbers decide which components you need.",
+    "Name the guarantees you will offer (consistency, durability, availability) and the trade-offs behind them.",
+    "Write down assumptions as you make them and revisit them when requirements change."
+  ],
+  "coreFunctionalRequirements": [
+    "List an item for sale with a price.",
+    "Search and filter listings.",
+    "Buy an item atomically.",
+    "Cancel or expire listings.",
+    "View transaction history."
+  ],
+  "requirementQuestions": [
+    {
+      "id": "q-1",
+      "area": "Scale",
+      "question": "How many listings, searches, and purchases per second?",
+      "whyItMatters": "Sets read and write rates and storage growth, which decide whether a single node can cope."
+    },
+    {
+      "id": "q-2",
+      "area": "Consistency",
+      "question": "Can an item ever be sold twice or duplicated?",
+      "whyItMatters": "Selects between strong and eventual models and shapes conflict handling."
+    },
+    {
+      "id": "q-3",
+      "area": "Scope",
+      "question": "Fixed-price listings, auctions, or direct trades?",
+      "whyItMatters": "Fixes what is in and out of the design so effort goes to what matters."
+    },
+    {
+      "id": "q-4",
+      "area": "Abuse",
+      "question": "How are scams, bots, and real-money trading handled?",
+      "whyItMatters": "Adds validation, rate limiting, and fraud controls to the critical path."
+    },
+    {
+      "id": "q-5",
+      "area": "Data",
+      "question": "How long are transaction records kept for disputes?",
+      "whyItMatters": "Determines the data model, retention, and storage choices."
+    },
+    {
+      "id": "q-6",
+      "area": "Availability",
+      "question": "Should the marketplace stay up when the game servers are down?",
+      "whyItMatters": "Determines redundancy and failover design, and which features may degrade instead of failing."
+    }
+  ],
+  "workloadAssumptions": {
+    "illustrativeNote": "All numbers below are illustrative examples for practice and are not benchmarks. Real answers depend on the requirements the candidate negotiates.",
+    "items": [
+      {
+        "name": "Active listings",
+        "value": "50 million",
+        "rationale": "Large economy."
+      },
+      {
+        "name": "Searches per second",
+        "value": "30,000",
+        "rationale": "Browsing is frequent."
+      },
+      {
+        "name": "Purchases per second",
+        "value": "2,000",
+        "rationale": "Peak."
+      },
+      {
+        "name": "Currency",
+        "value": "soft and hard currency",
+        "rationale": "Different audit needs."
+      }
+    ]
+  },
+  "estimationPrompts": [
+    "How large is the listings index and how often does it change?",
+    "What write rate do purchases generate on the inventory and wallet stores?",
+    "How much history is stored per day?"
+  ],
+  "keyDecisions": [
+    {
+      "id": "d-1",
+      "topic": "Atomic purchase",
+      "question": "How is a sale made safe?",
+      "considerations": [
+        "A single transaction moves item and currency, or a saga with compensation across services.",
+        "Idempotency keys for retries.",
+        "Prevent double-spend with conditional updates."
+      ]
+    },
+    {
+      "id": "d-2",
+      "topic": "Listing storage and search",
+      "question": "How are listings found?",
+      "considerations": [
+        "Search index for filters (type, rarity, price).",
+        "Database as the source of truth.",
+        "Index lag versus accuracy of availability."
+      ]
+    },
+    {
+      "id": "d-3",
+      "topic": "Inventory ownership",
+      "question": "How is item ownership tracked?",
+      "considerations": [
+        "Items are unique records with an owner; transfers are logged.",
+        "Locking an item while listed.",
+        "Audit trail of every change."
+      ]
+    },
+    {
+      "id": "d-4",
+      "topic": "Pricing and fees",
+      "question": "How are prices and fees handled?",
+      "considerations": [
+        "Fees and taxes as a sink in the economy.",
+        "Price history for guidance.",
+        "Limits to deter manipulation."
+      ]
+    },
+    {
+      "id": "d-5",
+      "topic": "Fraud controls",
+      "question": "How is abuse limited?",
+      "considerations": [
+        "Rate limits and anomaly detection.",
+        "Holds on suspicious trades.",
+        "Account trust levels."
+      ]
+    }
+  ],
+  "tradeoffs": [
+    {
+      "topic": "Single transaction vs saga",
+      "tension": "Simplicity versus independent services."
+    },
+    {
+      "topic": "Search freshness vs cost",
+      "tension": "Accurate availability versus indexing load."
+    },
+    {
+      "topic": "Fraud holds vs friction",
+      "tension": "Protection versus player experience."
+    }
+  ],
+  "commonMistakes": [
+    "Check-then-update purchases that allow double sale.",
+    "Trusting the search index as the source of truth.",
+    "No audit log of item movement.",
+    "Allowing item duplication through retries."
+  ],
+  "followUps": [
+    "How do you support auctions with bidding?",
+    "How do you roll back an exploit that duplicated items?",
+    "How do you manage inflation in the economy?",
+    "How do you support trading between friends with confirmation?"
+  ],
+  "topics": [
+    "Atomic purchase",
+    "Listing storage and search",
+    "Inventory ownership",
+    "Pricing and fees",
+    "Fraud controls",
+    "transactions",
+    "inventory",
+    "fraud"
+  ]
+}

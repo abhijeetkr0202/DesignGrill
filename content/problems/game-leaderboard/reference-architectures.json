@@ -1,0 +1,20 @@
+{
+  "architectures": [
+    {
+      "id": "ra-1",
+      "name": "In-memory sorted set with durable store",
+      "summary": "A sorted-set service holds scores, backed by a database for durability and rebuild.",
+      "components": ["Score API", "Sorted-set cluster", "Database", "Cache"],
+      "bestWhen": "Typical online leaderboard.",
+      "drawbacks": ["Memory cost.", "Rebuild time after failure."]
+    },
+    {
+      "id": "ra-2",
+      "name": "Score-range sharded boards",
+      "summary": "Players are partitioned by score band; global rank is derived from band counts.",
+      "components": ["Router", "Shard per band", "Counts index"],
+      "bestWhen": "Very large player counts.",
+      "drawbacks": ["Players move between shards.", "More complex queries."]
+    }
+  ]
+}

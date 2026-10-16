@@ -1,0 +1,179 @@
+{
+  "id": "key-value-store",
+  "version": 1,
+  "title": "Distributed Key-Value Store",
+  "category": "Infrastructure",
+  "difficulty": "medium",
+  "summary": "Design a highly available, horizontally scalable key-value store like Dynamo or Cassandra.",
+  "statement": "Design a distributed key-value store supporting get and put at massive scale. It should remain available during node and network failures, scale horizontally, and let clients tune consistency. Start by clarifying requirements and estimating scale, then design the system and defend your decisions.",
+  "tags": ["partitioning", "replication", "consistency"],
+  "initialGuidance": [
+    "Clarify the users, the main journeys, and what is explicitly out of scope before drawing anything.",
+    "Estimate read and write volume and storage growth; the numbers decide which components you need.",
+    "Name the guarantees you will offer (consistency, durability, availability) and the trade-offs behind them.",
+    "Write down assumptions as you make them and revisit them when requirements change."
+  ],
+  "coreFunctionalRequirements": [
+    "Put and get values by key.",
+    "Scale horizontally by adding nodes.",
+    "Tolerate node failures without data loss.",
+    "Support tunable consistency per request.",
+    "Support optional TTLs."
+  ],
+  "requirementQuestions": [
+    {
+      "id": "q-1",
+      "area": "Scale",
+      "question": "How much data, how many requests per second, and what value sizes?",
+      "whyItMatters": "Sets read and write rates and storage growth, which decide whether a single node can cope."
+    },
+    {
+      "id": "q-2",
+      "area": "Consistency",
+      "question": "Is strong consistency required, or is eventual consistency acceptable with tunable options?",
+      "whyItMatters": "Selects between strong and eventual models and shapes conflict handling."
+    },
+    {
+      "id": "q-3",
+      "area": "Availability",
+      "question": "Must writes succeed during a partition?",
+      "whyItMatters": "Determines redundancy and failover design, and which features may degrade instead of failing."
+    },
+    {
+      "id": "q-4",
+      "area": "Latency",
+      "question": "What are the p50 and p99 latency targets for reads and writes?",
+      "whyItMatters": "Defines which paths need caching, precomputation, or regional placement."
+    },
+    {
+      "id": "q-5",
+      "area": "Data",
+      "question": "Are there range queries, secondary indexes, or transactions?",
+      "whyItMatters": "Determines the data model, retention, and storage choices."
+    },
+    {
+      "id": "q-6",
+      "area": "Durability",
+      "question": "How many replicas and what write acknowledgement policy?",
+      "whyItMatters": "Drives replication, backup, and write acknowledgement policy."
+    }
+  ],
+  "workloadAssumptions": {
+    "illustrativeNote": "All numbers below are illustrative examples for practice and are not benchmarks. Real answers depend on the requirements the candidate negotiates.",
+    "items": [
+      {
+        "name": "Data size",
+        "value": "100 TB",
+        "rationale": "Large operational dataset."
+      },
+      {
+        "name": "Requests per second",
+        "value": "1 million",
+        "rationale": "Mixed reads and writes."
+      },
+      {
+        "name": "Value size",
+        "value": "under 10 KB",
+        "rationale": "Typical records."
+      },
+      {
+        "name": "Replication factor",
+        "value": "3",
+        "rationale": "Common durability baseline."
+      }
+    ]
+  },
+  "estimationPrompts": [
+    "How many nodes are required for storage and for throughput?",
+    "How much data moves when a node joins or fails?",
+    "What is the write amplification of the storage engine?"
+  ],
+  "keyDecisions": [
+    {
+      "id": "d-1",
+      "topic": "Partitioning",
+      "question": "How are keys spread across nodes?",
+      "considerations": [
+        "Consistent hashing with virtual nodes balances load and limits data movement.",
+        "Range partitioning supports scans but risks hot ranges.",
+        "Rebalancing cost."
+      ]
+    },
+    {
+      "id": "d-2",
+      "topic": "Replication",
+      "question": "How are copies placed and kept in sync?",
+      "considerations": [
+        "Replicate to N nodes clockwise on the ring or across racks.",
+        "Quorum reads and writes (W + R > N) tune consistency.",
+        "Cross-datacenter placement."
+      ]
+    },
+    {
+      "id": "d-3",
+      "topic": "Conflict handling",
+      "question": "How are concurrent writes reconciled?",
+      "considerations": [
+        "Last-write-wins is simple but loses data.",
+        "Vector clocks detect conflicts for the application to resolve.",
+        "Read repair and anti-entropy."
+      ]
+    },
+    {
+      "id": "d-4",
+      "topic": "Failure handling",
+      "question": "How are temporary and permanent failures handled?",
+      "considerations": [
+        "Hinted handoff keeps writes during brief outages.",
+        "Gossip-based failure detection.",
+        "Merkle trees repair divergence."
+      ]
+    },
+    {
+      "id": "d-5",
+      "topic": "Storage engine",
+      "question": "How is data stored on a node?",
+      "considerations": [
+        "LSM trees favour writes with compaction cost.",
+        "B-trees favour reads and in-place updates.",
+        "Commit log, memtable, and SSTables."
+      ]
+    }
+  ],
+  "tradeoffs": [
+    {
+      "topic": "Consistency vs availability",
+      "tension": "Quorum settings trade freshness against tolerance of failures."
+    },
+    {
+      "topic": "LWW vs vector clocks",
+      "tension": "Simplicity versus not silently losing updates."
+    },
+    {
+      "topic": "Virtual node count",
+      "tension": "Balance and recovery speed versus metadata overhead."
+    }
+  ],
+  "commonMistakes": [
+    "Hashing with modulo so adding a node reshuffles everything.",
+    "Claiming strong consistency without a quorum or consensus mechanism.",
+    "Ignoring repair for replicas that missed writes.",
+    "No plan for hot keys."
+  ],
+  "followUps": [
+    "How do you add multi-key transactions?",
+    "How would you support range scans?",
+    "How do you do cross-region replication?",
+    "How do you handle a hot key?"
+  ],
+  "topics": [
+    "Partitioning",
+    "Replication",
+    "Conflict handling",
+    "Failure handling",
+    "Storage engine",
+    "partitioning",
+    "replication",
+    "consistency"
+  ]
+}

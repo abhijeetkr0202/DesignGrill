@@ -1,0 +1,20 @@
+{
+  "architectures": [
+    {
+      "id": "ra-1",
+      "name": "Dedicated server fleet with orchestrator",
+      "summary": "An orchestrator allocates game server processes in regional fleets; clients connect over UDP.",
+      "components": ["Orchestrator", "Game servers", "Session service", "Persistence service"],
+      "bestWhen": "Competitive real-time games.",
+      "drawbacks": ["Fleet cost.", "Autoscaling complexity."]
+    },
+    {
+      "id": "ra-2",
+      "name": "Peer-hosted with relay",
+      "summary": "A player hosts the match and a relay brokers connections.",
+      "components": ["Relay", "Host client", "Verification service"],
+      "bestWhen": "Casual games where cost matters.",
+      "drawbacks": ["Easy to cheat.", "Host advantage and disconnect risk."]
+    }
+  ]
+}

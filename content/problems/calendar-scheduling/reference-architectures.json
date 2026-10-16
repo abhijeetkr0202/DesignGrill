@@ -1,0 +1,26 @@
+{
+  "architectures": [
+    {
+      "id": "ra-1",
+      "name": "Rule-based events with per-user calendars",
+      "summary": "Events keep recurrence rules; each user calendar references events; a scheduler issues reminders.",
+      "components": [
+        "Calendar API",
+        "Event store",
+        "Free/busy index",
+        "Reminder scheduler",
+        "Notification service"
+      ],
+      "bestWhen": "Consumer-scale calendar.",
+      "drawbacks": ["Recurrence expansion complexity.", "Update propagation."]
+    },
+    {
+      "id": "ra-2",
+      "name": "Materialised instances window",
+      "summary": "Instances for the next N months are materialised and extended by a background job.",
+      "components": ["Instance store", "Extender job"],
+      "bestWhen": "Fast queries over simple data.",
+      "drawbacks": ["Storage growth.", "Edits touch many rows."]
+    }
+  ]
+}

@@ -1,0 +1,28 @@
+{
+  "scenarios": [
+    {
+      "id": "sc-1",
+      "title": "Conflicting edits",
+      "description": "Two devices edit the same document offline.",
+      "triggers": ["Conflicting edits"],
+      "probes": ["How is the conflict detected?", "What does the user see?"],
+      "relatedTopics": ["Conflict handling"]
+    },
+    {
+      "id": "sc-2",
+      "title": "Mass sync",
+      "description": "A user adds 100,000 small files.",
+      "triggers": ["Mass sync"],
+      "probes": ["What limits throughput?", "How is the client and server protected?"],
+      "relatedTopics": ["Sync protocol"]
+    },
+    {
+      "id": "sc-3",
+      "title": "Metadata shard loss",
+      "description": "A metadata shard is unavailable.",
+      "triggers": ["Metadata shard loss"],
+      "probes": ["What can users still do?", "How is recovery done?"],
+      "relatedTopics": ["Metadata service"]
+    }
+  ]
+}

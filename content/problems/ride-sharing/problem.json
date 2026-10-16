@@ -1,0 +1,179 @@
+{
+  "id": "ride-sharing",
+  "version": 1,
+  "title": "Ride Sharing (Uber)",
+  "category": "Booking & delivery",
+  "difficulty": "hard",
+  "summary": "Design a ride-hailing service: match riders with nearby drivers, track trips, and price dynamically.",
+  "statement": "Design a ride-sharing platform. Riders request trips; the system finds nearby available drivers, dispatches one, tracks the trip in real time, and charges fares with surge pricing during high demand. Start by clarifying requirements and estimating scale, then design the system and defend your decisions.",
+  "tags": ["geo-index", "dispatch", "real-time-location"],
+  "initialGuidance": [
+    "Clarify the users, the main journeys, and what is explicitly out of scope before drawing anything.",
+    "Estimate read and write volume and storage growth; the numbers decide which components you need.",
+    "Name the guarantees you will offer (consistency, durability, availability) and the trade-offs behind them.",
+    "Write down assumptions as you make them and revisit them when requirements change."
+  ],
+  "coreFunctionalRequirements": [
+    "Riders request a trip with pickup and destination.",
+    "Find and dispatch nearby drivers.",
+    "Track driver location in real time.",
+    "Estimate fares and apply surge pricing.",
+    "Complete trips and process payment."
+  ],
+  "requirementQuestions": [
+    {
+      "id": "q-1",
+      "area": "Scale",
+      "question": "How many drivers, riders, location updates per second, and trips per day?",
+      "whyItMatters": "Sets read and write rates and storage growth, which decide whether a single node can cope."
+    },
+    {
+      "id": "q-2",
+      "area": "Latency",
+      "question": "How quickly must a rider get a match?",
+      "whyItMatters": "Defines which paths need caching, precomputation, or regional placement."
+    },
+    {
+      "id": "q-3",
+      "area": "Consistency",
+      "question": "Can a driver be offered two trips at once?",
+      "whyItMatters": "Selects between strong and eventual models and shapes conflict handling."
+    },
+    {
+      "id": "q-4",
+      "area": "Data",
+      "question": "How accurate and frequent are location updates?",
+      "whyItMatters": "Determines the data model, retention, and storage choices."
+    },
+    {
+      "id": "q-5",
+      "area": "Availability",
+      "question": "What happens to active trips during a regional failure?",
+      "whyItMatters": "Determines redundancy and failover design, and which features may degrade instead of failing."
+    },
+    {
+      "id": "q-6",
+      "area": "Scope",
+      "question": "Pooling, scheduled rides, and multiple vehicle types?",
+      "whyItMatters": "Fixes what is in and out of the design so effort goes to what matters."
+    }
+  ],
+  "workloadAssumptions": {
+    "illustrativeNote": "All numbers below are illustrative examples for practice and are not benchmarks. Real answers depend on the requirements the candidate negotiates.",
+    "items": [
+      {
+        "name": "Drivers online",
+        "value": "3 million",
+        "rationale": "Global peak."
+      },
+      {
+        "name": "Location updates",
+        "value": "750,000 per second",
+        "rationale": "Every 4 seconds per driver."
+      },
+      {
+        "name": "Trip requests per second",
+        "value": "3,000",
+        "rationale": "Peak."
+      },
+      {
+        "name": "Match target",
+        "value": "under 10 seconds",
+        "rationale": "Rider patience."
+      }
+    ]
+  },
+  "estimationPrompts": [
+    "What write rate do driver location updates produce?",
+    "How many drivers lie in one dense geographic cell?",
+    "How many dispatch decisions per second?"
+  ],
+  "keyDecisions": [
+    {
+      "id": "d-1",
+      "topic": "Location ingestion",
+      "question": "How are driver positions handled?",
+      "considerations": [
+        "High-volume writes to an in-memory geospatial index.",
+        "Only the latest position matters, so history goes to a stream.",
+        "Shard by city or geographic cell."
+      ]
+    },
+    {
+      "id": "d-2",
+      "topic": "Geospatial indexing",
+      "question": "How are nearby drivers found?",
+      "considerations": [
+        "Geohash, S2 cells, or H3 hexagons as keys.",
+        "Query neighbouring cells.",
+        "Cell size versus density."
+      ]
+    },
+    {
+      "id": "d-3",
+      "topic": "Dispatch",
+      "question": "How is a driver chosen?",
+      "considerations": [
+        "Score candidates by ETA and fit.",
+        "Offer to one driver with a timeout, then the next.",
+        "Prevent double-offering with a state machine."
+      ]
+    },
+    {
+      "id": "d-4",
+      "topic": "Trip state",
+      "question": "How is a trip tracked?",
+      "considerations": [
+        "Durable state machine from requested to completed.",
+        "Real-time updates over persistent connections.",
+        "Recovery after service restart."
+      ]
+    },
+    {
+      "id": "d-5",
+      "topic": "Surge pricing",
+      "question": "How is dynamic pricing computed?",
+      "considerations": [
+        "Supply and demand per cell in near real time.",
+        "Smooth changes to avoid oscillation.",
+        "Price shown is locked for the rider."
+      ]
+    }
+  ],
+  "tradeoffs": [
+    {
+      "topic": "Batch vs immediate matching",
+      "tension": "Global efficiency versus time to match."
+    },
+    {
+      "topic": "Location update frequency",
+      "tension": "Accuracy versus battery, network, and write load."
+    },
+    {
+      "topic": "Cell size",
+      "tension": "Query cost versus precision in dense areas."
+    }
+  ],
+  "commonMistakes": [
+    "Storing every location ping in a relational table for matching.",
+    "Querying all drivers and computing distances.",
+    "No guard against dispatching a driver twice.",
+    "Ignoring dense-city hot spots."
+  ],
+  "followUps": [
+    "How do you implement ride pooling?",
+    "How do you compute accurate ETAs?",
+    "How do you handle a city-wide outage?",
+    "How do you prevent fraudulent location spoofing?"
+  ],
+  "topics": [
+    "Location ingestion",
+    "Geospatial indexing",
+    "Dispatch",
+    "Trip state",
+    "Surge pricing",
+    "geo-index",
+    "dispatch",
+    "real-time-location"
+  ]
+}

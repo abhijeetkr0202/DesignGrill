@@ -1,0 +1,20 @@
+{
+  "architectures": [
+    {
+      "id": "ra-1",
+      "name": "Leaderless ring with quorums",
+      "summary": "Nodes on a consistent-hash ring replicate keys; clients or coordinators use quorums.",
+      "components": ["Coordinator", "Hash ring", "Replica nodes", "Gossip", "Storage engine"],
+      "bestWhen": "High availability and write throughput matter most.",
+      "drawbacks": ["Conflict resolution complexity.", "Weaker default consistency."]
+    },
+    {
+      "id": "ra-2",
+      "name": "Leader-based partitions with consensus",
+      "summary": "Each partition has a leader replicated by a consensus protocol.",
+      "components": ["Partition leaders", "Consensus groups", "Routing layer", "Storage engine"],
+      "bestWhen": "Strong consistency is required.",
+      "drawbacks": ["Leader failover pauses writes.", "Cross-partition operations are harder."]
+    }
+  ]
+}

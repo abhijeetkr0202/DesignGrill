@@ -1,0 +1,179 @@
+{
+  "id": "video-streaming",
+  "version": 1,
+  "title": "Video Streaming (Netflix / YouTube)",
+  "category": "Media & entertainment",
+  "difficulty": "hard",
+  "summary": "Design an on-demand video platform: upload or ingest, transcode, and stream smoothly to billions of viewers worldwide.",
+  "statement": "Design a video streaming service. Creators or studios upload videos; viewers watch them on many devices and networks with minimal buffering. Include processing, storage, delivery, and a basic recommendation entry point. Start by clarifying requirements and estimating scale, then design the system and defend your decisions.",
+  "tags": ["transcoding", "cdn", "adaptive-bitrate"],
+  "initialGuidance": [
+    "Clarify the users, the main journeys, and what is explicitly out of scope before drawing anything.",
+    "Estimate read and write volume and storage growth; the numbers decide which components you need.",
+    "Name the guarantees you will offer (consistency, durability, availability) and the trade-offs behind them.",
+    "Write down assumptions as you make them and revisit them when requirements change."
+  ],
+  "coreFunctionalRequirements": [
+    "Upload or ingest videos.",
+    "Transcode into multiple resolutions and formats.",
+    "Stream with adaptive bitrate.",
+    "Search and browse the catalogue.",
+    "Resume playback across devices."
+  ],
+  "requirementQuestions": [
+    {
+      "id": "q-1",
+      "area": "Scale",
+      "question": "How many videos, uploads per day, concurrent viewers, and hours watched?",
+      "whyItMatters": "Sets read and write rates and storage growth, which decide whether a single node can cope."
+    },
+    {
+      "id": "q-2",
+      "area": "Latency",
+      "question": "What start-up time and rebuffering rate is acceptable?",
+      "whyItMatters": "Defines which paths need caching, precomputation, or regional placement."
+    },
+    {
+      "id": "q-3",
+      "area": "Scope",
+      "question": "User-generated content or a curated catalogue?",
+      "whyItMatters": "Fixes what is in and out of the design so effort goes to what matters."
+    },
+    {
+      "id": "q-4",
+      "area": "Cost",
+      "question": "What is the budget for bandwidth and storage, and who pays for CDN egress?",
+      "whyItMatters": "Prevents over-engineering and affects build-versus-buy choices."
+    },
+    {
+      "id": "q-5",
+      "area": "Security",
+      "question": "Is DRM or content protection needed?",
+      "whyItMatters": "Introduces authentication, authorisation, and privacy constraints that affect the design."
+    },
+    {
+      "id": "q-6",
+      "area": "Availability",
+      "question": "How should playback behave during regional failures?",
+      "whyItMatters": "Determines redundancy and failover design, and which features may degrade instead of failing."
+    }
+  ],
+  "workloadAssumptions": {
+    "illustrativeNote": "All numbers below are illustrative examples for practice and are not benchmarks. Real answers depend on the requirements the candidate negotiates.",
+    "items": [
+      {
+        "name": "Concurrent viewers",
+        "value": "20 million peak",
+        "rationale": "Large global service."
+      },
+      {
+        "name": "Uploads per day",
+        "value": "500,000 hours of video",
+        "rationale": "User-generated platform."
+      },
+      {
+        "name": "Renditions per video",
+        "value": "8 to 10",
+        "rationale": "Resolutions and codecs."
+      },
+      {
+        "name": "Average stream bitrate",
+        "value": "3 Mbps",
+        "rationale": "Mixed devices."
+      }
+    ]
+  },
+  "estimationPrompts": [
+    "What peak egress bandwidth does 20 million viewers generate?",
+    "How much storage do renditions of a day of uploads need?",
+    "How much transcoding compute is required per hour of upload?"
+  ],
+  "keyDecisions": [
+    {
+      "id": "d-1",
+      "topic": "Upload and ingest",
+      "question": "How do videos enter the system?",
+      "considerations": [
+        "Chunked resumable uploads to object storage.",
+        "Validate and queue for processing.",
+        "Large files need parallel chunks."
+      ]
+    },
+    {
+      "id": "d-2",
+      "topic": "Transcoding pipeline",
+      "question": "How are renditions produced?",
+      "considerations": [
+        "Split the video into segments and transcode in parallel (DAG of tasks).",
+        "Idempotent tasks with retries.",
+        "Prioritise popular or new content."
+      ]
+    },
+    {
+      "id": "d-3",
+      "topic": "Adaptive streaming",
+      "question": "How is playback adapted to networks?",
+      "considerations": [
+        "Segment-based protocols (HLS, DASH) with multiple bitrates.",
+        "Client chooses the rendition from a manifest.",
+        "Short segments reduce latency but increase requests."
+      ]
+    },
+    {
+      "id": "d-4",
+      "topic": "Delivery",
+      "question": "How is content delivered globally?",
+      "considerations": [
+        "CDN with edge caches; popular titles pushed to edges.",
+        "ISP-embedded caches reduce transit cost.",
+        "Cache hierarchy and tail content on origin."
+      ]
+    },
+    {
+      "id": "d-5",
+      "topic": "Metadata and search",
+      "question": "Where do catalogue and playback state live?",
+      "considerations": [
+        "Metadata database and search index.",
+        "Watch-progress writes are frequent; use a scalable store.",
+        "Recommendations as a separate service."
+      ]
+    }
+  ],
+  "tradeoffs": [
+    {
+      "topic": "More renditions vs storage cost",
+      "tension": "Better quality coverage versus storage and compute."
+    },
+    {
+      "topic": "Pre-positioning vs on-demand caching",
+      "tension": "Hit rate versus bandwidth spent on unwatched content."
+    },
+    {
+      "topic": "Segment length",
+      "tension": "Startup latency versus request overhead."
+    }
+  ],
+  "commonMistakes": [
+    "Serving video from application servers.",
+    "Transcoding a whole file on one machine.",
+    "A single resolution with no adaptive bitrate.",
+    "Ignoring that popular content dominates and the long tail does not cache."
+  ],
+  "followUps": [
+    "How do you minimise start-up time?",
+    "How would you add DRM?",
+    "How do you handle a hit release causing a traffic surge?",
+    "How would you add live streaming?"
+  ],
+  "topics": [
+    "Upload and ingest",
+    "Transcoding pipeline",
+    "Adaptive streaming",
+    "Delivery",
+    "Metadata and search",
+    "transcoding",
+    "cdn",
+    "adaptive-bitrate"
+  ]
+}

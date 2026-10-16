@@ -1,0 +1,27 @@
+{
+  "architectures": [
+    {
+      "id": "ra-1",
+      "name": "Waiting room plus transactional seat inventory",
+      "summary": "A queue admits users; seat holds are conditional updates in a per-event database; payments follow.",
+      "components": [
+        "CDN",
+        "Waiting room",
+        "Booking API",
+        "Seat inventory DB",
+        "Hold expiry",
+        "Payment"
+      ],
+      "bestWhen": "Big on-sales with specific seats.",
+      "drawbacks": ["Per-event hot database.", "Queue fairness design."]
+    },
+    {
+      "id": "ra-2",
+      "name": "In-memory seat service per event",
+      "summary": "Each event has an in-memory owner that serialises seat operations and persists asynchronously.",
+      "components": ["Event owner", "Write-ahead log", "DB"],
+      "bestWhen": "Extreme contention.",
+      "drawbacks": ["Owner failover.", "Recovery from the log."]
+    }
+  ]
+}

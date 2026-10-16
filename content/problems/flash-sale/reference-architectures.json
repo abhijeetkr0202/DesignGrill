@@ -1,0 +1,27 @@
+{
+  "architectures": [
+    {
+      "id": "ra-1",
+      "name": "Waiting room plus in-memory inventory",
+      "summary": "A queue admits users; an atomic in-memory counter reserves stock; orders are created asynchronously.",
+      "components": [
+        "CDN",
+        "Waiting room",
+        "Inventory counter",
+        "Order queue",
+        "Order service",
+        "Payment"
+      ],
+      "bestWhen": "Extreme spikes for scarce stock.",
+      "drawbacks": ["Counter must be reconciled.", "More components."]
+    },
+    {
+      "id": "ra-2",
+      "name": "Pre-allocated stock tokens",
+      "summary": "Stock is turned into tokens in a queue; buyers claim tokens.",
+      "components": ["Token queue", "Claim service", "Orders"],
+      "bestWhen": "Simple fairness and no overselling.",
+      "drawbacks": ["Token expiry handling.", "Less flexible for variants."]
+    }
+  ]
+}

@@ -1,0 +1,27 @@
+{
+  "architectures": [
+    {
+      "id": "ra-1",
+      "name": "Parallel transcoding DAG with multi-CDN delivery",
+      "summary": "Uploads are segmented, transcoded in a task graph, stored, and served via CDNs.",
+      "components": [
+        "Upload service",
+        "Transcoding workers",
+        "Object storage",
+        "Manifest service",
+        "CDN",
+        "Metadata DB"
+      ],
+      "bestWhen": "User-generated video at scale.",
+      "drawbacks": ["Complex pipeline.", "Heavy compute cost."]
+    },
+    {
+      "id": "ra-2",
+      "name": "Pre-encoded catalogue with edge appliances",
+      "summary": "A fixed catalogue is encoded ahead and pushed to caches inside ISP networks.",
+      "components": ["Encoding farm", "Origin storage", "Edge cache appliances", "Control plane"],
+      "bestWhen": "Curated catalogue with predictable demand.",
+      "drawbacks": ["Operational partnerships.", "Needs demand prediction."]
+    }
+  ]
+}

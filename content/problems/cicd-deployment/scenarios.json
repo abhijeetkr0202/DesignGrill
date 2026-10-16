@@ -1,0 +1,28 @@
+{
+  "scenarios": [
+    {
+      "id": "sc-1",
+      "title": "Bad release",
+      "description": "A canary shows rising errors.",
+      "triggers": ["Bad release"],
+      "probes": ["How is it detected and rolled back?", "How far has it spread?"],
+      "relatedTopics": ["Rollout strategy"]
+    },
+    {
+      "id": "sc-2",
+      "title": "Build farm outage",
+      "description": "Build workers become unavailable.",
+      "triggers": ["Build farm outage"],
+      "probes": ["What is the impact on urgent fixes?", "How is capacity restored?"],
+      "relatedTopics": ["Build execution"]
+    },
+    {
+      "id": "sc-3",
+      "title": "Compromised dependency",
+      "description": "A dependency is found to be malicious.",
+      "triggers": ["Compromised dependency"],
+      "probes": ["How do you find affected artifacts?", "How do you block and roll back?"],
+      "relatedTopics": ["Security and compliance"]
+    }
+  ]
+}

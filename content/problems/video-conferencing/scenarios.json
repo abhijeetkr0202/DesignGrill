@@ -1,0 +1,28 @@
+{
+  "scenarios": [
+    {
+      "id": "sc-1",
+      "title": "Media server failure",
+      "description": "The SFU hosting a meeting crashes.",
+      "triggers": ["Media server failure"],
+      "probes": ["How fast can participants reconnect?", "What state must be recovered?"],
+      "relatedTopics": ["Topology", "Signalling and joining"]
+    },
+    {
+      "id": "sc-2",
+      "title": "Poor network",
+      "description": "A participant has high packet loss.",
+      "triggers": ["Poor network"],
+      "probes": ["How does the system adapt for them and for others?", "What is prioritised?"],
+      "relatedTopics": ["Quality adaptation"]
+    },
+    {
+      "id": "sc-3",
+      "title": "Webinar surge",
+      "description": "A event with 50,000 attendees starts.",
+      "triggers": ["Webinar surge"],
+      "probes": ["How is the audience served?", "Where are the limits?"],
+      "relatedTopics": ["Large events"]
+    }
+  ]
+}

@@ -13,7 +13,7 @@ Early development (v0.1). Below is what is implemented today versus planned.
 ### Implemented
 
 - Desktop app (Tauri 2, macOS and Windows targets) with a React and TypeScript UI. A macOS release build has been verified locally; Windows builds are configured in CI but have not been run yet.
-- Problem library with three problems: URL shortener, notification system, shopping cart. Content is independent of code (`content/problems`).
+- Problem library with 50 problems across gaming, streaming, ticketing, booking, food delivery, commerce, messaging, maps, search, storage, and infrastructure, filterable by category and difficulty. Content is independent of code (`content/problems`).
 - Requirements workspace: functional, non-functional (with optional measurable targets), assumptions, constraints, capacity estimates, open questions; confirmed or unresolved status, priority, notes.
 - Architecture canvas (React Flow): typed or custom components, directed connections, per-component and per-connection metadata, undo and redo, minimap, fit view.
 - Canonical, versioned session model with Zod validation; the canvas is derived from it.

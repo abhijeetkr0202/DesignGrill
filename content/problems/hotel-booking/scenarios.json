@@ -1,0 +1,28 @@
+{
+  "scenarios": [
+    {
+      "id": "sc-1",
+      "title": "Simultaneous booking",
+      "description": "Two guests book the last available night at the same time.",
+      "triggers": ["Simultaneous booking"],
+      "probes": ["How does only one succeed?", "What does the other see?"],
+      "relatedTopics": ["Booking transaction"]
+    },
+    {
+      "id": "sc-2",
+      "title": "Channel sync lag",
+      "description": "An external channel booked dates your system still shows as free.",
+      "triggers": ["Channel sync lag"],
+      "probes": ["How is the conflict resolved?", "How do you reduce its frequency?"],
+      "relatedTopics": ["External inventory sync"]
+    },
+    {
+      "id": "sc-3",
+      "title": "Search outage",
+      "description": "The search cluster is down.",
+      "triggers": ["Search outage"],
+      "probes": ["What can users still do?", "How is the degraded mode designed?"],
+      "relatedTopics": ["Search and availability"]
+    }
+  ]
+}

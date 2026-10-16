@@ -1,0 +1,28 @@
+{
+  "scenarios": [
+    {
+      "id": "sc-1",
+      "title": "Log storm",
+      "description": "An incident multiplies log volume tenfold.",
+      "triggers": ["Log storm"],
+      "probes": ["What backs up first?", "What is dropped or sampled?"],
+      "relatedTopics": ["Shipping"]
+    },
+    {
+      "id": "sc-2",
+      "title": "Indexer lag",
+      "description": "Indexers fall behind and logs are delayed.",
+      "triggers": ["Indexer lag"],
+      "probes": ["How is lag measured and corrected?", "What do responders see?"],
+      "relatedTopics": ["Indexing and storage"]
+    },
+    {
+      "id": "sc-3",
+      "title": "Sensitive data leak",
+      "description": "A service logs secrets.",
+      "triggers": ["Sensitive data leak"],
+      "probes": ["How is it detected and purged?", "How is it prevented?"],
+      "relatedTopics": ["Security"]
+    }
+  ]
+}

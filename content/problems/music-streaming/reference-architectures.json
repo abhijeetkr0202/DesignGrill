@@ -1,0 +1,27 @@
+{
+  "architectures": [
+    {
+      "id": "ra-1",
+      "name": "CDN streaming with event-log analytics",
+      "summary": "Chunked audio from CDN; play events stream into a log for aggregation and royalties.",
+      "components": [
+        "Playback API",
+        "CDN",
+        "Object storage",
+        "Event log",
+        "Aggregation jobs",
+        "Search"
+      ],
+      "bestWhen": "Standard large-scale audio service.",
+      "drawbacks": ["Pipeline complexity.", "Exactness of counts needs care."]
+    },
+    {
+      "id": "ra-2",
+      "name": "Peer-assisted delivery",
+      "summary": "Clients share cached chunks with nearby peers to reduce server load.",
+      "components": ["Tracker", "Peers", "Origin"],
+      "bestWhen": "Cost reduction at massive scale.",
+      "drawbacks": ["Privacy and licensing concerns.", "Complex client logic."]
+    }
+  ]
+}

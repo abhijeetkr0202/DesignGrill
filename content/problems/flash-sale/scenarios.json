@@ -1,0 +1,31 @@
+{
+  "scenarios": [
+    {
+      "id": "sc-1",
+      "title": "T+0 surge",
+      "description": "Five million users hit the site in the first second.",
+      "triggers": ["T+0 surge"],
+      "probes": ["What is served from the edge?", "How is the backend protected?"],
+      "relatedTopics": ["Traffic shaping"]
+    },
+    {
+      "id": "sc-2",
+      "title": "Counter loss",
+      "description": "The in-memory inventory node crashes mid-sale.",
+      "triggers": ["Counter loss"],
+      "probes": [
+        "How is the count recovered without overselling?",
+        "What happens to in-flight reservations?"
+      ],
+      "relatedTopics": ["Consistency with the source of truth"]
+    },
+    {
+      "id": "sc-3",
+      "title": "Reservation abandonment",
+      "description": "Many buyers reserve and never pay.",
+      "triggers": ["Reservation abandonment"],
+      "probes": ["How quickly is stock released?", "How is the last item handled?"],
+      "relatedTopics": ["Reservation and order"]
+    }
+  ]
+}

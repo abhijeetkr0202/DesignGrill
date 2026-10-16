@@ -1,0 +1,28 @@
+{
+  "scenarios": [
+    {
+      "id": "sc-1",
+      "title": "Concert lets out",
+      "description": "Thousands of riders request at once in one area.",
+      "triggers": ["Concert lets out"],
+      "probes": ["What breaks first?", "How does surge pricing and dispatch cope?"],
+      "relatedTopics": ["Dispatch", "Surge pricing"]
+    },
+    {
+      "id": "sc-2",
+      "title": "Region failover",
+      "description": "A data centre serving a city fails mid-trip.",
+      "triggers": ["Region failover"],
+      "probes": ["What happens to active trips?", "How is state recovered?"],
+      "relatedTopics": ["Trip state"]
+    },
+    {
+      "id": "sc-3",
+      "title": "Double dispatch",
+      "description": "Two requests offer the same driver at once.",
+      "triggers": ["Double dispatch"],
+      "probes": ["How is the conflict prevented?", "What does each rider see?"],
+      "relatedTopics": ["Dispatch"]
+    }
+  ]
+}

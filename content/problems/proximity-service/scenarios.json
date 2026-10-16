@@ -1,0 +1,28 @@
+{
+  "scenarios": [
+    {
+      "id": "sc-1",
+      "title": "Dense downtown",
+      "description": "A search in a very dense area returns many thousands of candidates.",
+      "triggers": ["Dense downtown"],
+      "probes": ["How do you bound work per query?", "How is ranking applied?"],
+      "relatedTopics": ["Spatial index", "Query pipeline"]
+    },
+    {
+      "id": "sc-2",
+      "title": "Index node loss",
+      "description": "A shard holding a region is unavailable.",
+      "triggers": ["Index node loss"],
+      "probes": ["What do users in that region see?", "How is recovery done?"],
+      "relatedTopics": ["Storage and sharding"]
+    },
+    {
+      "id": "sc-3",
+      "title": "Business moves",
+      "description": "A business changes location.",
+      "triggers": ["Business moves"],
+      "probes": ["How does the index update?", "How soon is it visible?"],
+      "relatedTopics": ["Updates"]
+    }
+  ]
+}

@@ -1,0 +1,31 @@
+{
+  "scenarios": [
+    {
+      "id": "sc-1",
+      "title": "Simultaneous swipes",
+      "description": "Two users swipe right on each other within milliseconds.",
+      "triggers": ["Simultaneous swipes"],
+      "probes": [
+        "How do you guarantee a match is created exactly once?",
+        "What if one write is delayed?"
+      ],
+      "relatedTopics": ["Match detection"]
+    },
+    {
+      "id": "sc-2",
+      "title": "Dense city",
+      "description": "A city with millions of users overloads one geographic shard.",
+      "triggers": ["Dense city"],
+      "probes": ["How is the hot area partitioned?", "How does latency stay stable?"],
+      "relatedTopics": ["Candidate generation"]
+    },
+    {
+      "id": "sc-3",
+      "title": "Bot swarm",
+      "description": "Fake accounts swipe at high rates.",
+      "triggers": ["Bot swarm"],
+      "probes": ["Where are they detected?", "How do you limit the impact on real users?"],
+      "relatedTopics": ["Ranking and fairness"]
+    }
+  ]
+}

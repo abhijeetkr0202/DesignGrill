@@ -1,0 +1,27 @@
+{
+  "architectures": [
+    {
+      "id": "ra-1",
+      "name": "Object store with async processing and CDN",
+      "summary": "Signed-URL uploads, event-driven processing, CDN delivery, and a sharded metadata DB.",
+      "components": [
+        "Upload API",
+        "Object storage",
+        "Processing workers",
+        "CDN",
+        "Metadata DB",
+        "Feed service"
+      ],
+      "bestWhen": "Standard media sharing at scale.",
+      "drawbacks": ["Several moving parts.", "Eventual availability of variants."]
+    },
+    {
+      "id": "ra-2",
+      "name": "On-the-fly image resizing",
+      "summary": "Variants are generated on request and cached at the CDN.",
+      "components": ["Image resizing service", "Origin storage", "CDN"],
+      "bestWhen": "Many display sizes and few precomputed variants.",
+      "drawbacks": ["Cold-cache latency.", "CPU load on the resizing tier."]
+    }
+  ]
+}

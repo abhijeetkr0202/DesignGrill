@@ -1,0 +1,179 @@
+{
+  "id": "realtime-game-server",
+  "version": 1,
+  "title": "Real-Time Multiplayer Game Backend",
+  "category": "Gaming",
+  "difficulty": "hard",
+  "summary": "Design the backend for a real-time multiplayer game: authoritative servers, state synchronisation, and cheat resistance.",
+  "statement": "Design the server architecture for a fast-paced online game with matches of up to 100 players. The server runs the simulation, synchronises state to clients several times per second, and must resist cheating and handle disconnects. Start by clarifying requirements and estimating scale, then design the system and defend your decisions.",
+  "tags": ["state-sync", "udp", "authoritative-server"],
+  "initialGuidance": [
+    "Clarify the users, the main journeys, and what is explicitly out of scope before drawing anything.",
+    "Estimate read and write volume and storage growth; the numbers decide which components you need.",
+    "Name the guarantees you will offer (consistency, durability, availability) and the trade-offs behind them.",
+    "Write down assumptions as you make them and revisit them when requirements change."
+  ],
+  "coreFunctionalRequirements": [
+    "Run authoritative game simulation per match.",
+    "Synchronise state to clients in real time.",
+    "Accept and validate player inputs.",
+    "Handle disconnects and reconnects.",
+    "Persist match results and player progress."
+  ],
+  "requirementQuestions": [
+    {
+      "id": "q-1",
+      "area": "Latency",
+      "question": "What round-trip latency and tick rate does the game require?",
+      "whyItMatters": "Defines which paths need caching, precomputation, or regional placement."
+    },
+    {
+      "id": "q-2",
+      "area": "Scale",
+      "question": "How many concurrent matches and players per match?",
+      "whyItMatters": "Sets read and write rates and storage growth, which decide whether a single node can cope."
+    },
+    {
+      "id": "q-3",
+      "area": "Consistency",
+      "question": "Is the server authoritative, and how much client prediction is allowed?",
+      "whyItMatters": "Selects between strong and eventual models and shapes conflict handling."
+    },
+    {
+      "id": "q-4",
+      "area": "Abuse",
+      "question": "Which cheats must be prevented and how fast must they be detected?",
+      "whyItMatters": "Adds validation, rate limiting, and fraud controls to the critical path."
+    },
+    {
+      "id": "q-5",
+      "area": "Availability",
+      "question": "What happens to a match if a game server crashes?",
+      "whyItMatters": "Determines redundancy and failover design, and which features may degrade instead of failing."
+    },
+    {
+      "id": "q-6",
+      "area": "Data",
+      "question": "What progress and inventory data is persisted, and when?",
+      "whyItMatters": "Determines the data model, retention, and storage choices."
+    }
+  ],
+  "workloadAssumptions": {
+    "illustrativeNote": "All numbers below are illustrative examples for practice and are not benchmarks. Real answers depend on the requirements the candidate negotiates.",
+    "items": [
+      {
+        "name": "Concurrent matches",
+        "value": "50,000",
+        "rationale": "Peak."
+      },
+      {
+        "name": "Players per match",
+        "value": "100",
+        "rationale": "Battle-royale style."
+      },
+      {
+        "name": "Tick rate",
+        "value": "30 per second",
+        "rationale": "Server simulation."
+      },
+      {
+        "name": "Update size per client",
+        "value": "about 2 KB per tick",
+        "rationale": "Interest-managed state."
+      }
+    ]
+  },
+  "estimationPrompts": [
+    "What bandwidth does one match need per second?",
+    "How many matches can one server host given CPU per tick?",
+    "What persistence write rate does match completion produce?"
+  ],
+  "keyDecisions": [
+    {
+      "id": "d-1",
+      "topic": "Authoritative simulation",
+      "question": "Who owns the game state?",
+      "considerations": [
+        "A dedicated game server runs the simulation and validates inputs.",
+        "Clients predict locally and reconcile.",
+        "Clients are never trusted for outcomes."
+      ]
+    },
+    {
+      "id": "d-2",
+      "topic": "Transport and sync",
+      "question": "How is state sent to clients?",
+      "considerations": [
+        "UDP-based protocols with custom reliability for latency.",
+        "Delta compression and snapshots.",
+        "Interest management sends only nearby entities."
+      ]
+    },
+    {
+      "id": "d-3",
+      "topic": "Server placement",
+      "question": "Where do matches run?",
+      "considerations": [
+        "Regional fleets chosen by player latency.",
+        "Warm instances and autoscaling.",
+        "One match per process or core for isolation."
+      ]
+    },
+    {
+      "id": "d-4",
+      "topic": "Failure and reconnect",
+      "question": "How are crashes and disconnects handled?",
+      "considerations": [
+        "Reconnect with state snapshot and input replay.",
+        "Periodic checkpoints for recovery are rarely worth it for short matches.",
+        "Graceful match abort and compensation."
+      ]
+    },
+    {
+      "id": "d-5",
+      "topic": "Persistence and anti-cheat",
+      "question": "How are results saved and cheating limited?",
+      "considerations": [
+        "Write final results asynchronously to a durable store.",
+        "Server-side validation and anomaly detection.",
+        "Telemetry replay for review."
+      ]
+    }
+  ],
+  "tradeoffs": [
+    {
+      "topic": "Tick rate vs cost",
+      "tension": "Smoothness versus CPU and bandwidth."
+    },
+    {
+      "topic": "Client prediction vs correctness",
+      "tension": "Responsiveness versus rollbacks."
+    },
+    {
+      "topic": "Checkpointing vs simplicity",
+      "tension": "Resilience to crashes versus overhead."
+    }
+  ],
+  "commonMistakes": [
+    "Trusting client-reported positions or damage.",
+    "Using TCP head-of-line blocking for fast state updates.",
+    "Sending the full world state to every player.",
+    "Persisting every tick to a database."
+  ],
+  "followUps": [
+    "How do you do lag compensation for hit detection?",
+    "How would you add spectating and replays?",
+    "How do you scale across regions with party members in different places?",
+    "How would you protect against DDoS on game servers?"
+  ],
+  "topics": [
+    "Authoritative simulation",
+    "Transport and sync",
+    "Server placement",
+    "Failure and reconnect",
+    "Persistence and anti-cheat",
+    "state-sync",
+    "udp",
+    "authoritative-server"
+  ]
+}

@@ -1,0 +1,28 @@
+{
+  "scenarios": [
+    {
+      "id": "sc-1",
+      "title": "Edge failure",
+      "description": "A major edge location goes offline.",
+      "triggers": ["Edge failure"],
+      "probes": ["How is traffic rerouted?", "What happens to the origin load?"],
+      "relatedTopics": ["Request routing"]
+    },
+    {
+      "id": "sc-2",
+      "title": "Viral object",
+      "description": "A new object suddenly receives massive traffic.",
+      "triggers": ["Viral object"],
+      "probes": ["How are misses coalesced?", "How is the origin protected?"],
+      "relatedTopics": ["Cache hierarchy"]
+    },
+    {
+      "id": "sc-3",
+      "title": "Mass purge",
+      "description": "A customer purges millions of objects.",
+      "triggers": ["Mass purge"],
+      "probes": ["How is it propagated?", "What load follows on the origin?"],
+      "relatedTopics": ["Invalidation"]
+    }
+  ]
+}

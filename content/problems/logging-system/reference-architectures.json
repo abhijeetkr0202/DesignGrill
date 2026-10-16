@@ -1,0 +1,20 @@
+{
+  "architectures": [
+    {
+      "id": "ra-1",
+      "name": "Agent, queue, indexer, tiered storage",
+      "summary": "Agents ship to a durable queue; indexers write to time-partitioned search storage with tiering.",
+      "components": ["Agents", "Queue", "Indexers", "Search cluster", "Object storage"],
+      "bestWhen": "Standard platform logging.",
+      "drawbacks": ["Cluster operations.", "Cost tuning."]
+    },
+    {
+      "id": "ra-2",
+      "name": "Object-store-first logging",
+      "summary": "Logs are written to object storage in columnar chunks with a small index and searched on demand.",
+      "components": ["Collectors", "Object storage", "Query engine"],
+      "bestWhen": "Very high volume with cost focus.",
+      "drawbacks": ["Slower searches.", "Query engine complexity."]
+    }
+  ]
+}

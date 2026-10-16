@@ -1,0 +1,29 @@
+{
+  "architectures": [
+    {
+      "id": "ra-1",
+      "name": "Gateway plus message store",
+      "summary": "Stateful gateways hold connections; a message service persists and routes via a session directory.",
+      "components": [
+        "Gateway fleet",
+        "Session directory",
+        "Message service",
+        "Message store",
+        "Push service"
+      ],
+      "bestWhen": "Standard real-time messaging.",
+      "drawbacks": [
+        "Reconnect storms on gateway loss.",
+        "Directory must be fast and consistent enough."
+      ]
+    },
+    {
+      "id": "ra-2",
+      "name": "Actor-per-conversation",
+      "summary": "Each conversation is an actor that serialises messages and fans out to members.",
+      "components": ["Actor runtime", "Message store", "Gateways"],
+      "bestWhen": "Strong per-conversation ordering is a priority.",
+      "drawbacks": ["Actor placement and migration complexity.", "Hot conversations."]
+    }
+  ]
+}

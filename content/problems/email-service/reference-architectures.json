@@ -1,0 +1,26 @@
+{
+  "architectures": [
+    {
+      "id": "ra-1",
+      "name": "Sharded mailbox service with async pipeline",
+      "summary": "SMTP edge, filter pipeline, and user-sharded mailbox storage with per-user search indexes.",
+      "components": [
+        "SMTP gateways",
+        "Filter pipeline",
+        "Mailbox shards",
+        "Object storage",
+        "Index service"
+      ],
+      "bestWhen": "Large-scale consumer mail.",
+      "drawbacks": ["Shard rebalancing.", "Indexing cost."]
+    },
+    {
+      "id": "ra-2",
+      "name": "Cloud-native object-based store",
+      "summary": "Messages as objects in blob storage with a metadata database and search service.",
+      "components": ["Gateway", "Blob store", "Metadata DB", "Search service"],
+      "bestWhen": "Elastic scaling and simpler durability.",
+      "drawbacks": ["Higher latency per message.", "Cost of small objects."]
+    }
+  ]
+}

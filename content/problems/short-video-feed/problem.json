@@ -1,0 +1,179 @@
+{
+  "id": "short-video-feed",
+  "version": 1,
+  "title": "Short Video Feed (TikTok)",
+  "category": "Media & entertainment",
+  "difficulty": "medium",
+  "summary": "Design a swipe-based short video feed with heavy personalised ranking and instant playback.",
+  "statement": "Design a short-video platform. Users scroll an endless feed of videos chosen mainly by recommendation, not by who they follow. Videos must start instantly, and creators upload content that is quickly discoverable. Start by clarifying requirements and estimating scale, then design the system and defend your decisions.",
+  "tags": ["recommendations", "prefetch", "cold-start"],
+  "initialGuidance": [
+    "Clarify the users, the main journeys, and what is explicitly out of scope before drawing anything.",
+    "Estimate read and write volume and storage growth; the numbers decide which components you need.",
+    "Name the guarantees you will offer (consistency, durability, availability) and the trade-offs behind them.",
+    "Write down assumptions as you make them and revisit them when requirements change."
+  ],
+  "coreFunctionalRequirements": [
+    "Upload and publish short videos.",
+    "Serve an endless personalised feed.",
+    "Like, comment, and share.",
+    "Start playback instantly while scrolling.",
+    "Surface new creators fairly."
+  ],
+  "requirementQuestions": [
+    {
+      "id": "q-1",
+      "area": "Scale",
+      "question": "How many users, uploads per day, and feed requests per second?",
+      "whyItMatters": "Sets read and write rates and storage growth, which decide whether a single node can cope."
+    },
+    {
+      "id": "q-2",
+      "area": "Latency",
+      "question": "How quickly must the next video start playing?",
+      "whyItMatters": "Defines which paths need caching, precomputation, or regional placement."
+    },
+    {
+      "id": "q-3",
+      "area": "Scope",
+      "question": "Is the feed purely algorithmic or mixed with follows?",
+      "whyItMatters": "Fixes what is in and out of the design so effort goes to what matters."
+    },
+    {
+      "id": "q-4",
+      "area": "Data",
+      "question": "What signals (watch time, likes, shares) are collected and how fast do they affect ranking?",
+      "whyItMatters": "Determines the data model, retention, and storage choices."
+    },
+    {
+      "id": "q-5",
+      "area": "Abuse",
+      "question": "How is prohibited content detected before wide distribution?",
+      "whyItMatters": "Adds validation, rate limiting, and fraud controls to the critical path."
+    },
+    {
+      "id": "q-6",
+      "area": "Cost",
+      "question": "How is bandwidth for very short clips controlled?",
+      "whyItMatters": "Prevents over-engineering and affects build-versus-buy choices."
+    }
+  ],
+  "workloadAssumptions": {
+    "illustrativeNote": "All numbers below are illustrative examples for practice and are not benchmarks. Real answers depend on the requirements the candidate negotiates.",
+    "items": [
+      {
+        "name": "Daily active users",
+        "value": "500 million",
+        "rationale": "Global app."
+      },
+      {
+        "name": "Videos uploaded per day",
+        "value": "50 million",
+        "rationale": "Short clips."
+      },
+      {
+        "name": "Videos watched per user per day",
+        "value": "100",
+        "rationale": "Heavy consumption."
+      },
+      {
+        "name": "Average clip size",
+        "value": "5 MB",
+        "rationale": "After transcoding."
+      }
+    ]
+  },
+  "estimationPrompts": [
+    "How many feed requests per second at peak?",
+    "How many candidate videos must be scored per request?",
+    "What is the egress for prefetching two videos ahead?"
+  ],
+  "keyDecisions": [
+    {
+      "id": "d-1",
+      "topic": "Candidate generation and ranking",
+      "question": "How is the feed chosen?",
+      "considerations": [
+        "Retrieve thousands of candidates from multiple sources, then rank with a model.",
+        "Latency budget for scoring.",
+        "Exploration versus exploitation."
+      ]
+    },
+    {
+      "id": "d-2",
+      "topic": "Feedback loop",
+      "question": "How fast do signals affect recommendations?",
+      "considerations": [
+        "Event stream into feature stores.",
+        "Near-real-time updates for session context.",
+        "Batch retraining for models."
+      ]
+    },
+    {
+      "id": "d-3",
+      "topic": "Prefetch and playback",
+      "question": "How does playback start instantly?",
+      "considerations": [
+        "Prefetch the first seconds of upcoming videos.",
+        "Adaptive quality and small segments.",
+        "Balance prefetch waste against smoothness."
+      ]
+    },
+    {
+      "id": "d-4",
+      "topic": "Upload and moderation",
+      "question": "How is content published safely?",
+      "considerations": [
+        "Transcode, then run automated checks before broad distribution.",
+        "Staged rollout of new videos to small audiences.",
+        "Human review for borderline cases."
+      ]
+    },
+    {
+      "id": "d-5",
+      "topic": "Cold start",
+      "question": "How do new videos and users get exposure?",
+      "considerations": [
+        "Small test audiences measure engagement.",
+        "Content features substitute for missing history.",
+        "Fairness and diversity constraints."
+      ]
+    }
+  ],
+  "tradeoffs": [
+    {
+      "topic": "Personalisation vs diversity",
+      "tension": "Engagement versus filter bubbles and creator fairness."
+    },
+    {
+      "topic": "Aggressive prefetch vs cost",
+      "tension": "Smoothness versus wasted bandwidth."
+    },
+    {
+      "topic": "Safety checks vs time to publish",
+      "tension": "Moderation depth versus speed."
+    }
+  ],
+  "commonMistakes": [
+    "Ranking every video for every request at read time with no candidate stage.",
+    "Ignoring cold start for new content.",
+    "No preloading, causing a spinner on every swipe.",
+    "Publishing to everyone before safety checks."
+  ],
+  "followUps": [
+    "How would you A/B test ranking changes safely?",
+    "How do you detect duplicate or reposted videos?",
+    "How do you keep the feed working if the model service is slow?",
+    "How do you add live replies or duets?"
+  ],
+  "topics": [
+    "Candidate generation and ranking",
+    "Feedback loop",
+    "Prefetch and playback",
+    "Upload and moderation",
+    "Cold start",
+    "recommendations",
+    "prefetch",
+    "cold-start"
+  ]
+}

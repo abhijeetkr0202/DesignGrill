@@ -1,0 +1,179 @@
+{
+  "id": "rate-limiter",
+  "version": 1,
+  "title": "Rate Limiter",
+  "category": "Infrastructure",
+  "difficulty": "easy",
+  "summary": "Design a rate limiting service that caps how many requests a client can make in a time window.",
+  "statement": "Design a rate limiter used by many API services. It should decide, per client and per rule, whether a request is allowed, with minimal added latency, across multiple servers. Start by clarifying requirements and estimating scale, then design the system and defend your decisions.",
+  "tags": ["algorithms", "distributed-state", "low-latency"],
+  "initialGuidance": [
+    "Clarify the users, the main journeys, and what is explicitly out of scope before drawing anything.",
+    "Estimate read and write volume and storage growth; the numbers decide which components you need.",
+    "Name the guarantees you will offer (consistency, durability, availability) and the trade-offs behind them.",
+    "Write down assumptions as you make them and revisit them when requirements change."
+  ],
+  "coreFunctionalRequirements": [
+    "Limit requests per client by key (user, API key, IP).",
+    "Support multiple rules and limits per endpoint.",
+    "Return clear rejection responses with retry guidance.",
+    "Update rules without redeploying.",
+    "Expose metrics about limited traffic."
+  ],
+  "requirementQuestions": [
+    {
+      "id": "q-1",
+      "area": "Scope",
+      "question": "Is limiting applied at the edge, in an API gateway, or inside each service?",
+      "whyItMatters": "Fixes what is in and out of the design so effort goes to what matters."
+    },
+    {
+      "id": "q-2",
+      "area": "Scale",
+      "question": "How many requests per second must be checked and how many distinct keys exist?",
+      "whyItMatters": "Sets read and write rates and storage growth, which decide whether a single node can cope."
+    },
+    {
+      "id": "q-3",
+      "area": "Consistency",
+      "question": "Is a small overshoot of the limit acceptable, or must limits be exact?",
+      "whyItMatters": "Selects between strong and eventual models and shapes conflict handling."
+    },
+    {
+      "id": "q-4",
+      "area": "Availability",
+      "question": "If the limiter is unavailable, should requests be allowed or blocked?",
+      "whyItMatters": "Determines redundancy and failover design, and which features may degrade instead of failing."
+    },
+    {
+      "id": "q-5",
+      "area": "Latency",
+      "question": "How much added latency per check is acceptable?",
+      "whyItMatters": "Defines which paths need caching, precomputation, or regional placement."
+    },
+    {
+      "id": "q-6",
+      "area": "Scope",
+      "question": "Are limits fixed, burst-tolerant, or dynamic per customer tier?",
+      "whyItMatters": "Fixes what is in and out of the design so effort goes to what matters."
+    }
+  ],
+  "workloadAssumptions": {
+    "illustrativeNote": "All numbers below are illustrative examples for practice and are not benchmarks. Real answers depend on the requirements the candidate negotiates.",
+    "items": [
+      {
+        "name": "Checks per second",
+        "value": "500,000",
+        "rationale": "Large API platform."
+      },
+      {
+        "name": "Distinct keys",
+        "value": "50 million",
+        "rationale": "Users, API keys, and IPs."
+      },
+      {
+        "name": "Added latency budget",
+        "value": "under 2 ms",
+        "rationale": "Sits on the critical path."
+      },
+      {
+        "name": "Rule changes",
+        "value": "a few per hour",
+        "rationale": "Operational updates."
+      }
+    ]
+  },
+  "estimationPrompts": [
+    "How much memory do the counters for all active keys need?",
+    "How many calls per second hit the shared store at peak?",
+    "How large is a hot key such as a shared corporate IP?"
+  ],
+  "keyDecisions": [
+    {
+      "id": "d-1",
+      "topic": "Algorithm",
+      "question": "Which limiting algorithm is used?",
+      "considerations": [
+        "Fixed window is simple but allows boundary bursts.",
+        "Sliding window is smoother; token bucket allows controlled bursts.",
+        "Memory and CPU cost per key differ."
+      ]
+    },
+    {
+      "id": "d-2",
+      "topic": "State storage",
+      "question": "Where do counters live?",
+      "considerations": [
+        "In-memory per node is fast but inexact across nodes.",
+        "A shared store such as Redis gives global accuracy at network cost.",
+        "Atomic increment or scripts avoid races."
+      ]
+    },
+    {
+      "id": "d-3",
+      "topic": "Placement",
+      "question": "Where is the check performed?",
+      "considerations": [
+        "Gateway or sidecar keeps services simple.",
+        "Client libraries reduce hops but spread logic.",
+        "Edge limiting stops traffic before it reaches your network."
+      ]
+    },
+    {
+      "id": "d-4",
+      "topic": "Failure mode",
+      "question": "What happens if the limiter fails?",
+      "considerations": [
+        "Fail open protects availability but risks overload.",
+        "Fail closed protects backends but blocks users.",
+        "Local fallback limits give graceful degradation."
+      ]
+    },
+    {
+      "id": "d-5",
+      "topic": "Rule distribution",
+      "question": "How are rules delivered and updated?",
+      "considerations": [
+        "Central config pushed or polled.",
+        "Cache rules locally with versioning.",
+        "Per-tenant overrides and defaults."
+      ]
+    }
+  ],
+  "tradeoffs": [
+    {
+      "topic": "Accuracy vs latency",
+      "tension": "Exact global counts require coordination; local approximations are faster."
+    },
+    {
+      "topic": "Fail open vs fail closed",
+      "tension": "Availability of the API versus protection of the backend."
+    },
+    {
+      "topic": "Sliding window vs token bucket",
+      "tension": "Smoothness and memory cost versus burst allowance."
+    }
+  ],
+  "commonMistakes": [
+    "Using a read-then-write counter without atomicity.",
+    "Making the limiter a single point of failure.",
+    "Ignoring hot keys and clock skew between nodes.",
+    "Not explaining the response clients get when limited."
+  ],
+  "followUps": [
+    "How would you rate limit across multiple regions?",
+    "How do you protect the limiter store from a hot key?",
+    "How would you support per-endpoint cost weights?",
+    "How do you test limits without hurting production?"
+  ],
+  "topics": [
+    "Algorithm",
+    "State storage",
+    "Placement",
+    "Failure mode",
+    "Rule distribution",
+    "algorithms",
+    "distributed-state",
+    "low-latency"
+  ]
+}

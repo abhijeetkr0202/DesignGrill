@@ -1,0 +1,179 @@
+{
+  "id": "cdn",
+  "version": 1,
+  "title": "Content Delivery Network",
+  "category": "Infrastructure",
+  "difficulty": "medium",
+  "summary": "Design a CDN that serves static and dynamic content from edge locations close to users.",
+  "statement": "Design a content delivery network. Customers point their domains at it; the network caches content at global edge locations, routes users to the nearest healthy edge, and fetches from the customer origin on misses. Start by clarifying requirements and estimating scale, then design the system and defend your decisions.",
+  "tags": ["edge-caching", "routing", "invalidation"],
+  "initialGuidance": [
+    "Clarify the users, the main journeys, and what is explicitly out of scope before drawing anything.",
+    "Estimate read and write volume and storage growth; the numbers decide which components you need.",
+    "Name the guarantees you will offer (consistency, durability, availability) and the trade-offs behind them.",
+    "Write down assumptions as you make them and revisit them when requirements change."
+  ],
+  "coreFunctionalRequirements": [
+    "Cache and serve content from edge locations.",
+    "Route users to a nearby healthy edge.",
+    "Fetch from origin on cache miss.",
+    "Purge or invalidate cached content.",
+    "Provide TLS and basic protection."
+  ],
+  "requirementQuestions": [
+    {
+      "id": "q-1",
+      "area": "Scale",
+      "question": "How much traffic, how many edge locations, and how large is the working set?",
+      "whyItMatters": "Sets read and write rates and storage growth, which decide whether a single node can cope."
+    },
+    {
+      "id": "q-2",
+      "area": "Latency",
+      "question": "What cache hit ratio and first-byte time are targeted?",
+      "whyItMatters": "Defines which paths need caching, precomputation, or regional placement."
+    },
+    {
+      "id": "q-3",
+      "area": "Consistency",
+      "question": "How fast must purges take effect globally?",
+      "whyItMatters": "Selects between strong and eventual models and shapes conflict handling."
+    },
+    {
+      "id": "q-4",
+      "area": "Scope",
+      "question": "Static only, or also dynamic acceleration, streaming, and edge compute?",
+      "whyItMatters": "Fixes what is in and out of the design so effort goes to what matters."
+    },
+    {
+      "id": "q-5",
+      "area": "Availability",
+      "question": "What happens when an edge location or origin fails?",
+      "whyItMatters": "Determines redundancy and failover design, and which features may degrade instead of failing."
+    },
+    {
+      "id": "q-6",
+      "area": "Security",
+      "question": "How are DDoS attacks and certificates managed?",
+      "whyItMatters": "Introduces authentication, authorisation, and privacy constraints that affect the design."
+    }
+  ],
+  "workloadAssumptions": {
+    "illustrativeNote": "All numbers below are illustrative examples for practice and are not benchmarks. Real answers depend on the requirements the candidate negotiates.",
+    "items": [
+      {
+        "name": "Traffic",
+        "value": "100 Tbps peak",
+        "rationale": "Global provider."
+      },
+      {
+        "name": "Edge locations",
+        "value": "300",
+        "rationale": "Worldwide."
+      },
+      {
+        "name": "Target hit ratio",
+        "value": "95%",
+        "rationale": "Origin offload."
+      },
+      {
+        "name": "Purge propagation",
+        "value": "under 5 seconds",
+        "rationale": "Customer expectation."
+      }
+    ]
+  },
+  "estimationPrompts": [
+    "How much cache storage does each edge need?",
+    "How much origin traffic remains at a 95% hit ratio?",
+    "How many purge messages per second must be propagated?"
+  ],
+  "keyDecisions": [
+    {
+      "id": "d-1",
+      "topic": "Request routing",
+      "question": "How are users sent to an edge?",
+      "considerations": [
+        "DNS-based routing using geography and latency measurements.",
+        "Anycast routes by network proximity.",
+        "Health checks and load awareness."
+      ]
+    },
+    {
+      "id": "d-2",
+      "topic": "Cache hierarchy",
+      "question": "How are misses handled?",
+      "considerations": [
+        "Edge, regional, and origin shield tiers collapse misses.",
+        "Request coalescing for the same object.",
+        "Reduce origin load."
+      ]
+    },
+    {
+      "id": "d-3",
+      "topic": "Cache policy",
+      "question": "What is cached and for how long?",
+      "considerations": [
+        "Honour cache-control headers with overrides.",
+        "Eviction by LRU variants with size awareness.",
+        "Negative caching of errors."
+      ]
+    },
+    {
+      "id": "d-4",
+      "topic": "Invalidation",
+      "question": "How are updates propagated?",
+      "considerations": [
+        "Purge by URL, tag, or prefix through a control plane message bus.",
+        "Versioned URLs avoid purges.",
+        "Soft purge and stale-while-revalidate."
+      ]
+    },
+    {
+      "id": "d-5",
+      "topic": "Protection",
+      "question": "How is the network protected?",
+      "considerations": [
+        "Absorb volumetric attacks across many locations.",
+        "Rate limits and web application firewall rules.",
+        "Automated certificate provisioning."
+      ]
+    }
+  ],
+  "tradeoffs": [
+    {
+      "topic": "More cache tiers vs latency",
+      "tension": "Origin offload versus extra hops."
+    },
+    {
+      "topic": "Long TTL vs freshness",
+      "tension": "Hit ratio versus staleness."
+    },
+    {
+      "topic": "Anycast vs DNS routing",
+      "tension": "Simplicity and failover versus finer control."
+    }
+  ],
+  "commonMistakes": [
+    "Every edge fetching from origin independently on a miss.",
+    "Relying only on purges instead of versioned URLs.",
+    "Ignoring cache key design (query strings, headers).",
+    "No plan for origin failure."
+  ],
+  "followUps": [
+    "How do you serve dynamic or personalised content?",
+    "How do you handle a viral object?",
+    "How do you do live video through the CDN?",
+    "How do you run compute at the edge?"
+  ],
+  "topics": [
+    "Request routing",
+    "Cache hierarchy",
+    "Cache policy",
+    "Invalidation",
+    "Protection",
+    "edge-caching",
+    "routing",
+    "invalidation"
+  ]
+}

@@ -1,0 +1,20 @@
+{
+  "architectures": [
+    {
+      "id": "ra-1",
+      "name": "Snowflake-style embedded generator",
+      "summary": "Each node composes timestamp, node ID, and a local sequence.",
+      "components": ["Embedded library", "Machine ID registry", "Time sync"],
+      "bestWhen": "Very high rates and no central dependency are needed.",
+      "drawbacks": ["Depends on clocks.", "Node ID management."]
+    },
+    {
+      "id": "ra-2",
+      "name": "Range allocation service",
+      "summary": "A service hands out blocks of sequential IDs that nodes consume locally.",
+      "components": ["Allocator service", "Durable counter", "Local issuers"],
+      "bestWhen": "Compact sequential IDs are preferred and clocks are untrusted.",
+      "drawbacks": ["IDs are not time-sortable across nodes.", "Gaps after node failure."]
+    }
+  ]
+}

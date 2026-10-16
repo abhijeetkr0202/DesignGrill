@@ -1,0 +1,23 @@
+{
+  "architectures": [
+    {
+      "id": "ra-1",
+      "name": "Consensus-backed lock service",
+      "summary": "A small replicated cluster stores lock state and grants leases with fencing tokens.",
+      "components": ["Consensus cluster", "Client library", "Session manager"],
+      "bestWhen": "Correctness is critical.",
+      "drawbacks": [
+        "Cluster availability limits lock availability.",
+        "Throughput bounded by consensus."
+      ]
+    },
+    {
+      "id": "ra-2",
+      "name": "Lock via database or cache",
+      "summary": "Locks implemented with conditional writes in an existing store.",
+      "components": ["Database or key-value store", "Client library"],
+      "bestWhen": "Efficiency locking where occasional overlap is tolerable.",
+      "drawbacks": ["Weaker guarantees.", "Easy to misuse for correctness."]
+    }
+  ]
+}

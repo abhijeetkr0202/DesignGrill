@@ -1,0 +1,179 @@
+{
+  "id": "proximity-service",
+  "version": 1,
+  "title": "Proximity Service (Yelp / Nearby Places)",
+  "category": "Maps & location",
+  "difficulty": "medium",
+  "summary": "Design a service that finds businesses near a location, with filters, ranking, and frequent reads.",
+  "statement": "Design a nearby-places service like Yelp. Users search for businesses within a radius of their location, filter by category and rating, and view details. Business data changes slowly but reads are very heavy. Start by clarifying requirements and estimating scale, then design the system and defend your decisions.",
+  "tags": ["geohash", "quadtree", "read-heavy"],
+  "initialGuidance": [
+    "Clarify the users, the main journeys, and what is explicitly out of scope before drawing anything.",
+    "Estimate read and write volume and storage growth; the numbers decide which components you need.",
+    "Name the guarantees you will offer (consistency, durability, availability) and the trade-offs behind them.",
+    "Write down assumptions as you make them and revisit them when requirements change."
+  ],
+  "coreFunctionalRequirements": [
+    "Search businesses within a radius.",
+    "Filter by category and rating.",
+    "View business details and reviews.",
+    "Owners add and update businesses.",
+    "Rank by distance and relevance."
+  ],
+  "requirementQuestions": [
+    {
+      "id": "q-1",
+      "area": "Scale",
+      "question": "How many businesses, searches per second, and updates per day?",
+      "whyItMatters": "Sets read and write rates and storage growth, which decide whether a single node can cope."
+    },
+    {
+      "id": "q-2",
+      "area": "Latency",
+      "question": "What search latency is expected?",
+      "whyItMatters": "Defines which paths need caching, precomputation, or regional placement."
+    },
+    {
+      "id": "q-3",
+      "area": "Consistency",
+      "question": "How quickly must new or changed businesses appear?",
+      "whyItMatters": "Selects between strong and eventual models and shapes conflict handling."
+    },
+    {
+      "id": "q-4",
+      "area": "Scope",
+      "question": "Are reviews, photos, and personalisation included?",
+      "whyItMatters": "Fixes what is in and out of the design so effort goes to what matters."
+    },
+    {
+      "id": "q-5",
+      "area": "Data",
+      "question": "How does density vary across regions?",
+      "whyItMatters": "Determines the data model, retention, and storage choices."
+    },
+    {
+      "id": "q-6",
+      "area": "Availability",
+      "question": "Can search serve slightly stale data during failures?",
+      "whyItMatters": "Determines redundancy and failover design, and which features may degrade instead of failing."
+    }
+  ],
+  "workloadAssumptions": {
+    "illustrativeNote": "All numbers below are illustrative examples for practice and are not benchmarks. Real answers depend on the requirements the candidate negotiates.",
+    "items": [
+      {
+        "name": "Businesses",
+        "value": "200 million",
+        "rationale": "Global directory."
+      },
+      {
+        "name": "Searches per second",
+        "value": "100,000",
+        "rationale": "Peak."
+      },
+      {
+        "name": "Updates per day",
+        "value": "1 million",
+        "rationale": "Slow-changing."
+      },
+      {
+        "name": "Search radius",
+        "value": "1 to 25 km",
+        "rationale": "Typical."
+      }
+    ]
+  },
+  "estimationPrompts": [
+    "How big is the geo index and does it fit in memory?",
+    "How many index cells does a typical query touch?",
+    "What is the read to write ratio?"
+  ],
+  "keyDecisions": [
+    {
+      "id": "d-1",
+      "topic": "Spatial index",
+      "question": "How are nearby businesses found?",
+      "considerations": [
+        "Geohash prefixes, quadtrees, S2, or H3 cells.",
+        "Query the target cell and its neighbours.",
+        "Adaptive cell sizes for dense areas."
+      ]
+    },
+    {
+      "id": "d-2",
+      "topic": "Storage and sharding",
+      "question": "How is the index partitioned?",
+      "considerations": [
+        "Shard by geographic region or cell prefix.",
+        "Dense areas need further splits.",
+        "Replicate for read throughput."
+      ]
+    },
+    {
+      "id": "d-3",
+      "topic": "Query pipeline",
+      "question": "How are results filtered and ranked?",
+      "considerations": [
+        "Retrieve candidates from cells, then filter by category and rating.",
+        "Rank by distance and quality.",
+        "Cache popular area queries."
+      ]
+    },
+    {
+      "id": "d-4",
+      "topic": "Updates",
+      "question": "How do changes reach the index?",
+      "considerations": [
+        "Source of truth in a database; index rebuilt incrementally.",
+        "Rare writes allow simple propagation.",
+        "Eventual consistency is fine."
+      ]
+    },
+    {
+      "id": "d-5",
+      "topic": "Caching",
+      "question": "How is repeated demand handled?",
+      "considerations": [
+        "Cache by cell and filter combination.",
+        "CDN for business detail pages.",
+        "Short TTLs for popular areas."
+      ]
+    }
+  ],
+  "tradeoffs": [
+    {
+      "topic": "Geohash vs quadtree",
+      "tension": "Simplicity and range queries versus adaptive density."
+    },
+    {
+      "topic": "Cell size",
+      "tension": "More precision versus more cells to read."
+    },
+    {
+      "topic": "Index freshness vs cost",
+      "tension": "Real-time updates unnecessary for slow-changing data."
+    }
+  ],
+  "commonMistakes": [
+    "Computing distance to every business.",
+    "Using only latitude and longitude B-tree indexes.",
+    "Ignoring the edge of a cell where neighbours matter.",
+    "Treating dense and sparse regions the same."
+  ],
+  "followUps": [
+    "How do you handle a search spanning the dateline or poles?",
+    "How do you add moving objects such as drivers?",
+    "How do you personalise results?",
+    "How do you handle sparse rural areas?"
+  ],
+  "topics": [
+    "Spatial index",
+    "Storage and sharding",
+    "Query pipeline",
+    "Updates",
+    "Caching",
+    "geohash",
+    "quadtree",
+    "read-heavy"
+  ]
+}

@@ -1,0 +1,179 @@
+{
+  "id": "email-service",
+  "version": 1,
+  "title": "Email Service (Gmail)",
+  "category": "Social & messaging",
+  "difficulty": "medium",
+  "summary": "Design a large-scale email service: sending, receiving, storing, searching, and filtering spam.",
+  "statement": "Design an email service like Gmail. It sends and receives mail over standard protocols, stores each user mailbox durably, supports search and labels, and filters spam and malware. Start by clarifying requirements and estimating scale, then design the system and defend your decisions.",
+  "tags": ["storage", "search", "protocols"],
+  "initialGuidance": [
+    "Clarify the users, the main journeys, and what is explicitly out of scope before drawing anything.",
+    "Estimate read and write volume and storage growth; the numbers decide which components you need.",
+    "Name the guarantees you will offer (consistency, durability, availability) and the trade-offs behind them.",
+    "Write down assumptions as you make them and revisit them when requirements change."
+  ],
+  "coreFunctionalRequirements": [
+    "Send and receive email.",
+    "Store mailboxes with folders and labels.",
+    "Search messages.",
+    "Detect spam and malware.",
+    "Support attachments and sync across clients."
+  ],
+  "requirementQuestions": [
+    {
+      "id": "q-1",
+      "area": "Scale",
+      "question": "How many users and how much mail per day?",
+      "whyItMatters": "Sets read and write rates and storage growth, which decide whether a single node can cope."
+    },
+    {
+      "id": "q-2",
+      "area": "Durability",
+      "question": "Can a delivered email ever be lost?",
+      "whyItMatters": "Drives replication, backup, and write acknowledgement policy."
+    },
+    {
+      "id": "q-3",
+      "area": "Latency",
+      "question": "How quickly must inbound mail appear and search results return?",
+      "whyItMatters": "Defines which paths need caching, precomputation, or regional placement."
+    },
+    {
+      "id": "q-4",
+      "area": "Security",
+      "question": "How is spam, phishing, and sender authenticity handled?",
+      "whyItMatters": "Introduces authentication, authorisation, and privacy constraints that affect the design."
+    },
+    {
+      "id": "q-5",
+      "area": "Data",
+      "question": "Mailbox size limits and retention policies?",
+      "whyItMatters": "Determines the data model, retention, and storage choices."
+    },
+    {
+      "id": "q-6",
+      "area": "Scope",
+      "question": "Which protocols (SMTP, IMAP, web API) must be supported?",
+      "whyItMatters": "Fixes what is in and out of the design so effort goes to what matters."
+    }
+  ],
+  "workloadAssumptions": {
+    "illustrativeNote": "All numbers below are illustrative examples for practice and are not benchmarks. Real answers depend on the requirements the candidate negotiates.",
+    "items": [
+      {
+        "name": "Users",
+        "value": "500 million",
+        "rationale": "Large provider."
+      },
+      {
+        "name": "Emails per day",
+        "value": "50 billion",
+        "rationale": "Includes spam before filtering."
+      },
+      {
+        "name": "Average mailbox",
+        "value": "5 GB",
+        "rationale": "Attachments dominate."
+      },
+      {
+        "name": "Spam share",
+        "value": "about 50%",
+        "rationale": "Filtering is a core cost."
+      }
+    ]
+  },
+  "estimationPrompts": [
+    "How much storage do mailboxes need in total?",
+    "How many inbound messages per second reach the filters?",
+    "How large is the search index per user?"
+  ],
+  "keyDecisions": [
+    {
+      "id": "d-1",
+      "topic": "Inbound pipeline",
+      "question": "How is incoming mail processed?",
+      "considerations": [
+        "SMTP front ends accept and queue mail.",
+        "Authentication checks (SPF, DKIM, DMARC) and spam filtering before delivery.",
+        "Retries for temporary failures."
+      ]
+    },
+    {
+      "id": "d-2",
+      "topic": "Mailbox storage",
+      "question": "How are mailboxes stored?",
+      "considerations": [
+        "Partition by user so a mailbox lives on one shard with replicas.",
+        "Large attachments in object storage.",
+        "Metadata store separate from bodies."
+      ]
+    },
+    {
+      "id": "d-3",
+      "topic": "Search",
+      "question": "How is search provided?",
+      "considerations": [
+        "Per-user inverted index updated on delivery.",
+        "Index size versus coverage.",
+        "Freshness lag of indexing."
+      ]
+    },
+    {
+      "id": "d-4",
+      "topic": "Spam and abuse",
+      "question": "How is spam controlled?",
+      "considerations": [
+        "Reputation, content models, and user feedback loops.",
+        "Quarantine versus reject decisions.",
+        "False positives are costly."
+      ]
+    },
+    {
+      "id": "d-5",
+      "topic": "Outbound sending",
+      "question": "How is deliverability managed?",
+      "considerations": [
+        "Queues with retry and backoff.",
+        "IP reputation and rate limits.",
+        "Bounce handling."
+      ]
+    }
+  ],
+  "tradeoffs": [
+    {
+      "topic": "Aggressive filtering vs false positives",
+      "tension": "Blocking spam versus losing legitimate mail."
+    },
+    {
+      "topic": "Index everything vs cost",
+      "tension": "Search coverage versus storage and compute."
+    },
+    {
+      "topic": "Replication vs cost",
+      "tension": "Durability versus storage expense."
+    }
+  ],
+  "commonMistakes": [
+    "Treating mail delivery as a single synchronous request.",
+    "Ignoring sender authentication.",
+    "One global index across all users.",
+    "No retry and queue strategy for temporary remote failures."
+  ],
+  "followUps": [
+    "How do you provide conversation threading?",
+    "How do you handle a user with a 100 GB mailbox?",
+    "How do you migrate mailboxes between shards?",
+    "How do you support offline clients with IMAP?"
+  ],
+  "topics": [
+    "Inbound pipeline",
+    "Mailbox storage",
+    "Search",
+    "Spam and abuse",
+    "Outbound sending",
+    "storage",
+    "search",
+    "protocols"
+  ]
+}

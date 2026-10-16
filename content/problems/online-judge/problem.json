@@ -1,0 +1,179 @@
+{
+  "id": "online-judge",
+  "version": 1,
+  "title": "Online Judge (LeetCode)",
+  "category": "Developer tools",
+  "difficulty": "medium",
+  "summary": "Design a coding platform that safely runs submitted code against tests and ranks contest participants.",
+  "statement": "Design an online judge. Users submit code in several languages; the system compiles and runs it in isolation against hidden test cases with time and memory limits, returns a verdict, and powers live contests with leaderboards. Start by clarifying requirements and estimating scale, then design the system and defend your decisions.",
+  "tags": ["sandboxing", "queues", "contests"],
+  "initialGuidance": [
+    "Clarify the users, the main journeys, and what is explicitly out of scope before drawing anything.",
+    "Estimate read and write volume and storage growth; the numbers decide which components you need.",
+    "Name the guarantees you will offer (consistency, durability, availability) and the trade-offs behind them.",
+    "Write down assumptions as you make them and revisit them when requirements change."
+  ],
+  "coreFunctionalRequirements": [
+    "Submit code in multiple languages.",
+    "Run code safely against tests.",
+    "Enforce time and memory limits.",
+    "Return verdicts quickly.",
+    "Run contests with live ranking."
+  ],
+  "requirementQuestions": [
+    {
+      "id": "q-1",
+      "area": "Scale",
+      "question": "How many submissions per second normally and during a contest?",
+      "whyItMatters": "Sets read and write rates and storage growth, which decide whether a single node can cope."
+    },
+    {
+      "id": "q-2",
+      "area": "Latency",
+      "question": "How quickly should a verdict return?",
+      "whyItMatters": "Defines which paths need caching, precomputation, or regional placement."
+    },
+    {
+      "id": "q-3",
+      "area": "Security",
+      "question": "How is untrusted code isolated from the platform and from other submissions?",
+      "whyItMatters": "Introduces authentication, authorisation, and privacy constraints that affect the design."
+    },
+    {
+      "id": "q-4",
+      "area": "Consistency",
+      "question": "How are verdicts made reproducible and fair across machines?",
+      "whyItMatters": "Selects between strong and eventual models and shapes conflict handling."
+    },
+    {
+      "id": "q-5",
+      "area": "Scope",
+      "question": "Which languages and special judges are supported?",
+      "whyItMatters": "Fixes what is in and out of the design so effort goes to what matters."
+    },
+    {
+      "id": "q-6",
+      "area": "Availability",
+      "question": "What happens to submissions during a contest peak?",
+      "whyItMatters": "Determines redundancy and failover design, and which features may degrade instead of failing."
+    }
+  ],
+  "workloadAssumptions": {
+    "illustrativeNote": "All numbers below are illustrative examples for practice and are not benchmarks. Real answers depend on the requirements the candidate negotiates.",
+    "items": [
+      {
+        "name": "Normal submissions per second",
+        "value": "50",
+        "rationale": "Steady."
+      },
+      {
+        "name": "Contest peak",
+        "value": "3,000 per second",
+        "rationale": "Start and end of contests."
+      },
+      {
+        "name": "Tests per submission",
+        "value": "up to 100",
+        "rationale": "Hidden cases."
+      },
+      {
+        "name": "Run time limit",
+        "value": "1 to 10 seconds",
+        "rationale": "Per test."
+      }
+    ]
+  },
+  "estimationPrompts": [
+    "How many sandbox runs per second at peak?",
+    "How much CPU capacity must be reserved for contests?",
+    "How large is the test data to distribute?"
+  ],
+  "keyDecisions": [
+    {
+      "id": "d-1",
+      "topic": "Submission pipeline",
+      "question": "How are submissions processed?",
+      "considerations": [
+        "Persist the submission, enqueue it, and let workers pull jobs.",
+        "Priority queues for contests.",
+        "Idempotent verdict updates."
+      ]
+    },
+    {
+      "id": "d-2",
+      "topic": "Sandboxing",
+      "question": "How is untrusted code isolated?",
+      "considerations": [
+        "Containers or microVMs with seccomp, cgroups, no network, and read-only filesystems.",
+        "CPU time and memory limits.",
+        "Clean environments per run."
+      ]
+    },
+    {
+      "id": "d-3",
+      "topic": "Fair measurement",
+      "question": "How are runtimes comparable?",
+      "considerations": [
+        "Dedicated pinned CPUs for timing.",
+        "Repeat or calibrate borderline runs.",
+        "Standardised judge machines."
+      ]
+    },
+    {
+      "id": "d-4",
+      "topic": "Test data distribution",
+      "question": "How is test data managed?",
+      "considerations": [
+        "Test cases in object storage cached on workers.",
+        "Versioned problems and tests.",
+        "Hidden data protected."
+      ]
+    },
+    {
+      "id": "d-5",
+      "topic": "Contest leaderboard",
+      "question": "How is live ranking served?",
+      "considerations": [
+        "Verdict events update a sorted structure.",
+        "Cache and push updates.",
+        "Freeze scoreboard near the end if needed."
+      ]
+    }
+  ],
+  "tradeoffs": [
+    {
+      "topic": "Isolation strength vs startup cost",
+      "tension": "MicroVMs are safer but slower than containers."
+    },
+    {
+      "topic": "Timing accuracy vs utilisation",
+      "tension": "Dedicated cores waste capacity."
+    },
+    {
+      "topic": "Contest priority vs normal traffic",
+      "tension": "Fairness versus responsiveness for practice users."
+    }
+  ],
+  "commonMistakes": [
+    "Running user code on application servers.",
+    "Allowing network access from the sandbox.",
+    "One shared queue so practice traffic starves contests.",
+    "Ignoring fork bombs and resource exhaustion."
+  ],
+  "followUps": [
+    "How do you support interactive problems?",
+    "How do you detect plagiarism?",
+    "How do you add a new language?",
+    "How do you handle a judge worker crash mid-run?"
+  ],
+  "topics": [
+    "Submission pipeline",
+    "Sandboxing",
+    "Fair measurement",
+    "Test data distribution",
+    "Contest leaderboard",
+    "sandboxing",
+    "queues",
+    "contests"
+  ]
+}

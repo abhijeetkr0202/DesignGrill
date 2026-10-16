@@ -1,0 +1,20 @@
+{
+  "architectures": [
+    {
+      "id": "ra-1",
+      "name": "Partitioned scheduler with queue",
+      "summary": "Scheduler shards own job partitions and enqueue due jobs for a worker pool.",
+      "components": ["Job store", "Scheduler shards", "Queue", "Worker pool"],
+      "bestWhen": "Large scale with many tenants.",
+      "drawbacks": ["Partition ownership management.", "Needs idempotent jobs."]
+    },
+    {
+      "id": "ra-2",
+      "name": "Workflow engine",
+      "summary": "A durable workflow engine runs timers and activities with persisted state.",
+      "components": ["Workflow engine", "Durable timers", "Activity workers"],
+      "bestWhen": "Jobs have multi-step logic and retries.",
+      "drawbacks": ["Engine becomes a critical dependency.", "Higher per-job overhead."]
+    }
+  ]
+}

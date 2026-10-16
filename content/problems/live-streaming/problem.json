@@ -1,0 +1,179 @@
+{
+  "id": "live-streaming",
+  "version": 1,
+  "title": "Live Streaming (Twitch)",
+  "category": "Media & entertainment",
+  "difficulty": "hard",
+  "summary": "Design a live video platform with broadcaster ingest, real-time delivery to large audiences, and live chat.",
+  "statement": "Design a live streaming service. Broadcasters stream from their devices; viewers watch with low latency and chat in real time. A single stream may have hundreds of thousands of viewers. Start by clarifying requirements and estimating scale, then design the system and defend your decisions.",
+  "tags": ["low-latency", "ingest", "chat"],
+  "initialGuidance": [
+    "Clarify the users, the main journeys, and what is explicitly out of scope before drawing anything.",
+    "Estimate read and write volume and storage growth; the numbers decide which components you need.",
+    "Name the guarantees you will offer (consistency, durability, availability) and the trade-offs behind them.",
+    "Write down assumptions as you make them and revisit them when requirements change."
+  ],
+  "coreFunctionalRequirements": [
+    "Ingest live streams from broadcasters.",
+    "Deliver streams to viewers with low delay.",
+    "Provide live chat.",
+    "Record streams for later playback.",
+    "List live channels and viewer counts."
+  ],
+  "requirementQuestions": [
+    {
+      "id": "q-1",
+      "area": "Latency",
+      "question": "What glass-to-glass delay is acceptable: several seconds or sub-second?",
+      "whyItMatters": "Defines which paths need caching, precomputation, or regional placement."
+    },
+    {
+      "id": "q-2",
+      "area": "Scale",
+      "question": "How many concurrent streams and the largest audience for one stream?",
+      "whyItMatters": "Sets read and write rates and storage growth, which decide whether a single node can cope."
+    },
+    {
+      "id": "q-3",
+      "area": "Availability",
+      "question": "What happens if the broadcaster drops or an ingest node fails?",
+      "whyItMatters": "Determines redundancy and failover design, and which features may degrade instead of failing."
+    },
+    {
+      "id": "q-4",
+      "area": "Scope",
+      "question": "Are recordings, clips, and interactive features required?",
+      "whyItMatters": "Fixes what is in and out of the design so effort goes to what matters."
+    },
+    {
+      "id": "q-5",
+      "area": "Cost",
+      "question": "How is egress cost controlled for large audiences?",
+      "whyItMatters": "Prevents over-engineering and affects build-versus-buy choices."
+    },
+    {
+      "id": "q-6",
+      "area": "Abuse",
+      "question": "How are chat spam and prohibited streams handled in real time?",
+      "whyItMatters": "Adds validation, rate limiting, and fraud controls to the critical path."
+    }
+  ],
+  "workloadAssumptions": {
+    "illustrativeNote": "All numbers below are illustrative examples for practice and are not benchmarks. Real answers depend on the requirements the candidate negotiates.",
+    "items": [
+      {
+        "name": "Concurrent streams",
+        "value": "100,000",
+        "rationale": "Peak global."
+      },
+      {
+        "name": "Largest audience",
+        "value": "500,000 viewers",
+        "rationale": "Major events."
+      },
+      {
+        "name": "Ingest bitrate",
+        "value": "6 Mbps",
+        "rationale": "High-quality source."
+      },
+      {
+        "name": "Chat messages",
+        "value": "50,000 per second",
+        "rationale": "Across the platform."
+      }
+    ]
+  },
+  "estimationPrompts": [
+    "How much transcoding capacity do 100,000 streams need?",
+    "What egress does a 500,000-viewer stream generate?",
+    "How many chat messages per second must one large channel handle?"
+  ],
+  "keyDecisions": [
+    {
+      "id": "d-1",
+      "topic": "Ingest",
+      "question": "How do streams enter the platform?",
+      "considerations": [
+        "RTMP or modern ingest protocols to nearby ingest points.",
+        "Redundant ingest paths.",
+        "Authentication with stream keys."
+      ]
+    },
+    {
+      "id": "d-2",
+      "topic": "Live transcoding",
+      "question": "How are renditions produced in real time?",
+      "considerations": [
+        "Transcode into several bitrates continuously.",
+        "Compute cost scales with streams, not viewers.",
+        "Transcode only popular streams at full ladder."
+      ]
+    },
+    {
+      "id": "d-3",
+      "topic": "Delivery protocol",
+      "question": "How is video sent to viewers?",
+      "considerations": [
+        "Segmented HLS/DASH with low-latency variants.",
+        "WebRTC for ultra-low latency but more costly.",
+        "CDN fan-out to a huge audience."
+      ]
+    },
+    {
+      "id": "d-4",
+      "topic": "Live chat",
+      "question": "How does chat scale?",
+      "considerations": [
+        "Pub/sub per channel with sharded connections.",
+        "Rate limits and message sampling in big rooms.",
+        "Moderation pipeline."
+      ]
+    },
+    {
+      "id": "d-5",
+      "topic": "Recording and discovery",
+      "question": "How are recordings and listings produced?",
+      "considerations": [
+        "Write segments to storage as the stream proceeds.",
+        "Viewer counts are approximate and aggregated.",
+        "Directory updates tolerate delay."
+      ]
+    }
+  ],
+  "tradeoffs": [
+    {
+      "topic": "Latency vs scalability",
+      "tension": "Lower delay reduces CDN efficiency and increases cost."
+    },
+    {
+      "topic": "Full ladder for all streams vs popular ones",
+      "tension": "Quality coverage versus compute."
+    },
+    {
+      "topic": "Chat completeness vs sustainability",
+      "tension": "Show every message versus sampling in huge rooms."
+    }
+  ],
+  "commonMistakes": [
+    "Pushing video through a single server per stream to all viewers.",
+    "Treating live like VOD with long segments and high delay.",
+    "One global chat server for all channels.",
+    "No plan for broadcaster reconnects."
+  ],
+  "followUps": [
+    "How do you reduce latency to under two seconds?",
+    "How do you create clips from a live stream?",
+    "How do you handle a raid that moves 100,000 viewers instantly?",
+    "How do you do regional failover for ingest?"
+  ],
+  "topics": [
+    "Ingest",
+    "Live transcoding",
+    "Delivery protocol",
+    "Live chat",
+    "Recording and discovery",
+    "low-latency",
+    "ingest",
+    "chat"
+  ]
+}

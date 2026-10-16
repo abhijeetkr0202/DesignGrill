@@ -1,0 +1,28 @@
+{
+  "scenarios": [
+    {
+      "id": "sc-1",
+      "title": "Hot key expiry",
+      "description": "A very popular entry expires and thousands of requests miss at once.",
+      "triggers": ["Hot key expiry"],
+      "probes": ["What protects the database?", "How do you refresh without a stampede?"],
+      "relatedTopics": ["Cache pattern"]
+    },
+    {
+      "id": "sc-2",
+      "title": "Node loss",
+      "description": "A cache node fails and its keys miss.",
+      "triggers": ["Node loss"],
+      "probes": ["What load reaches the database?", "How do you recover capacity safely?"],
+      "relatedTopics": ["Replication and failure"]
+    },
+    {
+      "id": "sc-3",
+      "title": "Stale data",
+      "description": "An update races with a cache fill and leaves old data cached.",
+      "triggers": ["Stale data"],
+      "probes": ["How can this happen?", "How do you bound the damage?"],
+      "relatedTopics": ["Invalidation"]
+    }
+  ]
+}

@@ -1,0 +1,31 @@
+{
+  "scenarios": [
+    {
+      "id": "sc-1",
+      "title": "Ranker timeout",
+      "description": "The ranking service slows under load.",
+      "triggers": ["Ranker timeout"],
+      "probes": ["What fallback feed is returned?", "How do you limit the impact?"],
+      "relatedTopics": ["Candidate generation and ranking"]
+    },
+    {
+      "id": "sc-2",
+      "title": "Viral new video",
+      "description": "An unknown video starts spreading rapidly.",
+      "triggers": ["Viral new video"],
+      "probes": [
+        "How does the system detect and amplify it?",
+        "How do you protect the CDN origin?"
+      ],
+      "relatedTopics": ["Cold start"]
+    },
+    {
+      "id": "sc-3",
+      "title": "Harmful upload",
+      "description": "A prohibited video slips past initial checks.",
+      "triggers": ["Harmful upload"],
+      "probes": ["How is it found and removed quickly?", "How far could it have spread?"],
+      "relatedTopics": ["Upload and moderation"]
+    }
+  ]
+}

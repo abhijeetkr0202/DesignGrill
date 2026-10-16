@@ -1,0 +1,27 @@
+{
+  "architectures": [
+    {
+      "id": "ra-1",
+      "name": "Two-stage recommender with prefetching client",
+      "summary": "Candidate retrieval, ranking service, and a client that prefetches upcoming clips.",
+      "components": [
+        "Feed API",
+        "Candidate retrieval",
+        "Ranker",
+        "Feature store",
+        "CDN",
+        "Event log"
+      ],
+      "bestWhen": "Algorithm-driven discovery at scale.",
+      "drawbacks": ["Heavy ML infrastructure.", "Feedback delay."]
+    },
+    {
+      "id": "ra-2",
+      "name": "Precomputed feed per user",
+      "summary": "Batch jobs precompute a ranked list that is lightly re-ranked at request time.",
+      "components": ["Batch ranking", "Feed cache", "Re-ranker"],
+      "bestWhen": "Cost-sensitive early-stage product.",
+      "drawbacks": ["Less responsive to session signals.", "Stale recommendations."]
+    }
+  ]
+}

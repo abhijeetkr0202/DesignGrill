@@ -1,0 +1,26 @@
+{
+  "architectures": [
+    {
+      "id": "ra-1",
+      "name": "Block-based sync with metadata service",
+      "summary": "Clients chunk and hash files; a metadata service tracks block lists; blocks live in object storage.",
+      "components": [
+        "Client agent",
+        "Metadata service",
+        "Block store",
+        "Notification service",
+        "Sharing service"
+      ],
+      "bestWhen": "Standard sync product.",
+      "drawbacks": ["Metadata scaling.", "Dedup privacy trade-offs."]
+    },
+    {
+      "id": "ra-2",
+      "name": "Whole-file versions",
+      "summary": "Each save uploads a complete file version.",
+      "components": ["Upload service", "Object store", "Version DB"],
+      "bestWhen": "Small files and simpler scope.",
+      "drawbacks": ["Bandwidth waste.", "Storage cost."]
+    }
+  ]
+}

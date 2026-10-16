@@ -1,0 +1,179 @@
+{
+  "id": "search-engine",
+  "version": 1,
+  "title": "Web Search Engine",
+  "category": "Search & data",
+  "difficulty": "hard",
+  "summary": "Design the indexing and query-serving stack of a web search engine over billions of documents.",
+  "statement": "Design a web search engine. Given crawled pages, build an index, then serve queries with relevant ranked results in a few hundred milliseconds. Cover index construction, distribution, ranking, and freshness. Start by clarifying requirements and estimating scale, then design the system and defend your decisions.",
+  "tags": ["inverted-index", "ranking", "sharding"],
+  "initialGuidance": [
+    "Clarify the users, the main journeys, and what is explicitly out of scope before drawing anything.",
+    "Estimate read and write volume and storage growth; the numbers decide which components you need.",
+    "Name the guarantees you will offer (consistency, durability, availability) and the trade-offs behind them.",
+    "Write down assumptions as you make them and revisit them when requirements change."
+  ],
+  "coreFunctionalRequirements": [
+    "Build an inverted index from crawled documents.",
+    "Answer text queries with ranked results.",
+    "Support phrase and boolean operators.",
+    "Show snippets.",
+    "Reflect new and changed pages."
+  ],
+  "requirementQuestions": [
+    {
+      "id": "q-1",
+      "area": "Scale",
+      "question": "How many documents, queries per second, and what index size?",
+      "whyItMatters": "Sets read and write rates and storage growth, which decide whether a single node can cope."
+    },
+    {
+      "id": "q-2",
+      "area": "Latency",
+      "question": "What query latency is expected at p99?",
+      "whyItMatters": "Defines which paths need caching, precomputation, or regional placement."
+    },
+    {
+      "id": "q-3",
+      "area": "Consistency",
+      "question": "How fresh must the index be for news versus the long tail?",
+      "whyItMatters": "Selects between strong and eventual models and shapes conflict handling."
+    },
+    {
+      "id": "q-4",
+      "area": "Scope",
+      "question": "Which ranking signals (links, quality, personalisation) are included?",
+      "whyItMatters": "Fixes what is in and out of the design so effort goes to what matters."
+    },
+    {
+      "id": "q-5",
+      "area": "Availability",
+      "question": "What happens when some index shards are unavailable?",
+      "whyItMatters": "Determines redundancy and failover design, and which features may degrade instead of failing."
+    },
+    {
+      "id": "q-6",
+      "area": "Cost",
+      "question": "How is the hardware cost of the index managed?",
+      "whyItMatters": "Prevents over-engineering and affects build-versus-buy choices."
+    }
+  ],
+  "workloadAssumptions": {
+    "illustrativeNote": "All numbers below are illustrative examples for practice and are not benchmarks. Real answers depend on the requirements the candidate negotiates.",
+    "items": [
+      {
+        "name": "Documents",
+        "value": "50 billion",
+        "rationale": "Large web index."
+      },
+      {
+        "name": "Queries per second",
+        "value": "100,000",
+        "rationale": "Peak."
+      },
+      {
+        "name": "Query latency",
+        "value": "under 300 ms p99",
+        "rationale": "User expectation."
+      },
+      {
+        "name": "Index size",
+        "value": "hundreds of terabytes",
+        "rationale": "Compressed postings."
+      }
+    ]
+  },
+  "estimationPrompts": [
+    "How many shards and replicas does the index need?",
+    "How many shards does each query touch?",
+    "What is the update volume per day?"
+  ],
+  "keyDecisions": [
+    {
+      "id": "d-1",
+      "topic": "Index structure",
+      "question": "How is the index organised?",
+      "considerations": [
+        "Inverted index with compressed posting lists.",
+        "Partition by document (each shard holds a subset) for parallel queries.",
+        "Tiered indexes: fresh, high-quality, long tail."
+      ]
+    },
+    {
+      "id": "d-2",
+      "topic": "Query execution",
+      "question": "How are queries answered?",
+      "considerations": [
+        "Broadcast to shards, each returns top results, then merge.",
+        "Early termination and caching of popular queries.",
+        "Replicas for throughput and tail latency."
+      ]
+    },
+    {
+      "id": "d-3",
+      "topic": "Ranking",
+      "question": "How are results ranked?",
+      "considerations": [
+        "First-pass scoring (BM25) then machine-learned reranking of top candidates.",
+        "Link analysis and quality signals.",
+        "Personalisation and freshness boosts."
+      ]
+    },
+    {
+      "id": "d-4",
+      "topic": "Indexing pipeline",
+      "question": "How are documents processed?",
+      "considerations": [
+        "Parse, tokenise, dedupe, and score documents offline in batches.",
+        "Incremental updates for fresh content.",
+        "Merge segments in the background."
+      ]
+    },
+    {
+      "id": "d-5",
+      "topic": "Resilience",
+      "question": "How does it handle failures?",
+      "considerations": [
+        "Replicas and tolerant merging with partial results.",
+        "Graceful degradation by skipping slow shards.",
+        "Canary rollouts of new index versions."
+      ]
+    }
+  ],
+  "tradeoffs": [
+    {
+      "topic": "Document vs term partitioning",
+      "tension": "Parallelism and simplicity versus per-term locality."
+    },
+    {
+      "topic": "Freshness vs index stability",
+      "tension": "Frequent updates cost more merges."
+    },
+    {
+      "topic": "Ranking depth vs latency",
+      "tension": "More reranking improves quality but adds time."
+    }
+  ],
+  "commonMistakes": [
+    "Using a general-purpose database for text search.",
+    "Querying every shard with no caching or early termination.",
+    "No tiering, so the long tail dominates cost.",
+    "Ignoring tail latency from slow shards."
+  ],
+  "followUps": [
+    "How do you handle spam and low-quality pages?",
+    "How would you add a news freshness tier?",
+    "How do you evaluate ranking changes?",
+    "How do you serve multiple languages?"
+  ],
+  "topics": [
+    "Index structure",
+    "Query execution",
+    "Ranking",
+    "Indexing pipeline",
+    "Resilience",
+    "inverted-index",
+    "ranking",
+    "sharding"
+  ]
+}

@@ -1,0 +1,179 @@
+{
+  "id": "multiplayer-matchmaking",
+  "version": 1,
+  "title": "Multiplayer Matchmaking",
+  "category": "Gaming",
+  "difficulty": "hard",
+  "summary": "Design a matchmaking service that groups players into fair, low-latency matches quickly.",
+  "statement": "Design a matchmaking system for an online competitive game. Players queue for a mode; the system forms balanced matches considering skill, party size, region, and latency, then allocates a game server. Start by clarifying requirements and estimating scale, then design the system and defend your decisions.",
+  "tags": ["queues", "skill-rating", "latency"],
+  "initialGuidance": [
+    "Clarify the users, the main journeys, and what is explicitly out of scope before drawing anything.",
+    "Estimate read and write volume and storage growth; the numbers decide which components you need.",
+    "Name the guarantees you will offer (consistency, durability, availability) and the trade-offs behind them.",
+    "Write down assumptions as you make them and revisit them when requirements change."
+  ],
+  "coreFunctionalRequirements": [
+    "Queue individuals and parties for a mode.",
+    "Form matches balanced by skill.",
+    "Respect latency and region.",
+    "Allocate a game server for each match.",
+    "Let players cancel or reconnect."
+  ],
+  "requirementQuestions": [
+    {
+      "id": "q-1",
+      "area": "Scale",
+      "question": "How many players queue concurrently and how many matches per minute?",
+      "whyItMatters": "Sets read and write rates and storage growth, which decide whether a single node can cope."
+    },
+    {
+      "id": "q-2",
+      "area": "Latency",
+      "question": "What maximum queue time is acceptable, and does it grow when waiting?",
+      "whyItMatters": "Defines which paths need caching, precomputation, or regional placement."
+    },
+    {
+      "id": "q-3",
+      "area": "Scope",
+      "question": "Solo, parties, team balance, and multiple modes?",
+      "whyItMatters": "Fixes what is in and out of the design so effort goes to what matters."
+    },
+    {
+      "id": "q-4",
+      "area": "Data",
+      "question": "How is skill rating computed and updated after matches?",
+      "whyItMatters": "Determines the data model, retention, and storage choices."
+    },
+    {
+      "id": "q-5",
+      "area": "Availability",
+      "question": "What happens if matchmaking is down: can players still play?",
+      "whyItMatters": "Determines redundancy and failover design, and which features may degrade instead of failing."
+    },
+    {
+      "id": "q-6",
+      "area": "Abuse",
+      "question": "How do you handle smurfing, dodging, and queue abuse?",
+      "whyItMatters": "Adds validation, rate limiting, and fraud controls to the critical path."
+    }
+  ],
+  "workloadAssumptions": {
+    "illustrativeNote": "All numbers below are illustrative examples for practice and are not benchmarks. Real answers depend on the requirements the candidate negotiates.",
+    "items": [
+      {
+        "name": "Concurrent queued players",
+        "value": "500,000",
+        "rationale": "Peak evening."
+      },
+      {
+        "name": "Matches formed per minute",
+        "value": "30,000",
+        "rationale": "Ten players per match."
+      },
+      {
+        "name": "Target wait",
+        "value": "under 45 seconds",
+        "rationale": "Player patience."
+      },
+      {
+        "name": "Server fleet",
+        "value": "100,000 instances",
+        "rationale": "Elastic capacity."
+      }
+    ]
+  },
+  "estimationPrompts": [
+    "How large is each pool after partitioning by region and mode?",
+    "How often must the matcher run to meet wait-time targets?",
+    "How many game servers must be warm?"
+  ],
+  "keyDecisions": [
+    {
+      "id": "d-1",
+      "topic": "Pool partitioning",
+      "question": "How are players grouped for matching?",
+      "considerations": [
+        "Partition by mode and region to bound the search space.",
+        "Skill buckets with widening tolerance over time.",
+        "Party handling."
+      ]
+    },
+    {
+      "id": "d-2",
+      "topic": "Matching algorithm",
+      "question": "How are matches formed?",
+      "considerations": [
+        "Tickets in a pool, matched periodically in batches.",
+        "Greedy versus optimisation; fairness versus speed.",
+        "Relax constraints as wait grows."
+      ]
+    },
+    {
+      "id": "d-3",
+      "topic": "Server allocation",
+      "question": "How is a game server chosen and started?",
+      "considerations": [
+        "Fleet manager with warm pools.",
+        "Select region by latency to all players.",
+        "Autoscale on queue forecasts."
+      ]
+    },
+    {
+      "id": "d-4",
+      "topic": "Rating system",
+      "question": "How are skill ratings maintained?",
+      "considerations": [
+        "Elo, Glicko, or TrueSkill style updates after matches.",
+        "Uncertainty for new players.",
+        "Idempotent rating updates."
+      ]
+    },
+    {
+      "id": "d-5",
+      "topic": "State and reliability",
+      "question": "How is matchmaking state kept consistent?",
+      "considerations": [
+        "Tickets stored in a fast store with expiry.",
+        "Avoid double-assigning a player to two matches.",
+        "Handle player disconnects during assignment."
+      ]
+    }
+  ],
+  "tradeoffs": [
+    {
+      "topic": "Match quality vs wait time",
+      "tension": "Tighter skill ranges mean longer queues."
+    },
+    {
+      "topic": "Warm servers vs cost",
+      "tension": "Instant starts versus idle capacity."
+    },
+    {
+      "topic": "Batch vs continuous matching",
+      "tension": "Better optimisation versus responsiveness."
+    }
+  ],
+  "commonMistakes": [
+    "One global queue for all regions and modes.",
+    "No time-based relaxation of constraints.",
+    "Allowing a player into two matches at once.",
+    "Ignoring latency when choosing the server region."
+  ],
+  "followUps": [
+    "How do you handle large parties versus solo players?",
+    "How do you backfill a match when someone leaves?",
+    "How do you test matchmaking changes safely?",
+    "How do you deal with cross-play platforms?"
+  ],
+  "topics": [
+    "Pool partitioning",
+    "Matching algorithm",
+    "Server allocation",
+    "Rating system",
+    "State and reliability",
+    "queues",
+    "skill-rating",
+    "latency"
+  ]
+}

@@ -1,0 +1,28 @@
+{
+  "scenarios": [
+    {
+      "id": "sc-1",
+      "title": "Upload spike",
+      "description": "A major event triggers many times normal uploads.",
+      "triggers": ["Upload spike"],
+      "probes": ["Which stage backs up first?", "How does the user experience degrade gracefully?"],
+      "relatedTopics": ["Processing pipeline"]
+    },
+    {
+      "id": "sc-2",
+      "title": "CDN origin outage",
+      "description": "The object store region is unavailable.",
+      "triggers": ["CDN origin outage"],
+      "probes": ["What is still served?", "How do you fail over?"],
+      "relatedTopics": ["Delivery"]
+    },
+    {
+      "id": "sc-3",
+      "title": "Takedown request",
+      "description": "A photo must be removed everywhere immediately.",
+      "triggers": ["Takedown request"],
+      "probes": ["How is it purged from caches and variants?", "How is re-upload prevented?"],
+      "relatedTopics": ["Delivery", "Metadata and feed"]
+    }
+  ]
+}

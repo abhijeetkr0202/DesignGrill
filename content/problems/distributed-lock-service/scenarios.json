@@ -1,0 +1,28 @@
+{
+  "scenarios": [
+    {
+      "id": "sc-1",
+      "title": "Client pause",
+      "description": "A lock holder stalls for longer than its lease, then resumes writing.",
+      "triggers": ["Client pause"],
+      "probes": ["How do fencing tokens prevent damage?", "What must the resource check?"],
+      "relatedTopics": ["Fencing"]
+    },
+    {
+      "id": "sc-2",
+      "title": "Leader loss",
+      "description": "The consensus leader crashes.",
+      "triggers": ["Leader loss"],
+      "probes": ["What is unavailable during election?", "Can a lock be granted twice?"],
+      "relatedTopics": ["Consensus core"]
+    },
+    {
+      "id": "sc-3",
+      "title": "Network partition",
+      "description": "A client is cut off from the cluster but can still reach the resource.",
+      "triggers": ["Network partition"],
+      "probes": ["What does the client believe about its lock?", "How is safety preserved?"],
+      "relatedTopics": ["Leases", "Fencing"]
+    }
+  ]
+}

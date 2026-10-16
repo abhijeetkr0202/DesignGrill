@@ -1,0 +1,27 @@
+{
+  "architectures": [
+    {
+      "id": "ra-1",
+      "name": "Sequenced event-sourced engine with hot standby",
+      "summary": "Gateways feed a sequencer; engines consume the ordered log; a standby replays the same stream.",
+      "components": [
+        "Gateways",
+        "Sequencer",
+        "Matching engines",
+        "Event log",
+        "Hot standby",
+        "Market data publisher"
+      ],
+      "bestWhen": "Low-latency deterministic exchange.",
+      "drawbacks": ["Specialised engineering.", "Single sequencer is critical."]
+    },
+    {
+      "id": "ra-2",
+      "name": "Partitioned engines by symbol",
+      "summary": "Symbols are assigned to independent engine instances.",
+      "components": ["Router", "Engine per symbol group", "Log per engine"],
+      "bestWhen": "Scale across many symbols.",
+      "drawbacks": ["Cross-symbol orders are hard.", "Uneven load by symbol."]
+    }
+  ]
+}

@@ -1,0 +1,31 @@
+{
+  "scenarios": [
+    {
+      "id": "sc-1",
+      "title": "Major accident",
+      "description": "A closure suddenly changes traffic across a region.",
+      "triggers": ["Major accident"],
+      "probes": ["How fast do routes adapt?", "What load does mass re-routing cause?"],
+      "relatedTopics": ["Live traffic", "Navigation session"]
+    },
+    {
+      "id": "sc-2",
+      "title": "Tile cache purge",
+      "description": "A map data update invalidates many tiles.",
+      "triggers": ["Tile cache purge"],
+      "probes": [
+        "How do you regenerate without overloading storage?",
+        "What do users see meanwhile?"
+      ],
+      "relatedTopics": ["Tile serving"]
+    },
+    {
+      "id": "sc-3",
+      "title": "Routing node failure",
+      "description": "A region routing server is lost.",
+      "triggers": ["Routing node failure"],
+      "probes": ["How are requests served?", "How is the graph reloaded?"],
+      "relatedTopics": ["Routing graph"]
+    }
+  ]
+}

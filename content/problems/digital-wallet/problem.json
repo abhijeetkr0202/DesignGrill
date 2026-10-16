@@ -1,0 +1,179 @@
+{
+  "id": "digital-wallet",
+  "version": 1,
+  "title": "Digital Wallet",
+  "category": "Commerce & payments",
+  "difficulty": "medium",
+  "summary": "Design a digital wallet that holds balances and transfers money between users instantly and safely.",
+  "statement": "Design a digital wallet service. Users hold balances, top up, send money to each other, and pay merchants. Transfers must be atomic, balances never negative, and every movement auditable. Start by clarifying requirements and estimating scale, then design the system and defend your decisions.",
+  "tags": ["ledger", "transactions", "sharding"],
+  "initialGuidance": [
+    "Clarify the users, the main journeys, and what is explicitly out of scope before drawing anything.",
+    "Estimate read and write volume and storage growth; the numbers decide which components you need.",
+    "Name the guarantees you will offer (consistency, durability, availability) and the trade-offs behind them.",
+    "Write down assumptions as you make them and revisit them when requirements change."
+  ],
+  "coreFunctionalRequirements": [
+    "Maintain per-user balances.",
+    "Transfer money between wallets atomically.",
+    "Top up and withdraw via external accounts.",
+    "Show transaction history.",
+    "Enforce limits and fraud checks."
+  ],
+  "requirementQuestions": [
+    {
+      "id": "q-1",
+      "area": "Consistency",
+      "question": "Must balances be strongly consistent at all times?",
+      "whyItMatters": "Selects between strong and eventual models and shapes conflict handling."
+    },
+    {
+      "id": "q-2",
+      "area": "Scale",
+      "question": "How many wallets, transfers per second, and what peak?",
+      "whyItMatters": "Sets read and write rates and storage growth, which decide whether a single node can cope."
+    },
+    {
+      "id": "q-3",
+      "area": "Availability",
+      "question": "What happens to transfers when a shard is down?",
+      "whyItMatters": "Determines redundancy and failover design, and which features may degrade instead of failing."
+    },
+    {
+      "id": "q-4",
+      "area": "Security",
+      "question": "How are fraud and account takeover handled?",
+      "whyItMatters": "Introduces authentication, authorisation, and privacy constraints that affect the design."
+    },
+    {
+      "id": "q-5",
+      "area": "Data",
+      "question": "What audit and retention requirements exist?",
+      "whyItMatters": "Determines the data model, retention, and storage choices."
+    },
+    {
+      "id": "q-6",
+      "area": "Scope",
+      "question": "Are multiple currencies and holds supported?",
+      "whyItMatters": "Fixes what is in and out of the design so effort goes to what matters."
+    }
+  ],
+  "workloadAssumptions": {
+    "illustrativeNote": "All numbers below are illustrative examples for practice and are not benchmarks. Real answers depend on the requirements the candidate negotiates.",
+    "items": [
+      {
+        "name": "Wallets",
+        "value": "100 million",
+        "rationale": "Consumer scale."
+      },
+      {
+        "name": "Transfers per second",
+        "value": "10,000",
+        "rationale": "Peak."
+      },
+      {
+        "name": "History reads per second",
+        "value": "50,000",
+        "rationale": "App refreshes."
+      },
+      {
+        "name": "Balance check latency",
+        "value": "under 50 ms",
+        "rationale": "Interactive."
+      }
+    ]
+  },
+  "estimationPrompts": [
+    "How many writes per second does the ledger take?",
+    "How is data partitioned across shards?",
+    "What is the share of cross-shard transfers?"
+  ],
+  "keyDecisions": [
+    {
+      "id": "d-1",
+      "topic": "Data model",
+      "question": "How is money represented?",
+      "considerations": [
+        "Immutable ledger entries with derived balances.",
+        "Integer minor units to avoid rounding.",
+        "Per-wallet sequence numbers."
+      ]
+    },
+    {
+      "id": "d-2",
+      "topic": "Transfer atomicity",
+      "question": "How are cross-wallet transfers atomic?",
+      "considerations": [
+        "Same-shard transfers use a database transaction.",
+        "Cross-shard transfers use two-phase commit or a saga with holds.",
+        "Idempotency keys."
+      ]
+    },
+    {
+      "id": "d-3",
+      "topic": "Sharding",
+      "question": "How is data partitioned?",
+      "considerations": [
+        "Shard by wallet ID.",
+        "Hot wallets such as merchants need special handling.",
+        "Rebalancing."
+      ]
+    },
+    {
+      "id": "d-4",
+      "topic": "Fraud and limits",
+      "question": "How are risky transfers detected?",
+      "considerations": [
+        "Rule and model checks on the critical path with latency budget.",
+        "Holds on suspicious transactions.",
+        "Velocity limits."
+      ]
+    },
+    {
+      "id": "d-5",
+      "topic": "History and reporting",
+      "question": "How is history served?",
+      "considerations": [
+        "Read model derived from the ledger.",
+        "Pagination by time.",
+        "Statements and exports."
+      ]
+    }
+  ],
+  "tradeoffs": [
+    {
+      "topic": "2PC vs saga",
+      "tension": "Strictness versus availability and complexity."
+    },
+    {
+      "topic": "Synchronous fraud checks vs speed",
+      "tension": "Safety versus latency."
+    },
+    {
+      "topic": "Single shard simplicity vs scale",
+      "tension": "Capacity versus operational simplicity."
+    }
+  ],
+  "commonMistakes": [
+    "Updating two balances in separate non-atomic calls.",
+    "Floating-point money.",
+    "Hot merchant wallets on one row.",
+    "Computing balances by scanning all history on every read."
+  ],
+  "followUps": [
+    "How do you handle a merchant wallet receiving thousands of payments per second?",
+    "How do you support currency conversion?",
+    "How do you reverse an erroneous transfer?",
+    "How do you recover from a lost shard?"
+  ],
+  "topics": [
+    "Data model",
+    "Transfer atomicity",
+    "Sharding",
+    "Fraud and limits",
+    "History and reporting",
+    "ledger",
+    "transactions",
+    "sharding"
+  ]
+}

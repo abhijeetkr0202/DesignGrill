@@ -1,0 +1,179 @@
+{
+  "id": "distributed-lock-service",
+  "version": 1,
+  "title": "Distributed Lock Service",
+  "category": "Infrastructure",
+  "difficulty": "hard",
+  "summary": "Design a service that provides distributed locks and leader election with safety under failures.",
+  "statement": "Design a distributed lock service used by many applications to coordinate exclusive access to resources and elect leaders. It must remain correct during crashes, pauses, and partitions. Start by clarifying requirements and estimating scale, then design the system and defend your decisions.",
+  "tags": ["consensus", "leases", "fencing"],
+  "initialGuidance": [
+    "Clarify the users, the main journeys, and what is explicitly out of scope before drawing anything.",
+    "Estimate read and write volume and storage growth; the numbers decide which components you need.",
+    "Name the guarantees you will offer (consistency, durability, availability) and the trade-offs behind them.",
+    "Write down assumptions as you make them and revisit them when requirements change."
+  ],
+  "coreFunctionalRequirements": [
+    "Acquire and release locks by name.",
+    "Locks expire automatically via leases.",
+    "Support leader election.",
+    "Provide fencing tokens to protect resources.",
+    "Allow clients to watch lock state."
+  ],
+  "requirementQuestions": [
+    {
+      "id": "q-1",
+      "area": "Consistency",
+      "question": "Is mutual exclusion required strictly, or is best-effort efficiency locking enough?",
+      "whyItMatters": "Selects between strong and eventual models and shapes conflict handling."
+    },
+    {
+      "id": "q-2",
+      "area": "Availability",
+      "question": "What should happen to locks during a partition?",
+      "whyItMatters": "Determines redundancy and failover design, and which features may degrade instead of failing."
+    },
+    {
+      "id": "q-3",
+      "area": "Scale",
+      "question": "How many locks and acquisition attempts per second?",
+      "whyItMatters": "Sets read and write rates and storage growth, which decide whether a single node can cope."
+    },
+    {
+      "id": "q-4",
+      "area": "Latency",
+      "question": "What acquisition latency is acceptable?",
+      "whyItMatters": "Defines which paths need caching, precomputation, or regional placement."
+    },
+    {
+      "id": "q-5",
+      "area": "Scope",
+      "question": "Are locks reentrant, and do clients need to wait in a queue?",
+      "whyItMatters": "Fixes what is in and out of the design so effort goes to what matters."
+    },
+    {
+      "id": "q-6",
+      "area": "Durability",
+      "question": "Must lock state survive a full cluster restart?",
+      "whyItMatters": "Drives replication, backup, and write acknowledgement policy."
+    }
+  ],
+  "workloadAssumptions": {
+    "illustrativeNote": "All numbers below are illustrative examples for practice and are not benchmarks. Real answers depend on the requirements the candidate negotiates.",
+    "items": [
+      {
+        "name": "Locks held",
+        "value": "1 million",
+        "rationale": "Many services and tenants."
+      },
+      {
+        "name": "Acquisitions per second",
+        "value": "50,000",
+        "rationale": "Mixed contention."
+      },
+      {
+        "name": "Lease length",
+        "value": "10 to 30 seconds",
+        "rationale": "Balances failover and renewal traffic."
+      },
+      {
+        "name": "Cluster size",
+        "value": "5 nodes",
+        "rationale": "Typical consensus group."
+      }
+    ]
+  },
+  "estimationPrompts": [
+    "How many heartbeat renewals per second do leases generate?",
+    "How much state does the cluster hold?",
+    "What is the failover time after a leader loss?"
+  ],
+  "keyDecisions": [
+    {
+      "id": "d-1",
+      "topic": "Consensus core",
+      "question": "How does the service stay consistent?",
+      "considerations": [
+        "A replicated state machine using Raft or Paxos.",
+        "Quorum of nodes decides every lock grant.",
+        "Leader handles writes."
+      ]
+    },
+    {
+      "id": "d-2",
+      "topic": "Leases",
+      "question": "How are crashed holders handled?",
+      "considerations": [
+        "Locks carry time-limited leases renewed by heartbeats.",
+        "Clock drift assumptions.",
+        "Session-based locks tied to client liveness."
+      ]
+    },
+    {
+      "id": "d-3",
+      "topic": "Fencing",
+      "question": "How is a paused client prevented from corrupting data?",
+      "considerations": [
+        "A monotonically increasing token accompanies each grant.",
+        "Protected resources reject stale tokens.",
+        "Leases alone are not sufficient."
+      ]
+    },
+    {
+      "id": "d-4",
+      "topic": "Client behaviour",
+      "question": "How do clients wait and retry?",
+      "considerations": [
+        "Watches avoid polling.",
+        "Fair queueing versus random retry.",
+        "Backoff to prevent herd effects."
+      ]
+    },
+    {
+      "id": "d-5",
+      "topic": "Scaling",
+      "question": "How does it scale beyond one consensus group?",
+      "considerations": [
+        "Shard locks across groups by name.",
+        "Read scaling with followers for watches.",
+        "Multi-region coordination cost."
+      ]
+    }
+  ],
+  "tradeoffs": [
+    {
+      "topic": "Strong safety vs availability",
+      "tension": "During partitions the minority cannot grant locks."
+    },
+    {
+      "topic": "Short vs long leases",
+      "tension": "Fast failover versus renewal load and false expiry."
+    },
+    {
+      "topic": "Single group vs sharded",
+      "tension": "Simplicity versus capacity."
+    }
+  ],
+  "commonMistakes": [
+    "Using a single-node store as the lock authority.",
+    "Assuming lease expiry alone makes locks safe.",
+    "Ignoring client pauses such as garbage collection.",
+    "Using wall-clock time comparisons across machines."
+  ],
+  "followUps": [
+    "How do you make a lock safe for a database write?",
+    "How do you implement leader election?",
+    "What if a client keeps renewing but is partitioned from the resource?",
+    "How do you support read-write locks?"
+  ],
+  "topics": [
+    "Consensus core",
+    "Leases",
+    "Fencing",
+    "Client behaviour",
+    "Scaling",
+    "consensus",
+    "leases",
+    "fencing"
+  ]
+}

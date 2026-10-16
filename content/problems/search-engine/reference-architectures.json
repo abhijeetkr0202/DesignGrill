@@ -1,0 +1,20 @@
+{
+  "architectures": [
+    {
+      "id": "ra-1",
+      "name": "Document-sharded tiered index",
+      "summary": "Shards hold subsets of documents with replicas; aggregators merge results; rerankers refine.",
+      "components": ["Indexers", "Index shards and replicas", "Aggregators", "Rerankers", "Cache"],
+      "bestWhen": "Web-scale search.",
+      "drawbacks": ["Fan-out cost per query.", "Tail latency management."]
+    },
+    {
+      "id": "ra-2",
+      "name": "Term-partitioned index",
+      "summary": "Posting lists are partitioned by term; a query contacts only shards for its terms.",
+      "components": ["Term shards", "Coordinator"],
+      "bestWhen": "Short queries over a smaller corpus.",
+      "drawbacks": ["Large posting list transfers.", "Hot terms."]
+    }
+  ]
+}

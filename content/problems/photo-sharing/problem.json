@@ -1,0 +1,179 @@
+{
+  "id": "photo-sharing",
+  "version": 1,
+  "title": "Photo Sharing (Instagram)",
+  "category": "Social & messaging",
+  "difficulty": "medium",
+  "summary": "Design a photo-sharing service with uploads, image processing, follow relationships, and a media-heavy feed.",
+  "statement": "Design a photo-sharing application. Users upload photos, follow others, like and comment, and view a feed. Photos must be stored durably, processed into multiple sizes, and delivered quickly worldwide. Start by clarifying requirements and estimating scale, then design the system and defend your decisions.",
+  "tags": ["media-pipeline", "cdn", "feeds"],
+  "initialGuidance": [
+    "Clarify the users, the main journeys, and what is explicitly out of scope before drawing anything.",
+    "Estimate read and write volume and storage growth; the numbers decide which components you need.",
+    "Name the guarantees you will offer (consistency, durability, availability) and the trade-offs behind them.",
+    "Write down assumptions as you make them and revisit them when requirements change."
+  ],
+  "coreFunctionalRequirements": [
+    "Upload photos with captions.",
+    "Generate thumbnails and resized variants.",
+    "Follow users and view a feed.",
+    "Like and comment on photos.",
+    "View a user profile grid."
+  ],
+  "requirementQuestions": [
+    {
+      "id": "q-1",
+      "area": "Scale",
+      "question": "How many uploads and views per day, and what is the average photo size?",
+      "whyItMatters": "Sets read and write rates and storage growth, which decide whether a single node can cope."
+    },
+    {
+      "id": "q-2",
+      "area": "Latency",
+      "question": "What load time is expected for feed images globally?",
+      "whyItMatters": "Defines which paths need caching, precomputation, or regional placement."
+    },
+    {
+      "id": "q-3",
+      "area": "Durability",
+      "question": "Can an uploaded photo ever be lost?",
+      "whyItMatters": "Drives replication, backup, and write acknowledgement policy."
+    },
+    {
+      "id": "q-4",
+      "area": "Scope",
+      "question": "Is video supported, and are there filters or editing?",
+      "whyItMatters": "Fixes what is in and out of the design so effort goes to what matters."
+    },
+    {
+      "id": "q-5",
+      "area": "Data",
+      "question": "What retention and storage cost constraints exist?",
+      "whyItMatters": "Determines the data model, retention, and storage choices."
+    },
+    {
+      "id": "q-6",
+      "area": "Consistency",
+      "question": "How soon must a new photo appear for followers?",
+      "whyItMatters": "Selects between strong and eventual models and shapes conflict handling."
+    }
+  ],
+  "workloadAssumptions": {
+    "illustrativeNote": "All numbers below are illustrative examples for practice and are not benchmarks. Real answers depend on the requirements the candidate negotiates.",
+    "items": [
+      {
+        "name": "Photos uploaded per day",
+        "value": "100 million",
+        "rationale": "Large platform."
+      },
+      {
+        "name": "Average original size",
+        "value": "3 MB",
+        "rationale": "Modern phone photos."
+      },
+      {
+        "name": "Views per day",
+        "value": "10 billion",
+        "rationale": "Strong read skew."
+      },
+      {
+        "name": "Variants per photo",
+        "value": "4 sizes",
+        "rationale": "Different display contexts."
+      }
+    ]
+  },
+  "estimationPrompts": [
+    "How much new storage per day including variants?",
+    "What bandwidth does global delivery need at peak?",
+    "How many image processing jobs per second?"
+  ],
+  "keyDecisions": [
+    {
+      "id": "d-1",
+      "topic": "Upload path",
+      "question": "How do photos get into the system?",
+      "considerations": [
+        "Direct-to-object-storage uploads with signed URLs keep API servers light.",
+        "Resumable uploads on mobile networks.",
+        "Confirm and register metadata afterwards."
+      ]
+    },
+    {
+      "id": "d-2",
+      "topic": "Processing pipeline",
+      "question": "How are variants produced?",
+      "considerations": [
+        "Asynchronous workers triggered by upload events.",
+        "Idempotent jobs with retries.",
+        "Show the photo once the first variant exists."
+      ]
+    },
+    {
+      "id": "d-3",
+      "topic": "Delivery",
+      "question": "How are images served?",
+      "considerations": [
+        "Object storage origin with a CDN.",
+        "Responsive sizes and modern formats.",
+        "Cache invalidation on deletion."
+      ]
+    },
+    {
+      "id": "d-4",
+      "topic": "Metadata and feed",
+      "question": "Where do metadata and relationships live?",
+      "considerations": [
+        "Sharded database for photos, users, and follows.",
+        "Feed assembled like a social feed with fan-out choices.",
+        "Counters for likes aggregated asynchronously."
+      ]
+    },
+    {
+      "id": "d-5",
+      "topic": "Cost control",
+      "question": "How is storage cost managed?",
+      "considerations": [
+        "Lifecycle tiers for old originals.",
+        "Deduplicate identical uploads where possible.",
+        "Delete unused variants."
+      ]
+    }
+  ],
+  "tradeoffs": [
+    {
+      "topic": "Eager vs lazy variant generation",
+      "tension": "Upfront cost and storage versus first-view latency."
+    },
+    {
+      "topic": "Storage tiering vs retrieval latency",
+      "tension": "Cost savings versus slow access to old photos."
+    },
+    {
+      "topic": "Fan-out choices",
+      "tension": "Same trade-offs as any follow-based feed."
+    }
+  ],
+  "commonMistakes": [
+    "Proxying large uploads through application servers.",
+    "Doing image processing synchronously in the request.",
+    "Serving originals to every client.",
+    "No plan for CDN invalidation on removal."
+  ],
+  "followUps": [
+    "How do you detect and block prohibited images?",
+    "How would you add video support?",
+    "How do you make uploads reliable on flaky networks?",
+    "How would you build the explore page?"
+  ],
+  "topics": [
+    "Upload path",
+    "Processing pipeline",
+    "Delivery",
+    "Metadata and feed",
+    "Cost control",
+    "media-pipeline",
+    "cdn",
+    "feeds"
+  ]
+}

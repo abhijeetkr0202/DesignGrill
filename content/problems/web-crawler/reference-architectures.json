@@ -1,0 +1,27 @@
+{
+  "architectures": [
+    {
+      "id": "ra-1",
+      "name": "Host-partitioned distributed crawler",
+      "summary": "Frontier and fetchers are partitioned by host; seen-set and fingerprints live in sharded stores.",
+      "components": [
+        "Frontier",
+        "Fetchers",
+        "DNS cache",
+        "Seen-URL store",
+        "Content store",
+        "Parser"
+      ],
+      "bestWhen": "Large-scale web crawling.",
+      "drawbacks": ["Rebalancing hosts.", "Frontier state size."]
+    },
+    {
+      "id": "ra-2",
+      "name": "Focused crawler",
+      "summary": "A classifier scores links so only relevant pages are queued.",
+      "components": ["Fetchers", "Relevance model", "Frontier"],
+      "bestWhen": "Vertical search or archives.",
+      "drawbacks": ["Model quality limits coverage.", "Extra compute."]
+    }
+  ]
+}

@@ -1,0 +1,179 @@
+{
+  "id": "game-leaderboard",
+  "version": 1,
+  "title": "Real-Time Game Leaderboard",
+  "category": "Gaming",
+  "difficulty": "easy",
+  "summary": "Design a leaderboard that ranks millions of players by score with fast updates and rank lookups.",
+  "statement": "Design a global and friends leaderboard for a mobile game. Scores update continuously; players want to see the top N, their own rank, and the players near them. Seasons reset periodically. Start by clarifying requirements and estimating scale, then design the system and defend your decisions.",
+  "tags": ["sorted-sets", "ranking", "real-time"],
+  "initialGuidance": [
+    "Clarify the users, the main journeys, and what is explicitly out of scope before drawing anything.",
+    "Estimate read and write volume and storage growth; the numbers decide which components you need.",
+    "Name the guarantees you will offer (consistency, durability, availability) and the trade-offs behind them.",
+    "Write down assumptions as you make them and revisit them when requirements change."
+  ],
+  "coreFunctionalRequirements": [
+    "Update a player score.",
+    "Show the top N players.",
+    "Show a player rank and neighbours.",
+    "Support friends-only and regional boards.",
+    "Reset or archive per season."
+  ],
+  "requirementQuestions": [
+    {
+      "id": "q-1",
+      "area": "Scale",
+      "question": "How many players and score updates per second?",
+      "whyItMatters": "Sets read and write rates and storage growth, which decide whether a single node can cope."
+    },
+    {
+      "id": "q-2",
+      "area": "Latency",
+      "question": "How fresh must the leaderboard be?",
+      "whyItMatters": "Defines which paths need caching, precomputation, or regional placement."
+    },
+    {
+      "id": "q-3",
+      "area": "Consistency",
+      "question": "Must ranks be exact, or is approximate acceptable for lower ranks?",
+      "whyItMatters": "Selects between strong and eventual models and shapes conflict handling."
+    },
+    {
+      "id": "q-4",
+      "area": "Scope",
+      "question": "Which boards exist: global, regional, friends, per game mode?",
+      "whyItMatters": "Fixes what is in and out of the design so effort goes to what matters."
+    },
+    {
+      "id": "q-5",
+      "area": "Durability",
+      "question": "Can scores be lost if a node fails?",
+      "whyItMatters": "Drives replication, backup, and write acknowledgement policy."
+    },
+    {
+      "id": "q-6",
+      "area": "Abuse",
+      "question": "How are cheated scores prevented?",
+      "whyItMatters": "Adds validation, rate limiting, and fraud controls to the critical path."
+    }
+  ],
+  "workloadAssumptions": {
+    "illustrativeNote": "All numbers below are illustrative examples for practice and are not benchmarks. Real answers depend on the requirements the candidate negotiates.",
+    "items": [
+      {
+        "name": "Players",
+        "value": "50 million",
+        "rationale": "Popular game."
+      },
+      {
+        "name": "Score updates per second",
+        "value": "20,000",
+        "rationale": "Peak hours."
+      },
+      {
+        "name": "Top-N reads per second",
+        "value": "100,000",
+        "rationale": "Menus refresh often."
+      },
+      {
+        "name": "Season length",
+        "value": "30 days",
+        "rationale": "Periodic resets."
+      }
+    ]
+  },
+  "estimationPrompts": [
+    "How much memory does a sorted set of all players need?",
+    "How many writes per second per board shard?",
+    "What is the read load for the top 100?"
+  ],
+  "keyDecisions": [
+    {
+      "id": "d-1",
+      "topic": "Ranking structure",
+      "question": "How is rank computed fast?",
+      "considerations": [
+        "In-memory sorted set (skip list) gives logarithmic updates and rank queries.",
+        "A relational database ORDER BY does not scale.",
+        "Memory footprint at 50 million players."
+      ]
+    },
+    {
+      "id": "d-2",
+      "topic": "Sharding",
+      "question": "How is a huge board partitioned?",
+      "considerations": [
+        "Shard by score range to get global rank by summing shard sizes.",
+        "Or approximate rank beyond the top thousand.",
+        "Hot top shard."
+      ]
+    },
+    {
+      "id": "d-3",
+      "topic": "Durability",
+      "question": "How are scores persisted?",
+      "considerations": [
+        "Write to a durable store and update the in-memory board.",
+        "Rebuild the board from the store after failure.",
+        "Snapshots plus log."
+      ]
+    },
+    {
+      "id": "d-4",
+      "topic": "Friends and regional boards",
+      "question": "How are sub-boards served?",
+      "considerations": [
+        "Small per-user friend sets can be computed at read time.",
+        "Regional boards are separate sorted sets.",
+        "Cache results briefly."
+      ]
+    },
+    {
+      "id": "d-5",
+      "topic": "Season reset",
+      "question": "How are seasons handled?",
+      "considerations": [
+        "Key boards by season.",
+        "Archive old boards to cold storage.",
+        "Avoid a mass delete at reset time."
+      ]
+    }
+  ],
+  "tradeoffs": [
+    {
+      "topic": "Exact vs approximate rank",
+      "tension": "Cost of exactness for the long tail versus player expectations."
+    },
+    {
+      "topic": "Sync vs async score updates",
+      "tension": "Freshness versus write amplification."
+    },
+    {
+      "topic": "One big board vs sharded boards",
+      "tension": "Simplicity versus capacity."
+    }
+  ],
+  "commonMistakes": [
+    "Sorting the whole table on every read.",
+    "Updating ranks for all players when one score changes.",
+    "Only an in-memory board with no persistence.",
+    "No plan for the season rollover."
+  ],
+  "followUps": [
+    "How do you handle ties?",
+    "How do you prevent cheating through client-reported scores?",
+    "How do you show rank change since yesterday?",
+    "How do you scale reads for the top 100?"
+  ],
+  "topics": [
+    "Ranking structure",
+    "Sharding",
+    "Durability",
+    "Friends and regional boards",
+    "Season reset",
+    "sorted-sets",
+    "ranking",
+    "real-time"
+  ]
+}

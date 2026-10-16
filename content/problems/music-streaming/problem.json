@@ -1,0 +1,179 @@
+{
+  "id": "music-streaming",
+  "version": 1,
+  "title": "Music Streaming (Spotify)",
+  "category": "Media & entertainment",
+  "difficulty": "medium",
+  "summary": "Design a music streaming service with a large catalogue, playlists, offline playback, and recommendations.",
+  "statement": "Design a music streaming service. Users search and play tracks, create playlists, follow artists, download for offline use, and get personalised suggestions. Licensing and royalty accounting are also required. Start by clarifying requirements and estimating scale, then design the system and defend your decisions.",
+  "tags": ["catalogue", "offline-sync", "recommendations"],
+  "initialGuidance": [
+    "Clarify the users, the main journeys, and what is explicitly out of scope before drawing anything.",
+    "Estimate read and write volume and storage growth; the numbers decide which components you need.",
+    "Name the guarantees you will offer (consistency, durability, availability) and the trade-offs behind them.",
+    "Write down assumptions as you make them and revisit them when requirements change."
+  ],
+  "coreFunctionalRequirements": [
+    "Search and play tracks.",
+    "Create and share playlists.",
+    "Download for offline listening.",
+    "Personalised recommendations.",
+    "Track plays for royalties."
+  ],
+  "requirementQuestions": [
+    {
+      "id": "q-1",
+      "area": "Scale",
+      "question": "How many users, concurrent listeners, tracks, and playlists?",
+      "whyItMatters": "Sets read and write rates and storage growth, which decide whether a single node can cope."
+    },
+    {
+      "id": "q-2",
+      "area": "Latency",
+      "question": "How quickly must a track start and how is it buffered?",
+      "whyItMatters": "Defines which paths need caching, precomputation, or regional placement."
+    },
+    {
+      "id": "q-3",
+      "area": "Consistency",
+      "question": "How must playlist edits sync across devices?",
+      "whyItMatters": "Selects between strong and eventual models and shapes conflict handling."
+    },
+    {
+      "id": "q-4",
+      "area": "Scope",
+      "question": "Are podcasts, lyrics, or social features included?",
+      "whyItMatters": "Fixes what is in and out of the design so effort goes to what matters."
+    },
+    {
+      "id": "q-5",
+      "area": "Data",
+      "question": "How are plays counted for royalties, and how exact must they be?",
+      "whyItMatters": "Determines the data model, retention, and storage choices."
+    },
+    {
+      "id": "q-6",
+      "area": "Security",
+      "question": "Is DRM required for downloads?",
+      "whyItMatters": "Introduces authentication, authorisation, and privacy constraints that affect the design."
+    }
+  ],
+  "workloadAssumptions": {
+    "illustrativeNote": "All numbers below are illustrative examples for practice and are not benchmarks. Real answers depend on the requirements the candidate negotiates.",
+    "items": [
+      {
+        "name": "Monthly users",
+        "value": "400 million",
+        "rationale": "Global service."
+      },
+      {
+        "name": "Concurrent listeners",
+        "value": "30 million",
+        "rationale": "Peak."
+      },
+      {
+        "name": "Catalogue",
+        "value": "100 million tracks",
+        "rationale": "Mostly long tail."
+      },
+      {
+        "name": "Average track size",
+        "value": "5 MB",
+        "rationale": "Compressed audio."
+      }
+    ]
+  },
+  "estimationPrompts": [
+    "What storage does the catalogue need across encodings?",
+    "How many play events per second must be recorded?",
+    "What fraction of listening comes from a small hot set?"
+  ],
+  "keyDecisions": [
+    {
+      "id": "d-1",
+      "topic": "Audio delivery",
+      "question": "How is audio served?",
+      "considerations": [
+        "Chunked streaming from object storage via CDN with prefetch of the next track.",
+        "Multiple bitrates for network conditions.",
+        "Popular tracks cache well; the tail goes to origin."
+      ]
+    },
+    {
+      "id": "d-2",
+      "topic": "Catalogue and search",
+      "question": "How are metadata and search stored?",
+      "considerations": [
+        "Metadata database plus a search index with typo tolerance.",
+        "Rights metadata by region.",
+        "Index update flow from content ingestion."
+      ]
+    },
+    {
+      "id": "d-3",
+      "topic": "Playlists and sync",
+      "question": "How are playlists stored and synced?",
+      "considerations": [
+        "Per-user data with versioning for conflict handling.",
+        "Collaborative playlists need merge semantics.",
+        "Cache on devices with sync deltas."
+      ]
+    },
+    {
+      "id": "d-4",
+      "topic": "Play accounting",
+      "question": "How are plays counted?",
+      "considerations": [
+        "Client events into a durable log, then aggregated.",
+        "Deduplicate and validate for royalties.",
+        "Near-real-time for display; exact batch for payouts."
+      ]
+    },
+    {
+      "id": "d-5",
+      "topic": "Recommendations",
+      "question": "How are suggestions produced?",
+      "considerations": [
+        "Offline batch models plus real-time signals.",
+        "Precompute daily lists per user.",
+        "Cold start for new users and tracks."
+      ]
+    }
+  ],
+  "tradeoffs": [
+    {
+      "topic": "Prefetching vs bandwidth waste",
+      "tension": "Seamless playback versus unplayed downloads."
+    },
+    {
+      "topic": "Exact vs approximate play counts",
+      "tension": "Royalty accuracy versus real-time cost."
+    },
+    {
+      "topic": "Offline downloads vs rights control",
+      "tension": "User experience versus license enforcement."
+    }
+  ],
+  "commonMistakes": [
+    "Streaming the whole file before playing.",
+    "Counting plays synchronously in the playback path.",
+    "One global playlist table without sharding.",
+    "Ignoring regional licensing restrictions."
+  ],
+  "followUps": [
+    "How do you implement offline mode with licence expiry?",
+    "How do you build Discover Weekly style playlists?",
+    "How do you handle a new album release surge?",
+    "How would you add collaborative playlists?"
+  ],
+  "topics": [
+    "Audio delivery",
+    "Catalogue and search",
+    "Playlists and sync",
+    "Play accounting",
+    "Recommendations",
+    "catalogue",
+    "offline-sync",
+    "recommendations"
+  ]
+}

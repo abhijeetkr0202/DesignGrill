@@ -1,0 +1,20 @@
+{
+  "architectures": [
+    {
+      "id": "ra-1",
+      "name": "Metadata database plus object store",
+      "summary": "API servers write metadata to a database and content to object storage; reads go through a CDN.",
+      "components": ["API service", "Metadata database", "Object storage", "CDN", "Key generator"],
+      "bestWhen": "Pastes vary in size and read traffic is global.",
+      "drawbacks": ["Two stores to keep consistent.", "Deletion must purge the CDN."]
+    },
+    {
+      "id": "ra-2",
+      "name": "Single key-value store",
+      "summary": "Small pastes live directly in a key-value store keyed by paste code with a TTL.",
+      "components": ["API service", "Key-value store with TTL"],
+      "bestWhen": "Pastes are small and operational simplicity matters.",
+      "drawbacks": ["Large pastes strain the store.", "Less flexible querying by owner."]
+    }
+  ]
+}

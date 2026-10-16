@@ -1,0 +1,26 @@
+{
+  "architectures": [
+    {
+      "id": "ra-1",
+      "name": "Transactional marketplace service",
+      "summary": "A service with its own database performs atomic purchases and publishes events to the search index.",
+      "components": [
+        "Marketplace API",
+        "Transactional DB",
+        "Search index",
+        "Event log",
+        "Wallet and inventory"
+      ],
+      "bestWhen": "Consistency of ownership is paramount.",
+      "drawbacks": ["Database as a scaling limit.", "Index lag."]
+    },
+    {
+      "id": "ra-2",
+      "name": "Saga across wallet and inventory services",
+      "summary": "Purchase coordinates separate services with compensating actions.",
+      "components": ["Orchestrator", "Wallet service", "Inventory service"],
+      "bestWhen": "Existing separate services own balances and items.",
+      "drawbacks": ["Partial failure complexity.", "Longer purchase latency."]
+    }
+  ]
+}

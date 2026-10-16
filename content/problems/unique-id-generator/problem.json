@@ -1,0 +1,179 @@
+{
+  "id": "unique-id-generator",
+  "version": 1,
+  "title": "Unique ID Generator",
+  "category": "Infrastructure",
+  "difficulty": "easy",
+  "summary": "Design a service that generates unique, roughly time-ordered 64-bit IDs across many machines.",
+  "statement": "Design a distributed unique ID generator for a large platform. IDs must be unique across data centers, fit in 64 bits, and be sortable by creation time. Services need to generate them at very high rates with low latency. Start by clarifying requirements and estimating scale, then design the system and defend your decisions.",
+  "tags": ["distributed-systems", "ordering", "time"],
+  "initialGuidance": [
+    "Clarify the users, the main journeys, and what is explicitly out of scope before drawing anything.",
+    "Estimate read and write volume and storage growth; the numbers decide which components you need.",
+    "Name the guarantees you will offer (consistency, durability, availability) and the trade-offs behind them.",
+    "Write down assumptions as you make them and revisit them when requirements change."
+  ],
+  "coreFunctionalRequirements": [
+    "Generate globally unique IDs.",
+    "IDs fit in 64 bits.",
+    "IDs are roughly sortable by time.",
+    "Generation requires no per-ID network call where possible.",
+    "Support multiple data centers."
+  ],
+  "requirementQuestions": [
+    {
+      "id": "q-1",
+      "area": "Scale",
+      "question": "How many IDs per second must the system generate in total and per node?",
+      "whyItMatters": "Sets read and write rates and storage growth, which decide whether a single node can cope."
+    },
+    {
+      "id": "q-2",
+      "area": "Ordering",
+      "question": "Must IDs be strictly increasing, or is rough time ordering enough?",
+      "whyItMatters": "Ordering guarantees constrain partitioning and parallelism."
+    },
+    {
+      "id": "q-3",
+      "area": "Data",
+      "question": "Are IDs exposed publicly, and does predictability matter?",
+      "whyItMatters": "Determines the data model, retention, and storage choices."
+    },
+    {
+      "id": "q-4",
+      "area": "Availability",
+      "question": "Can ID generation depend on a central service?",
+      "whyItMatters": "Determines redundancy and failover design, and which features may degrade instead of failing."
+    },
+    {
+      "id": "q-5",
+      "area": "Consistency",
+      "question": "What happens if two nodes issue the same ID, and is that ever acceptable?",
+      "whyItMatters": "Selects between strong and eventual models and shapes conflict handling."
+    },
+    {
+      "id": "q-6",
+      "area": "Scope",
+      "question": "Is there a size constraint, such as 64 bits, or a required character set?",
+      "whyItMatters": "Fixes what is in and out of the design so effort goes to what matters."
+    }
+  ],
+  "workloadAssumptions": {
+    "illustrativeNote": "All numbers below are illustrative examples for practice and are not benchmarks. Real answers depend on the requirements the candidate negotiates.",
+    "items": [
+      {
+        "name": "IDs per second",
+        "value": "1 million overall",
+        "rationale": "Large multi-service platform."
+      },
+      {
+        "name": "Nodes generating IDs",
+        "value": "1,000",
+        "rationale": "Spread across regions."
+      },
+      {
+        "name": "Per-node rate",
+        "value": "up to 5,000 per second",
+        "rationale": "Bursty workloads."
+      },
+      {
+        "name": "Lifetime",
+        "value": "69 years",
+        "rationale": "A timestamp-based design must not overflow."
+      }
+    ]
+  },
+  "estimationPrompts": [
+    "How many bits are needed for time, node identifier, and sequence?",
+    "How many IDs can one node issue per millisecond?",
+    "When does the timestamp field overflow?"
+  ],
+  "keyDecisions": [
+    {
+      "id": "d-1",
+      "topic": "Scheme",
+      "question": "How is an ID composed?",
+      "considerations": [
+        "Timestamp plus machine ID plus sequence (snowflake style).",
+        "Database auto-increment is simple but is a bottleneck.",
+        "UUIDs are unique but large and not ordered."
+      ]
+    },
+    {
+      "id": "d-2",
+      "topic": "Node identity",
+      "question": "How do nodes get unique machine IDs?",
+      "considerations": [
+        "Coordinated assignment through a registry.",
+        "Reuse after failure must not create duplicates.",
+        "Bit budget limits the node count."
+      ]
+    },
+    {
+      "id": "d-3",
+      "topic": "Clock handling",
+      "question": "How are clock problems handled?",
+      "considerations": [
+        "Clock moving backwards can duplicate IDs.",
+        "Wait, refuse, or use a logical component.",
+        "Time synchronisation and monitoring."
+      ]
+    },
+    {
+      "id": "d-4",
+      "topic": "Sequence overflow",
+      "question": "What if a node exceeds its per-millisecond sequence?",
+      "considerations": [
+        "Block until the next tick.",
+        "Borrow bits from other fields.",
+        "Backpressure to callers."
+      ]
+    },
+    {
+      "id": "d-5",
+      "topic": "Deployment shape",
+      "question": "Is generation embedded or a service?",
+      "considerations": [
+        "Library embedded in each service avoids a network hop.",
+        "A central service simplifies coordination.",
+        "Failure isolation."
+      ]
+    }
+  ],
+  "tradeoffs": [
+    {
+      "topic": "Ordering vs coordination",
+      "tension": "Strict ordering needs a central sequencer; rough ordering needs none."
+    },
+    {
+      "topic": "Embedded vs service",
+      "tension": "Latency and availability versus central control."
+    },
+    {
+      "topic": "Time-based vs random",
+      "tension": "Sortability and compactness versus unpredictability."
+    }
+  ],
+  "commonMistakes": [
+    "Assuming clocks never go backwards.",
+    "Using a single database sequence as the global generator.",
+    "Ignoring reuse of machine IDs after restarts.",
+    "Not accounting for the bit budget."
+  ],
+  "followUps": [
+    "How would you add a shard identifier to IDs?",
+    "How do you avoid exposing creation rate through IDs?",
+    "What if you need strictly monotonic IDs?",
+    "How do you migrate from auto-increment IDs?"
+  ],
+  "topics": [
+    "Scheme",
+    "Node identity",
+    "Clock handling",
+    "Sequence overflow",
+    "Deployment shape",
+    "distributed-systems",
+    "ordering",
+    "time"
+  ]
+}

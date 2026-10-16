@@ -1,0 +1,37 @@
+{
+  "scenarios": [
+    {
+      "id": "sc-1",
+      "title": "Shared store outage",
+      "description": "The counter store fails during peak traffic.",
+      "triggers": ["Shared store outage"],
+      "probes": [
+        "Do you fail open or closed and why?",
+        "How do you avoid a stampede when it recovers?"
+      ],
+      "relatedTopics": ["Failure mode", "State storage"]
+    },
+    {
+      "id": "sc-2",
+      "title": "Hot key",
+      "description": "One customer sends a huge share of traffic through a single key.",
+      "triggers": ["Hot key"],
+      "probes": [
+        "What happens to the store partition holding that key?",
+        "How can the hot key be spread or handled locally?"
+      ],
+      "relatedTopics": ["State storage"]
+    },
+    {
+      "id": "sc-3",
+      "title": "Clock skew",
+      "description": "Gateway nodes disagree about time by several seconds.",
+      "triggers": ["Clock skew"],
+      "probes": [
+        "How does this affect window-based algorithms?",
+        "Which approach is robust to skew?"
+      ],
+      "relatedTopics": ["Algorithm"]
+    }
+  ]
+}

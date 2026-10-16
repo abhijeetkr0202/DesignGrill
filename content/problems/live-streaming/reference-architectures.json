@@ -1,0 +1,20 @@
+{
+  "architectures": [
+    {
+      "id": "ra-1",
+      "name": "Ingest, transcode, segment, CDN",
+      "summary": "Streams enter at ingest points, are transcoded and segmented, and pushed through a CDN.",
+      "components": ["Ingest edge", "Transcoder", "Segmenter", "Origin", "CDN", "Chat service"],
+      "bestWhen": "Large audiences with seconds of delay.",
+      "drawbacks": ["Several seconds of latency.", "Transcode cost per stream."]
+    },
+    {
+      "id": "ra-2",
+      "name": "WebRTC-based low-latency distribution",
+      "summary": "Viewers receive media through a tree of media servers.",
+      "components": ["Ingest", "Media server tree", "Signalling"],
+      "bestWhen": "Interactive streams needing sub-second delay.",
+      "drawbacks": ["Costly at huge scale.", "Operational complexity."]
+    }
+  ]
+}

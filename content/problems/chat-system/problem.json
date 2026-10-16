@@ -1,0 +1,179 @@
+{
+  "id": "chat-system",
+  "version": 1,
+  "title": "Chat System (WhatsApp)",
+  "category": "Social & messaging",
+  "difficulty": "hard",
+  "summary": "Design a real-time messaging service for one-to-one and group chat with delivery receipts and offline support.",
+  "statement": "Design a chat application like WhatsApp or Messenger. Users exchange messages in one-to-one and group conversations, see delivery and read status, and receive messages when they come back online across multiple devices. Start by clarifying requirements and estimating scale, then design the system and defend your decisions.",
+  "tags": ["websockets", "ordering", "presence"],
+  "initialGuidance": [
+    "Clarify the users, the main journeys, and what is explicitly out of scope before drawing anything.",
+    "Estimate read and write volume and storage growth; the numbers decide which components you need.",
+    "Name the guarantees you will offer (consistency, durability, availability) and the trade-offs behind them.",
+    "Write down assumptions as you make them and revisit them when requirements change."
+  ],
+  "coreFunctionalRequirements": [
+    "Send and receive messages in real time.",
+    "Support one-to-one and group chats.",
+    "Show sent, delivered, and read receipts.",
+    "Deliver messages to offline users when they return.",
+    "Sync history across devices."
+  ],
+  "requirementQuestions": [
+    {
+      "id": "q-1",
+      "area": "Scale",
+      "question": "How many users, concurrent connections, and messages per second?",
+      "whyItMatters": "Sets read and write rates and storage growth, which decide whether a single node can cope."
+    },
+    {
+      "id": "q-2",
+      "area": "Latency",
+      "question": "What end-to-end delivery latency is expected?",
+      "whyItMatters": "Defines which paths need caching, precomputation, or regional placement."
+    },
+    {
+      "id": "q-3",
+      "area": "Ordering",
+      "question": "Must messages within a conversation appear in the same order for everyone?",
+      "whyItMatters": "Ordering guarantees constrain partitioning and parallelism."
+    },
+    {
+      "id": "q-4",
+      "area": "Durability",
+      "question": "Can a message ever be lost after the sender sees it as sent?",
+      "whyItMatters": "Drives replication, backup, and write acknowledgement policy."
+    },
+    {
+      "id": "q-5",
+      "area": "Security",
+      "question": "Is end-to-end encryption required, and what does the server see?",
+      "whyItMatters": "Introduces authentication, authorisation, and privacy constraints that affect the design."
+    },
+    {
+      "id": "q-6",
+      "area": "Scope",
+      "question": "Group size limits, media sharing, and message retention?",
+      "whyItMatters": "Fixes what is in and out of the design so effort goes to what matters."
+    }
+  ],
+  "workloadAssumptions": {
+    "illustrativeNote": "All numbers below are illustrative examples for practice and are not benchmarks. Real answers depend on the requirements the candidate negotiates.",
+    "items": [
+      {
+        "name": "Monthly users",
+        "value": "1 billion",
+        "rationale": "Global messaging platform."
+      },
+      {
+        "name": "Concurrent connections",
+        "value": "100 million",
+        "rationale": "Persistent connections."
+      },
+      {
+        "name": "Messages per second",
+        "value": "1 million average",
+        "rationale": "Peaks at events."
+      },
+      {
+        "name": "Group size limit",
+        "value": "1,000",
+        "rationale": "Bounds fan-out."
+      }
+    ]
+  },
+  "estimationPrompts": [
+    "How many chat servers are needed for 100 million connections?",
+    "How much storage do undelivered messages need?",
+    "What is the fan-out of a message to a 1,000-member group?"
+  ],
+  "keyDecisions": [
+    {
+      "id": "d-1",
+      "topic": "Connection layer",
+      "question": "How do clients stay connected?",
+      "considerations": [
+        "Persistent WebSocket or similar connections to gateway servers.",
+        "Routing from a user to the gateway holding their connection.",
+        "Reconnect storms after failure."
+      ]
+    },
+    {
+      "id": "d-2",
+      "topic": "Message flow and storage",
+      "question": "How are messages persisted and routed?",
+      "considerations": [
+        "Persist before acknowledging to the sender.",
+        "Queue messages for offline recipients.",
+        "Per-conversation sequence numbers give ordering."
+      ]
+    },
+    {
+      "id": "d-3",
+      "topic": "Group chat",
+      "question": "How are group messages delivered?",
+      "considerations": [
+        "Fan-out on the server to each member.",
+        "Membership lookups on the hot path.",
+        "Large groups need batching."
+      ]
+    },
+    {
+      "id": "d-4",
+      "topic": "Receipts and presence",
+      "question": "How are status and online state tracked?",
+      "considerations": [
+        "Receipts are small messages in the reverse direction.",
+        "Presence via heartbeats is costly; subscribe only to visible contacts.",
+        "Approximate presence is fine."
+      ]
+    },
+    {
+      "id": "d-5",
+      "topic": "Multi-device sync",
+      "question": "How do devices stay in sync?",
+      "considerations": [
+        "Each device has its own cursor into the message log.",
+        "Messages are stored per conversation with sequence IDs.",
+        "Idempotent delivery on retries."
+      ]
+    }
+  ],
+  "tradeoffs": [
+    {
+      "topic": "Persist before ack vs latency",
+      "tension": "Safety versus a small delay."
+    },
+    {
+      "topic": "Presence accuracy vs load",
+      "tension": "Frequent heartbeats cost server and battery."
+    },
+    {
+      "topic": "Server fan-out vs client fan-out",
+      "tension": "Server work and visibility versus encryption model."
+    }
+  ],
+  "commonMistakes": [
+    "Using plain HTTP polling for real-time delivery.",
+    "No way to route a message to the right gateway server.",
+    "Ignoring ordering and duplicate delivery on retries.",
+    "Broadcasting presence to everyone."
+  ],
+  "followUps": [
+    "How would end-to-end encryption change the design?",
+    "How do you handle a gateway server crash with millions of connections?",
+    "How do you deliver push notifications to offline devices?",
+    "How would you support message search?"
+  ],
+  "topics": [
+    "Connection layer",
+    "Message flow and storage",
+    "Group chat",
+    "Receipts and presence",
+    "Multi-device sync",
+    "websockets",
+    "ordering",
+    "presence"
+  ]
+}

@@ -1,0 +1,179 @@
+{
+  "id": "typeahead-autocomplete",
+  "version": 1,
+  "title": "Search Autocomplete (Typeahead)",
+  "category": "Search & data",
+  "difficulty": "medium",
+  "summary": "Design a search suggestion service that returns the best completions as the user types.",
+  "statement": "Design the autocomplete feature of a search box. As the user types each character, the service returns the top suggestions ranked by popularity and personal relevance within tens of milliseconds, using fresh query data. Start by clarifying requirements and estimating scale, then design the system and defend your decisions.",
+  "tags": ["trie", "low-latency", "ranking"],
+  "initialGuidance": [
+    "Clarify the users, the main journeys, and what is explicitly out of scope before drawing anything.",
+    "Estimate read and write volume and storage growth; the numbers decide which components you need.",
+    "Name the guarantees you will offer (consistency, durability, availability) and the trade-offs behind them.",
+    "Write down assumptions as you make them and revisit them when requirements change."
+  ],
+  "coreFunctionalRequirements": [
+    "Return top suggestions for a prefix.",
+    "Update suggestions from recent query trends.",
+    "Filter inappropriate suggestions.",
+    "Support multiple languages.",
+    "Optionally personalise by user and location."
+  ],
+  "requirementQuestions": [
+    {
+      "id": "q-1",
+      "area": "Latency",
+      "question": "What response time is required per keystroke?",
+      "whyItMatters": "Defines which paths need caching, precomputation, or regional placement."
+    },
+    {
+      "id": "q-2",
+      "area": "Scale",
+      "question": "How many queries per second and how many distinct queries exist?",
+      "whyItMatters": "Sets read and write rates and storage growth, which decide whether a single node can cope."
+    },
+    {
+      "id": "q-3",
+      "area": "Consistency",
+      "question": "How fresh must trending suggestions be?",
+      "whyItMatters": "Selects between strong and eventual models and shapes conflict handling."
+    },
+    {
+      "id": "q-4",
+      "area": "Scope",
+      "question": "Is personalisation required or only global popularity?",
+      "whyItMatters": "Fixes what is in and out of the design so effort goes to what matters."
+    },
+    {
+      "id": "q-5",
+      "area": "Abuse",
+      "question": "How are offensive or sensitive suggestions removed?",
+      "whyItMatters": "Adds validation, rate limiting, and fraud controls to the critical path."
+    },
+    {
+      "id": "q-6",
+      "area": "Data",
+      "question": "How many suggestions per prefix and what is the maximum prefix length?",
+      "whyItMatters": "Determines the data model, retention, and storage choices."
+    }
+  ],
+  "workloadAssumptions": {
+    "illustrativeNote": "All numbers below are illustrative examples for practice and are not benchmarks. Real answers depend on the requirements the candidate negotiates.",
+    "items": [
+      {
+        "name": "Suggestion requests per second",
+        "value": "300,000",
+        "rationale": "Several per search."
+      },
+      {
+        "name": "Distinct queries",
+        "value": "1 billion",
+        "rationale": "Long tail."
+      },
+      {
+        "name": "Latency target",
+        "value": "under 50 ms",
+        "rationale": "Perceived instant."
+      },
+      {
+        "name": "Suggestions per prefix",
+        "value": "5 to 10",
+        "rationale": "UI limit."
+      }
+    ]
+  },
+  "estimationPrompts": [
+    "How much memory does a prefix index of popular queries need?",
+    "What cache hit rate do common prefixes give?",
+    "How often must the index refresh?"
+  ],
+  "keyDecisions": [
+    {
+      "id": "d-1",
+      "topic": "Data structure",
+      "question": "How are prefixes mapped to suggestions?",
+      "considerations": [
+        "A trie with top-k stored at each node makes lookup constant per prefix.",
+        "Or precompute prefix to top-k in a key-value store.",
+        "Memory pruning of rare queries."
+      ]
+    },
+    {
+      "id": "d-2",
+      "topic": "Offline build",
+      "question": "How is the index built?",
+      "considerations": [
+        "Aggregate query logs into frequencies on a schedule.",
+        "Build and swap new index versions atomically.",
+        "Decay old popularity."
+      ]
+    },
+    {
+      "id": "d-3",
+      "topic": "Freshness",
+      "question": "How are trending queries reflected?",
+      "considerations": [
+        "Stream processing adds a small real-time layer.",
+        "Merge with the offline index at serve time.",
+        "Guard against manipulation."
+      ]
+    },
+    {
+      "id": "d-4",
+      "topic": "Serving",
+      "question": "How is latency kept low?",
+      "considerations": [
+        "Cache popular prefixes at the edge and in memory.",
+        "Clients debounce and cache locally.",
+        "Shard the index by prefix range."
+      ]
+    },
+    {
+      "id": "d-5",
+      "topic": "Quality and safety",
+      "question": "How are bad suggestions removed?",
+      "considerations": [
+        "Blocklists and classifiers in the build pipeline.",
+        "Manual overrides and takedowns.",
+        "Handling of rare but sensitive queries."
+      ]
+    }
+  ],
+  "tradeoffs": [
+    {
+      "topic": "Freshness vs complexity",
+      "tension": "Real-time trends need a second pipeline."
+    },
+    {
+      "topic": "Memory vs coverage",
+      "tension": "More queries indexed versus cost."
+    },
+    {
+      "topic": "Personalisation vs cacheability",
+      "tension": "Relevance versus shared caches."
+    }
+  ],
+  "commonMistakes": [
+    "Querying a database with LIKE on every keystroke.",
+    "Storing full query lists at every trie node.",
+    "No client-side debouncing or caching.",
+    "Ignoring offensive suggestions."
+  ],
+  "followUps": [
+    "How do you support typos in the prefix?",
+    "How do you personalise suggestions without breaking caches?",
+    "How do you handle multilingual input?",
+    "How do you update the index with zero downtime?"
+  ],
+  "topics": [
+    "Data structure",
+    "Offline build",
+    "Freshness",
+    "Serving",
+    "Quality and safety",
+    "trie",
+    "low-latency",
+    "ranking"
+  ]
+}

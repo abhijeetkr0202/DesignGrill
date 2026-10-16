@@ -1,0 +1,26 @@
+{
+  "architectures": [
+    {
+      "id": "ra-1",
+      "name": "Hybrid fan-out",
+      "summary": "Fan out to followers on write for normal accounts and merge celebrity posts at read time.",
+      "components": [
+        "Post service",
+        "Fan-out workers",
+        "Timeline cache",
+        "Graph store",
+        "Feed service"
+      ],
+      "bestWhen": "Follower counts are highly skewed.",
+      "drawbacks": ["Two code paths.", "Merge logic at read time."]
+    },
+    {
+      "id": "ra-2",
+      "name": "Pull-based feed with caching",
+      "summary": "Fetch recent posts from followees at read time and cache the result.",
+      "components": ["Feed service", "Post store", "Cache"],
+      "bestWhen": "Users follow few accounts and writes dominate.",
+      "drawbacks": ["Slow for users following many accounts.", "Heavy fan-in load on post store."]
+    }
+  ]
+}

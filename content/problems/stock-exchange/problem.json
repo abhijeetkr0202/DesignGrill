@@ -1,0 +1,179 @@
+{
+  "id": "stock-exchange",
+  "version": 1,
+  "title": "Stock Exchange Order Matching",
+  "category": "Commerce & payments",
+  "difficulty": "hard",
+  "summary": "Design an exchange that matches buy and sell orders with strict fairness, ultra-low latency, and full auditability.",
+  "statement": "Design a stock exchange order matching system. Traders submit buy and sell orders; the engine matches them by price and time priority, publishes market data, and must be deterministic, fast, and recoverable. Start by clarifying requirements and estimating scale, then design the system and defend your decisions.",
+  "tags": ["low-latency", "determinism", "event-sourcing"],
+  "initialGuidance": [
+    "Clarify the users, the main journeys, and what is explicitly out of scope before drawing anything.",
+    "Estimate read and write volume and storage growth; the numbers decide which components you need.",
+    "Name the guarantees you will offer (consistency, durability, availability) and the trade-offs behind them.",
+    "Write down assumptions as you make them and revisit them when requirements change."
+  ],
+  "coreFunctionalRequirements": [
+    "Accept limit and market orders.",
+    "Match orders by price-time priority.",
+    "Publish trades and market data.",
+    "Cancel and amend orders.",
+    "Maintain an auditable record of every event."
+  ],
+  "requirementQuestions": [
+    {
+      "id": "q-1",
+      "area": "Latency",
+      "question": "What order-to-ack latency is required, microseconds or milliseconds?",
+      "whyItMatters": "Defines which paths need caching, precomputation, or regional placement."
+    },
+    {
+      "id": "q-2",
+      "area": "Scale",
+      "question": "How many orders per second and how many symbols?",
+      "whyItMatters": "Sets read and write rates and storage growth, which decide whether a single node can cope."
+    },
+    {
+      "id": "q-3",
+      "area": "Consistency",
+      "question": "Must matching be strictly deterministic and ordered?",
+      "whyItMatters": "Selects between strong and eventual models and shapes conflict handling."
+    },
+    {
+      "id": "q-4",
+      "area": "Availability",
+      "question": "What is the recovery time target after a failure?",
+      "whyItMatters": "Determines redundancy and failover design, and which features may degrade instead of failing."
+    },
+    {
+      "id": "q-5",
+      "area": "Scope",
+      "question": "Which order types, and does it include risk checks and clearing?",
+      "whyItMatters": "Fixes what is in and out of the design so effort goes to what matters."
+    },
+    {
+      "id": "q-6",
+      "area": "Data",
+      "question": "What audit and replay requirements exist?",
+      "whyItMatters": "Determines the data model, retention, and storage choices."
+    }
+  ],
+  "workloadAssumptions": {
+    "illustrativeNote": "All numbers below are illustrative examples for practice and are not benchmarks. Real answers depend on the requirements the candidate negotiates.",
+    "items": [
+      {
+        "name": "Orders per second",
+        "value": "1 million",
+        "rationale": "Peak across symbols."
+      },
+      {
+        "name": "Symbols",
+        "value": "8,000",
+        "rationale": "Equity market."
+      },
+      {
+        "name": "Latency target",
+        "value": "under 1 ms median",
+        "rationale": "Competitive venue."
+      },
+      {
+        "name": "Market data subscribers",
+        "value": "100,000",
+        "rationale": "Fan-out."
+      }
+    ]
+  },
+  "estimationPrompts": [
+    "How many orders per second per symbol for the busiest names?",
+    "How large is an order book in memory?",
+    "What bandwidth does market data fan-out need?"
+  ],
+  "keyDecisions": [
+    {
+      "id": "d-1",
+      "topic": "Matching engine",
+      "question": "How is matching done?",
+      "considerations": [
+        "Single-threaded, in-memory order book per symbol for determinism.",
+        "Price-time priority data structures.",
+        "Avoid locks and garbage collection pauses."
+      ]
+    },
+    {
+      "id": "d-2",
+      "topic": "Sequencing and event log",
+      "question": "How is order maintained?",
+      "considerations": [
+        "A sequencer assigns a global order to inbound messages.",
+        "Append-only event log enables replay.",
+        "State is the result of replaying the log."
+      ]
+    },
+    {
+      "id": "d-3",
+      "topic": "Replication and recovery",
+      "question": "How does it survive failures?",
+      "considerations": [
+        "Hot standby consumes the same event stream.",
+        "Fail over by promoting the replica.",
+        "Snapshots speed recovery."
+      ]
+    },
+    {
+      "id": "d-4",
+      "topic": "Risk and gateways",
+      "question": "How are orders validated?",
+      "considerations": [
+        "Pre-trade risk checks at gateways.",
+        "Authentication and rate limits.",
+        "Fat-finger protections."
+      ]
+    },
+    {
+      "id": "d-5",
+      "topic": "Market data",
+      "question": "How are results published?",
+      "considerations": [
+        "Multicast or efficient fan-out of trades and book updates.",
+        "Snapshots and incremental feeds.",
+        "Fairness in delivery."
+      ]
+    }
+  ],
+  "tradeoffs": [
+    {
+      "topic": "Single-threaded determinism vs parallelism",
+      "tension": "Correctness and speed per symbol versus total throughput."
+    },
+    {
+      "topic": "Synchronous replication vs latency",
+      "tension": "Zero data loss versus added delay."
+    },
+    {
+      "topic": "Rich risk checks vs speed",
+      "tension": "Safety versus latency."
+    }
+  ],
+  "commonMistakes": [
+    "Using a general-purpose database in the matching path.",
+    "Multi-threaded matching with locks causing non-determinism.",
+    "No event log, making replay and audit impossible.",
+    "Ignoring fairness of message ordering."
+  ],
+  "followUps": [
+    "How do you shard symbols across engines?",
+    "How do you handle a circuit breaker halt?",
+    "How do you support an opening auction?",
+    "How do you handle a hot symbol?"
+  ],
+  "topics": [
+    "Matching engine",
+    "Sequencing and event log",
+    "Replication and recovery",
+    "Risk and gateways",
+    "Market data",
+    "low-latency",
+    "determinism",
+    "event-sourcing"
+  ]
+}

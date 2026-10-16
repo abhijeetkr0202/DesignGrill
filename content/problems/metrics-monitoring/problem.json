@@ -1,0 +1,179 @@
+{
+  "id": "metrics-monitoring",
+  "version": 1,
+  "title": "Metrics Monitoring and Alerting",
+  "category": "Search & data",
+  "difficulty": "hard",
+  "summary": "Design a monitoring platform that collects metrics, stores time series, and triggers reliable alerts.",
+  "statement": "Design a metrics monitoring system like Prometheus or Datadog. It collects metrics from thousands of services, stores time series efficiently, serves dashboard queries, and evaluates alert rules with low delay. Start by clarifying requirements and estimating scale, then design the system and defend your decisions.",
+  "tags": ["time-series", "downsampling", "alerting"],
+  "initialGuidance": [
+    "Clarify the users, the main journeys, and what is explicitly out of scope before drawing anything.",
+    "Estimate read and write volume and storage growth; the numbers decide which components you need.",
+    "Name the guarantees you will offer (consistency, durability, availability) and the trade-offs behind them.",
+    "Write down assumptions as you make them and revisit them when requirements change."
+  ],
+  "coreFunctionalRequirements": [
+    "Collect metrics from many sources.",
+    "Store time series with labels.",
+    "Query with aggregation over time ranges.",
+    "Evaluate alert rules and notify.",
+    "Retain and downsample old data."
+  ],
+  "requirementQuestions": [
+    {
+      "id": "q-1",
+      "area": "Scale",
+      "question": "How many series and data points per second?",
+      "whyItMatters": "Sets read and write rates and storage growth, which decide whether a single node can cope."
+    },
+    {
+      "id": "q-2",
+      "area": "Latency",
+      "question": "How fresh must dashboards and alerts be?",
+      "whyItMatters": "Defines which paths need caching, precomputation, or regional placement."
+    },
+    {
+      "id": "q-3",
+      "area": "Availability",
+      "question": "Must alerting keep working when the monitored system or the monitor partly fails?",
+      "whyItMatters": "Determines redundancy and failover design, and which features may degrade instead of failing."
+    },
+    {
+      "id": "q-4",
+      "area": "Data",
+      "question": "What retention and resolution are required?",
+      "whyItMatters": "Determines the data model, retention, and storage choices."
+    },
+    {
+      "id": "q-5",
+      "area": "Scope",
+      "question": "Pull or push collection, and which cardinality limits apply?",
+      "whyItMatters": "Fixes what is in and out of the design so effort goes to what matters."
+    },
+    {
+      "id": "q-6",
+      "area": "Cost",
+      "question": "How is storage cost controlled for high-cardinality labels?",
+      "whyItMatters": "Prevents over-engineering and affects build-versus-buy choices."
+    }
+  ],
+  "workloadAssumptions": {
+    "illustrativeNote": "All numbers below are illustrative examples for practice and are not benchmarks. Real answers depend on the requirements the candidate negotiates.",
+    "items": [
+      {
+        "name": "Active series",
+        "value": "100 million",
+        "rationale": "Large fleet."
+      },
+      {
+        "name": "Data points per second",
+        "value": "10 million",
+        "rationale": "Ten-second intervals."
+      },
+      {
+        "name": "Retention",
+        "value": "15 days raw, 2 years downsampled",
+        "rationale": "Tiered."
+      },
+      {
+        "name": "Alert rules",
+        "value": "200,000",
+        "rationale": "Evaluated every minute."
+      }
+    ]
+  },
+  "estimationPrompts": [
+    "How much storage per day at 2 bytes per compressed point?",
+    "How many alert evaluations per second?",
+    "How much memory does the series index need?"
+  ],
+  "keyDecisions": [
+    {
+      "id": "d-1",
+      "topic": "Collection",
+      "question": "How are metrics gathered?",
+      "considerations": [
+        "Pull scraping gives control and discovery; push suits short-lived jobs.",
+        "Agents batch and buffer.",
+        "Service discovery integration."
+      ]
+    },
+    {
+      "id": "d-2",
+      "topic": "Time-series storage",
+      "question": "How are points stored?",
+      "considerations": [
+        "Append-optimised store with delta compression and blocks by time.",
+        "Series index maps labels to series IDs.",
+        "Shard by series hash."
+      ]
+    },
+    {
+      "id": "d-3",
+      "topic": "Query engine",
+      "question": "How are queries executed?",
+      "considerations": [
+        "Fan out to shards and merge aggregates.",
+        "Use rollups for long ranges.",
+        "Limit expensive queries."
+      ]
+    },
+    {
+      "id": "d-4",
+      "topic": "Alerting",
+      "question": "How are alerts evaluated reliably?",
+      "considerations": [
+        "A dedicated evaluator reads recent data on a schedule.",
+        "Deduplicate and group notifications.",
+        "Alert on missing data and on the monitor itself."
+      ]
+    },
+    {
+      "id": "d-5",
+      "topic": "Cardinality and retention",
+      "question": "How is growth controlled?",
+      "considerations": [
+        "Limit label cardinality per metric.",
+        "Downsample old data to coarser resolution.",
+        "Tier cold data to cheaper storage."
+      ]
+    }
+  ],
+  "tradeoffs": [
+    {
+      "topic": "Pull vs push",
+      "tension": "Control and simplicity versus handling ephemeral workloads."
+    },
+    {
+      "topic": "Resolution vs retention cost",
+      "tension": "Detail versus storage."
+    },
+    {
+      "topic": "Alert latency vs false positives",
+      "tension": "Fast detection versus noise."
+    }
+  ],
+  "commonMistakes": [
+    "Using a general relational database for time series.",
+    "Unbounded label cardinality.",
+    "Alerting that depends on the failing system alone.",
+    "No downsampling for long retention."
+  ],
+  "followUps": [
+    "How do you make alerting highly available?",
+    "How do you handle a cardinality explosion?",
+    "How do you support multi-tenant isolation?",
+    "How do you detect anomalies without static thresholds?"
+  ],
+  "topics": [
+    "Collection",
+    "Time-series storage",
+    "Query engine",
+    "Alerting",
+    "Cardinality and retention",
+    "time-series",
+    "downsampling",
+    "alerting"
+  ]
+}

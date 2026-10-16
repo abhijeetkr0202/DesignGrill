@@ -1,0 +1,20 @@
+{
+  "architectures": [
+    {
+      "id": "ra-1",
+      "name": "Sharded cluster with client-side routing",
+      "summary": "Clients use consistent hashing to route to cache nodes directly.",
+      "components": ["Cache nodes", "Client library", "Config service"],
+      "bestWhen": "Lowest latency and a stable topology.",
+      "drawbacks": ["Clients must handle topology changes.", "Harder to evolve routing."]
+    },
+    {
+      "id": "ra-2",
+      "name": "Proxy tier in front of the cache",
+      "summary": "A proxy layer routes requests, pools connections, and handles failover.",
+      "components": ["Proxy fleet", "Cache nodes", "Control plane"],
+      "bestWhen": "Many clients and languages need uniform behaviour.",
+      "drawbacks": ["Extra hop.", "Proxy tier must scale and stay available."]
+    }
+  ]
+}
