@@ -55,7 +55,7 @@ No official Rust SDK exists for these providers and the key must stay native, so
 
 ## Interviewer engine
 
-`src/features/design-review/interviewer.ts` runs one logical interviewer in distinct modes: requirements discovery, architecture interview, architecture review, failure scenario, answer evaluation, and session summary. Each turn builds a snapshot (`snapshot.ts`) from the canonical model: problem, requirements, graph, decisions, recent messages, open findings, the pending question, changes since the last review, and curated reference material. The full current graph is sent every time, which avoids stale incremental context; drag events and intermediate edits are never sent.
+`src/features/design-review/interviewer.ts` runs one logical interviewer in distinct modes: requirements discovery, architecture interview, architecture review, failure scenario, answer evaluation, and session summary. Each turn builds a snapshot (`snapshot.ts`) from the canonical model: problem, requirements, graph, decisions, canvas drawings (`architecture/annotations.ts` turns each shape into its text plus the components it contains, connects, or sits beside), recent messages, open findings, the pending question, changes since the last review, and curated reference material. The full current graph is sent every time, which avoids stale incremental context; drag events and intermediate edits are never sent.
 
 Review triggers are event-driven: the UI computes a debounced change summary against the baseline stored at the last review (`changes.ts`) and suggests a review when the design materially changed. Nothing calls the model automatically. A response is tagged with the revision it saw, and the UI marks it "based on an earlier version" if the design has since changed.
 

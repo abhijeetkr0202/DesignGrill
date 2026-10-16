@@ -4,12 +4,18 @@ import {
   MemorySessionRepository,
 } from '@/data/repositories/memory-repository';
 import { setRepositoriesForTesting } from '@/data/repositories';
-import { addRequirement } from '@/features/interview-session/commands';
+import {
+  addRequirement,
+  renameSession,
+  setProblemStatement,
+} from '@/features/interview-session/commands';
 import {
   deleteSession,
   resumeSession,
+  startCustomSession,
   startSession,
 } from '@/features/interview-session/session-service';
+import { buildSnapshot } from '@/features/design-review/snapshot';
 import { useSessionStore } from '@/store/session-store';
 import { useUiStore } from '@/store/ui-store';
 import { loadPack, newDoc } from './helpers';
@@ -121,5 +127,44 @@ describe('session lifecycle', () => {
 
   it('reports a missing or invalid problem pack instead of crashing', async () => {
     await expect(startSession('does-not-exist')).rejects.toThrow(/problem\.json is missing/);
+  });
+});
+
+describe('custom problems', () => {
+  it('creates a blank canvas under the user-chosen name and resumes it after a restart', async () => {
+    const started = await startCustomSession({
+      title: '  Ride-sharing dispatch ',
+      statement: 'Match riders with drivers.',
+    });
+    expect(started).toMatchObject({
+      title: 'Ride-sharing dispatch',
+      problemId: 'custom',
+      problemStatement: 'Match riders with drivers.',
+    });
+    expect(started.architecture.nodes).toHaveLength(0);
+    expect(sessions.problems.size).toBe(0);
+
+    add('Match within 5 seconds');
+    useSessionStore.getState().apply((d) => setProblemStatement(d, 'Updated statement'));
+    useSessionStore.getState().apply((d) => renameSession(d, 'Dispatch v2'), { history: false });
+    await useSessionStore.getState().save();
+
+    useSessionStore.setState({ doc: null, pack: null, undoStack: [], redoStack: [] });
+    const resumed = await resumeSession(started.id);
+    expect(resumed).toMatchObject({ title: 'Dispatch v2', problemStatement: 'Updated statement' });
+    expect(resumed.requirements).toHaveLength(1);
+    expect((await sessions.list()).map((s) => s.title)).toEqual(['Dispatch v2']);
+  });
+
+  it('requires a name', async () => {
+    await expect(startCustomSession({ title: '   ' })).rejects.toThrow(/name/);
+  });
+
+  it("sends the user's own title and statement to the interviewer, with no reference solution", async () => {
+    const doc = await startCustomSession({ title: 'Chat app', statement: 'Real-time messaging.' });
+    const snap = buildSnapshot(doc, useSessionStore.getState().pack!, 'architecture-review', 'now');
+    expect(snap.problem).toMatchObject({ title: 'Chat app', statement: 'Real-time messaging.' });
+    expect(snap.referenceMaterial).toMatch(/custom problem/);
+    expect(snap.referenceMaterial).not.toMatch(/Valid alternative architectures/);
   });
 });

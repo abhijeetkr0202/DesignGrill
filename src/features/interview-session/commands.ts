@@ -3,6 +3,7 @@ import type {
   ArchNode,
   ComponentType,
   Decision,
+  Drawing,
   Finding,
   Message,
   PendingQuestion,
@@ -18,6 +19,7 @@ export interface NewSessionInput {
   problemId: string;
   problemVersion: number;
   title: string;
+  problemStatement?: string;
 }
 
 export function createSession(
@@ -36,7 +38,13 @@ export function createSession(
     createdAt: now,
     updatedAt: now,
     requirements: [],
-    architecture: { id: ctx.newId('arch'), schemaVersion: SCHEMA_VERSION, nodes: [], edges: [] },
+    architecture: {
+      id: ctx.newId('arch'),
+      schemaVersion: SCHEMA_VERSION,
+      nodes: [],
+      edges: [],
+      drawings: [],
+    },
     decisions: [],
     messages: [],
     reviews: [],
@@ -44,6 +52,7 @@ export function createSession(
     summaries: [],
     pendingQuestion: null,
     reviewBaseline: null,
+    problemStatement: input.problemStatement ?? '',
   };
 }
 
@@ -207,14 +216,129 @@ export function moveComponents(
   ctx: Context = defaultContext,
 ): SessionDocument {
   let changed = false;
-  const nodes = doc.architecture.nodes.map((n) => {
-    const p = positions[n.id];
-    if (!p || (p.x === n.position.x && p.y === n.position.y)) return n;
+  const move = <T extends { id: string }>(
+    item: T,
+    current: { x: number; y: number },
+    apply: (p: { x: number; y: number }) => T,
+  ): T => {
+    const p = positions[item.id];
+    if (!p || (p.x === current.x && p.y === current.y)) return item;
     changed = true;
-    return { ...n, position: p };
-  });
+    return apply(p);
+  };
+  const nodes = doc.architecture.nodes.map((n) =>
+    move(n, n.position, (position) => ({ ...n, position })),
+  );
+  const drawings = doc.architecture.drawings.map((d) =>
+    move(d, d, (p) => ({ ...d, x: p.x, y: p.y })),
+  );
   if (!changed) return doc;
-  return touch({ ...doc, architecture: { ...doc.architecture, nodes } }, ctx, false);
+  return touch({ ...doc, architecture: { ...doc.architecture, nodes, drawings } }, ctx, false);
+}
+
+// ---------- Drawings (free-form notes the interviewer also sees) ----------
+
+export type DrawingInput = Omit<Drawing, 'id'>;
+
+export function addDrawing(
+  doc: SessionDocument,
+  input: DrawingInput,
+  ctx: Context = defaultContext,
+): { doc: SessionDocument; id: string } {
+  const drawing: Drawing = { ...input, id: ctx.newId('drw') };
+  const architecture = { ...doc.architecture, drawings: [...doc.architecture.drawings, drawing] };
+  return { doc: touch({ ...doc, architecture }, ctx, true), id: drawing.id };
+}
+
+// Only a change of text alters what a reviewer would read; colour, size and position do not.
+export function updateDrawings(
+  doc: SessionDocument,
+  ids: string[],
+  patch: Partial<Omit<Drawing, 'id' | 'kind'>>,
+  ctx: Context = defaultContext,
+): SessionDocument {
+  const target = new Set(ids);
+  const affected = doc.architecture.drawings.filter((d) => target.has(d.id));
+  if (affected.length === 0) return doc;
+  const semantic = 'text' in patch && affected.some((d) => d.text !== patch.text);
+  const drawings = doc.architecture.drawings.map((d) =>
+    target.has(d.id) ? { ...d, ...patch } : d,
+  );
+  return touch({ ...doc, architecture: { ...doc.architecture, drawings } }, ctx, semantic);
+}
+
+export function removeDrawings(
+  doc: SessionDocument,
+  ids: string[],
+  ctx: Context = defaultContext,
+): SessionDocument {
+  const target = new Set(ids);
+  if (!doc.architecture.drawings.some((d) => target.has(d.id))) return doc;
+  const drawings = doc.architecture.drawings.filter((d) => !target.has(d.id));
+  return touch({ ...doc, architecture: { ...doc.architecture, drawings } }, ctx, true);
+}
+
+// ---------- Copy and paste (for replicas, shards and repeated tiers) ----------
+
+export interface ClipboardData {
+  nodes: ArchNode[];
+  // Only connections whose two ends are both copied.
+  edges: ArchEdge[];
+  drawings: Drawing[];
+}
+
+export function collectClipboard(doc: SessionDocument, ids: string[]): ClipboardData | null {
+  const chosen = new Set(ids);
+  const nodes = doc.architecture.nodes.filter((n) => chosen.has(n.id));
+  const drawings = doc.architecture.drawings.filter((d) => chosen.has(d.id));
+  if (nodes.length + drawings.length === 0) return null;
+  const copied = new Set(nodes.map((n) => n.id));
+  const edges = doc.architecture.edges.filter((e) => copied.has(e.source) && copied.has(e.target));
+  return structuredClone({ nodes, edges, drawings });
+}
+
+export function clipboardBounds(data: ClipboardData): { x: number; y: number } {
+  const xs = [...data.nodes.map((n) => n.position.x), ...data.drawings.map((d) => d.x)];
+  const ys = [...data.nodes.map((n) => n.position.y), ...data.drawings.map((d) => d.y)];
+  return { x: Math.min(...xs), y: Math.min(...ys) };
+}
+
+// Pasted copies get fresh ids and no decision links, so they start as independent components.
+export function pasteClipboard(
+  doc: SessionDocument,
+  data: ClipboardData,
+  offset: { dx: number; dy: number },
+  ctx: Context = defaultContext,
+): { doc: SessionDocument; ids: string[] } {
+  if (data.nodes.length + data.drawings.length === 0) return { doc, ids: [] };
+  const idMap = new Map(data.nodes.map((n) => [n.id, ctx.newId('node')] as const));
+  const nodes = data.nodes.map((n): ArchNode => ({
+    ...n,
+    id: idMap.get(n.id) ?? n.id,
+    position: { x: n.position.x + offset.dx, y: n.position.y + offset.dy },
+    relatedDecisionIds: [],
+  }));
+  const edges = data.edges.flatMap((e): ArchEdge[] => {
+    const source = idMap.get(e.source);
+    const target = idMap.get(e.target);
+    return source && target ? [{ ...e, id: ctx.newId('edge'), source, target }] : [];
+  });
+  const drawings = data.drawings.map((d): Drawing => ({
+    ...d,
+    id: ctx.newId('drw'),
+    x: d.x + offset.dx,
+    y: d.y + offset.dy,
+  }));
+  const architecture = {
+    ...doc.architecture,
+    nodes: [...doc.architecture.nodes, ...nodes],
+    edges: [...doc.architecture.edges, ...edges],
+    drawings: [...doc.architecture.drawings, ...drawings],
+  };
+  return {
+    doc: touch({ ...doc, architecture }, ctx, true),
+    ids: [...nodes.map((n) => n.id), ...drawings.map((d) => d.id)],
+  };
 }
 
 export function removeComponents(
@@ -479,4 +603,13 @@ export function renameSession(
 ): SessionDocument {
   const trimmed = title.trim();
   return trimmed ? touch({ ...doc, title: trimmed.slice(0, 300) }, ctx, false) : doc;
+}
+
+export function setProblemStatement(
+  doc: SessionDocument,
+  statement: string,
+  ctx: Context = defaultContext,
+): SessionDocument {
+  const next = statement.trim().slice(0, 8000);
+  return next === doc.problemStatement ? doc : touch({ ...doc, problemStatement: next }, ctx, true);
 }

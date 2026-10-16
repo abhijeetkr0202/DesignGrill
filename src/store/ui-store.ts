@@ -1,4 +1,9 @@
 import { create } from 'zustand';
+import {
+  DEFAULT_DRAW_STYLE,
+  type DrawStyle,
+  type DrawTool,
+} from '@/features/architecture/drawing-geometry';
 
 export type View = 'library' | 'workspace' | 'settings';
 export type LeftTab = 'problem' | 'requirements';
@@ -17,6 +22,10 @@ interface UiState {
   selectedNodeIds: string[];
   selectedEdgeIds: string[];
   focusNodeIds: string[];
+  drawOpen: boolean;
+  drawTool: DrawTool;
+  drawStyle: DrawStyle;
+  editingDrawingId: string | null;
   setView(view: View): void;
   setTheme(theme: Theme): void;
   setLeftTab(tab: LeftTab): void;
@@ -28,6 +37,10 @@ interface UiState {
   setSelection(nodeIds: string[], edgeIds: string[]): void;
   clearSelection(): void;
   setFocusNodes(ids: string[]): void;
+  setDrawOpen(open: boolean): void;
+  setDrawTool(tool: DrawTool): void;
+  setDrawStyle(patch: Partial<DrawStyle>): void;
+  setEditingDrawing(id: string | null): void;
 }
 
 const sameSet = (a: string[], b: string[]) =>
@@ -45,6 +58,10 @@ export const useUiStore = create<UiState>((set, get) => ({
   selectedNodeIds: [],
   selectedEdgeIds: [],
   focusNodeIds: [],
+  drawOpen: false,
+  drawTool: 'select',
+  drawStyle: DEFAULT_DRAW_STYLE,
+  editingDrawingId: null,
   setView: (view) => set({ view }),
   setTheme: (theme) => set({ theme }),
   setLeftTab: (leftTab) => set({ leftTab, leftCollapsed: false }),
@@ -60,4 +77,8 @@ export const useUiStore = create<UiState>((set, get) => ({
   },
   clearSelection: () => set({ selectedNodeIds: [], selectedEdgeIds: [] }),
   setFocusNodes: (focusNodeIds) => set({ focusNodeIds }),
+  setDrawOpen: (drawOpen) => set(drawOpen ? { drawOpen } : { drawOpen, drawTool: 'select' }),
+  setDrawTool: (drawTool) => set({ drawTool }),
+  setDrawStyle: (patch) => set((s) => ({ drawStyle: { ...s.drawStyle, ...patch } })),
+  setEditingDrawing: (editingDrawingId) => set({ editingDrawingId }),
 }));

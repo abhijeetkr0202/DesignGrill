@@ -4,12 +4,14 @@ import {
   deleteSession,
   listSessions,
   resumeSession,
+  startCustomSession,
   startSession,
 } from '@/features/interview-session/session-service';
+import { CUSTOM_PROBLEM_ID } from '@/features/problem-library/custom';
 import { getRepositories } from '@/data/repositories';
 import { useUiStore } from '@/store/ui-store';
 import type { SessionMeta } from '@/types/session';
-import { Badge, Button, ConfirmDialog, Notice, Spinner } from '@/components/shared/ui';
+import { Badge, Button, ConfirmDialog, Notice, Spinner, fieldClass } from '@/components/shared/ui';
 
 export function LibraryView() {
   const [problems, setProblems] = useState<ProblemListing[] | null>(null);
@@ -17,6 +19,8 @@ export function LibraryView() {
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [deleting, setDeleting] = useState<SessionMeta | null>(null);
+  const [customName, setCustomName] = useState('');
+  const [customStatement, setCustomStatement] = useState('');
 
   const refresh = useCallback(async () => {
     try {
@@ -41,8 +45,6 @@ export function LibraryView() {
       setBusy(null);
     }
   };
-
-  const titleOf = (id: string) => problems?.find((p) => p.id === id)?.problem?.title ?? id;
 
   return (
     <div className="mx-auto h-full max-w-4xl overflow-y-auto px-6 py-8">
@@ -116,6 +118,55 @@ export function LibraryView() {
         </ul>
       </section>
 
+      <section aria-labelledby="custom-heading" className="mb-8">
+        <h2
+          id="custom-heading"
+          className="mb-2 text-xs font-semibold tracking-wide text-muted uppercase"
+        >
+          Or start with a blank canvas
+        </h2>
+        <form
+          className="space-y-2 rounded-lg border border-line bg-surface p-3"
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (!customName.trim()) return;
+            void run('start-custom', () =>
+              startCustomSession({ title: customName, statement: customStatement }),
+            );
+          }}
+        >
+          <p className="text-xs text-muted">
+            Design any system of your own. You write the problem and requirements; the interviewer
+            judges your design against them.
+          </p>
+          <label className="block">
+            <span className="mb-0.5 block text-[11px] font-medium text-muted">Session name</span>
+            <input
+              className={fieldClass}
+              value={customName}
+              maxLength={300}
+              placeholder="e.g. Ride-sharing dispatch"
+              onChange={(e) => setCustomName(e.target.value)}
+            />
+          </label>
+          <label className="block">
+            <span className="mb-0.5 block text-[11px] font-medium text-muted">
+              Problem statement (optional, editable later)
+            </span>
+            <textarea
+              className={fieldClass}
+              rows={3}
+              value={customStatement}
+              maxLength={8000}
+              onChange={(e) => setCustomStatement(e.target.value)}
+            />
+          </label>
+          <Button type="submit" variant="primary" disabled={busy !== null || !customName.trim()}>
+            {busy === 'start-custom' ? 'Creating…' : 'Create blank canvas'}
+          </Button>
+        </form>
+      </section>
+
       <section aria-labelledby="sessions-heading">
         <h2
           id="sessions-heading"
@@ -131,7 +182,10 @@ export function LibraryView() {
               className="flex items-center justify-between gap-3 rounded border border-line bg-surface px-3 py-2"
             >
               <div className="min-w-0">
-                <div className="truncate text-[13px] font-medium">{titleOf(s.problemId)}</div>
+                <div className="flex items-center gap-2">
+                  <span className="truncate text-[13px] font-medium">{s.title}</span>
+                  {s.problemId === CUSTOM_PROBLEM_ID && <Badge>custom</Badge>}
+                </div>
                 <div className="text-[11px] text-muted">
                   Updated {new Date(s.updatedAt).toLocaleString()} ·{' '}
                   {s.status === 'completed' ? 'Completed' : 'In progress'}

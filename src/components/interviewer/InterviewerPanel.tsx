@@ -105,10 +105,11 @@ export function InterviewerPanel() {
           <summary className="cursor-pointer">What is sent to {info.displayName}?</summary>
           <p className="mt-1">
             Each AI action sends your problem statement, requirements, architecture (components,
-            connections, properties), design decisions, open findings, recent chat messages, and
-            illustrative reference notes for this problem, directly to {info.displayName} using
-            model <code>{model}</code>. Nothing is sent until you click an action or send an answer.
-            Your API key never leaves the OS credential store and native layer.
+            connections, properties), diagram drawings (text, shapes, arrows and which components
+            they relate to), design decisions, open findings, recent chat messages, and illustrative
+            reference notes for this problem, directly to {info.displayName} using model{' '}
+            <code>{model}</code>. Nothing is sent until you click an action or send an answer. Your
+            API key never leaves the OS credential store and native layer.
           </p>
         </details>
         {changes?.significant && !running && (

@@ -3,6 +3,19 @@
 
 @custom-variant dark (&:where(.dark, .dark *));
 
+/* Excalidraw's Excalifont (SIL OFL 1.1, see src/assets/fonts/OFL.txt), Latin subset, bundled so nothing loads from the network. */
+@font-face {
+  font-family: 'Excalifont';
+  src: url('./assets/fonts/Excalifont-Latin.woff2') format('woff2');
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  unicode-range:
+    U+20-7e, U+a0-a3, U+a5-a6, U+a8-ab, U+ad-b1, U+b4, U+b6-b8, U+ba-ff, U+131, U+152-153, U+2bc,
+    U+2c6, U+2da, U+2dc, U+304, U+308, U+2013-2014, U+2018-201a, U+201c-201e, U+2020-2022, U+2026,
+    U+2030, U+2039-203a, U+20ac, U+2122;
+}
+
 :root {
   --bg: #f6f7f9;
   --surface: #ffffff;
@@ -47,6 +60,7 @@
   --color-warn: var(--warn);
   --font-sans: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
   --font-mono: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  --font-hand: 'Excalifont', system-ui, -apple-system, 'Segoe UI', sans-serif;
 }
 
 html,
@@ -72,4 +86,10 @@ body {
 
 .react-flow {
   --xy-background-color: var(--bg);
+  font-family: var(--font-hand);
+}
+
+/* Keeps outlines a constant thickness when a shape is stretched to its node size. */
+.shape-svg * {
+  vector-effect: non-scaling-stroke;
 }

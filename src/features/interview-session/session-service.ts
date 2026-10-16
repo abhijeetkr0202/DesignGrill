@@ -1,4 +1,5 @@
 import { getRepositories, type SessionRepository } from '@/data/repositories';
+import { buildCustomPack, CUSTOM_PROBLEM_ID } from '@/features/problem-library/custom';
 import { loadProblemPack } from '@/features/problem-library/loader';
 import type { ProblemPack } from '@/features/problem-library/schema';
 import { useSessionStore } from '@/store/session-store';
@@ -25,9 +26,29 @@ export async function startSession(problemId: string): Promise<SessionDocument> 
   return doc;
 }
 
+export async function startCustomSession(input: {
+  title: string;
+  statement?: string;
+}): Promise<SessionDocument> {
+  const title = input.title.trim().slice(0, 300);
+  if (!title) throw new Error('Give your session a name.');
+  const doc = createSession({
+    problemId: CUSTOM_PROBLEM_ID,
+    problemVersion: 1,
+    title,
+    problemStatement: input.statement?.trim().slice(0, 8000) ?? '',
+  });
+  await getRepositories().sessions.save(doc);
+  await enter(doc, buildCustomPack(title));
+  return doc;
+}
+
 export async function resumeSession(id: string): Promise<SessionDocument> {
   const doc = await getRepositories().sessions.load(id);
-  const pack = await loadProblemPack(doc.problemId);
+  const pack =
+    doc.problemId === CUSTOM_PROBLEM_ID
+      ? buildCustomPack(doc.title)
+      : await loadProblemPack(doc.problemId);
   await enter(doc, pack);
   return doc;
 }

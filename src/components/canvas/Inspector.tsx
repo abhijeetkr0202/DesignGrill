@@ -1,8 +1,10 @@
 import { COMPONENT_TYPE_LABELS } from '@/features/architecture/flow-adapter';
 import {
   removeComponents,
+  removeDrawings,
   removeEdges,
   updateComponent,
+  updateDrawings,
   updateEdge,
 } from '@/features/interview-session/commands';
 import { useSessionStore } from '@/store/session-store';
@@ -14,9 +16,11 @@ import {
   type ArchNode,
   type CommunicationPattern,
   type ComponentType,
+  type Drawing,
 } from '@/types/session';
 import { CommitText, LabeledField } from '@/components/shared/CommitText';
 import { Button, fieldClass } from '@/components/shared/ui';
+import { StylePicker } from './StylePicker';
 
 export function Inspector() {
   const selectedNodeIds = useUiStore((s) => s.selectedNodeIds);
@@ -50,11 +54,63 @@ export function Inspector() {
       <EdgeForm edge={edge} sourceLabel={label(edge.source)} targetLabel={label(edge.target)} />
     );
   }
+  const drawing =
+    selectedNodeIds.length === 1 && total === 1
+      ? architecture.drawings.find((d) => d.id === selectedNodeIds[0])
+      : undefined;
+  if (drawing) return <DrawingForm drawing={drawing} />;
   return (
     <div className="p-3 text-xs text-muted">
       {total > 1
         ? `${total} items selected. Select a single component or connection to edit its properties.`
         : 'Select a component or connection to edit its properties.'}
+    </div>
+  );
+}
+
+function DrawingForm({ drawing: d }: { drawing: Drawing }) {
+  const patch = (p: Partial<Drawing>) =>
+    useSessionStore.getState().apply((doc) => updateDrawings(doc, [d.id], p));
+  const hasText = d.kind !== 'line' && d.kind !== 'arrow' && d.kind !== 'freehand';
+  return (
+    <div className="p-3">
+      <div className="mb-2 flex items-center justify-between">
+        <h3 className="text-xs font-semibold tracking-wide text-muted uppercase">
+          Drawing: {d.kind.replace('-', ' ')}
+        </h3>
+        <Button
+          size="sm"
+          variant="danger"
+          onClick={() => {
+            useSessionStore.getState().apply((doc) => removeDrawings(doc, [d.id]));
+            useUiStore.getState().clearSelection();
+          }}
+        >
+          Delete drawing
+        </Button>
+      </div>
+      <p className="mb-2 text-[11px] text-muted">
+        Drawings are sent to the interviewer with your design: their text, kind, and which
+        components they contain, connect, or sit beside. Add text to say what a shape means.
+      </p>
+      {hasText && (
+        <div className="mb-2 max-w-md">
+          <LabeledField label="Text">
+            <CommitText
+              label="Drawing text"
+              multiline
+              rows={2}
+              maxLength={2000}
+              value={d.text ?? ''}
+              onCommit={(v) => patch({ text: v || undefined })}
+            />
+          </LabeledField>
+        </div>
+      )}
+      <StylePicker
+        value={{ stroke: d.stroke, fill: d.fill, strokeWidth: d.strokeWidth, dashed: d.dashed }}
+        onChange={(p) => patch(p)}
+      />
     </div>
   );
 }

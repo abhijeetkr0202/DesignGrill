@@ -113,11 +113,55 @@ export const ArchEdgeSchema = z.object({
 });
 export type ArchEdge = z.infer<typeof ArchEdgeSchema>;
 
+// Free-form shapes drawn on the canvas. They are annotations rather than components, but the
+// interviewer receives them (text and relations to components) as part of the design.
+export const DRAWING_KINDS = [
+  'rectangle',
+  'rounded-rectangle',
+  'ellipse',
+  'circle',
+  'diamond',
+  'triangle',
+  'line',
+  'arrow',
+  'text',
+  'freehand',
+] as const;
+export const DrawingKindSchema = z.enum(DRAWING_KINDS);
+export type DrawingKind = z.infer<typeof DrawingKindSchema>;
+
+// 'auto' follows the theme text colour, 'none' means transparent.
+export const ColorSchema = z.string().regex(/^(auto|none|#[0-9a-fA-F]{6})$/);
+
+export const DrawingSchema = z.object({
+  id,
+  kind: DrawingKindSchema,
+  x: z.number().finite(),
+  y: z.number().finite(),
+  width: z.number().finite().min(1).max(20000),
+  height: z.number().finite().min(1).max(20000),
+  stroke: ColorSchema.default('auto'),
+  fill: ColorSchema.default('none'),
+  strokeWidth: z.number().min(1).max(12).default(2),
+  dashed: z.boolean().default(false),
+  text: z.string().max(2000).optional(),
+  // Lines and arrows run from the top-left to the bottom-right corner unless flipped.
+  flipX: z.boolean().default(false),
+  flipY: z.boolean().default(false),
+  // Freehand strokes: points normalised to the 0..1 box.
+  points: z
+    .array(z.tuple([z.number(), z.number()]))
+    .max(600)
+    .optional(),
+});
+export type Drawing = z.infer<typeof DrawingSchema>;
+
 export const ArchitectureSchema = z.object({
   id,
   schemaVersion: z.number().int().default(SCHEMA_VERSION),
   nodes: z.array(ArchNodeSchema).max(2000),
   edges: z.array(ArchEdgeSchema).max(5000),
+  drawings: z.array(DrawingSchema).max(2000).default([]),
 });
 export type Architecture = z.infer<typeof ArchitectureSchema>;
 
@@ -263,6 +307,7 @@ export const ReviewBaselineSchema = z.object({
   edges: z.record(z.string(), z.string()),
   requirements: z.record(z.string(), z.string()),
   decisions: z.record(z.string(), z.string()),
+  drawings: z.record(z.string(), z.string()).default({}),
   labels: z.record(z.string(), z.string()).default({}),
 });
 export type ReviewBaseline = z.infer<typeof ReviewBaselineSchema>;
@@ -270,6 +315,8 @@ export type ReviewBaseline = z.infer<typeof ReviewBaselineSchema>;
 export const SessionExtraSchema = z.object({
   pendingQuestion: PendingQuestionSchema.nullable().default(null),
   reviewBaseline: ReviewBaselineSchema.nullable().default(null),
+  // Written by the user for custom problems; empty for bundled problems.
+  problemStatement: longText.default(''),
 });
 export type SessionExtra = z.infer<typeof SessionExtraSchema>;
 
@@ -296,5 +343,6 @@ export const SessionDocumentSchema = SessionMetaSchema.extend({
   summaries: z.array(SummarySchema),
   pendingQuestion: PendingQuestionSchema.nullable().default(null),
   reviewBaseline: ReviewBaselineSchema.nullable().default(null),
+  problemStatement: longText.default(''),
 });
 export type SessionDocument = z.infer<typeof SessionDocumentSchema>;

@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { getInterviewService, useAiStore } from '@/features/interview-session/ai-store';
-import { setSessionStatus } from '@/features/interview-session/commands';
+import { renameSession, setSessionStatus } from '@/features/interview-session/commands';
 import { leaveSession } from '@/features/interview-session/session-service';
 import { useSettingsStore } from '@/features/settings/settings-store';
 import { useSessionStore } from '@/store/session-store';
 import { useUiStore } from '@/store/ui-store';
+import { CommitText } from '@/components/shared/CommitText';
 import { Badge, Button, ConfirmDialog } from '@/components/shared/ui';
 
 export function Toolbar() {
@@ -37,7 +38,17 @@ export function Toolbar() {
         DesignGrill
       </button>
       <span className="text-muted">/</span>
-      <h1 className="text-[13px] font-semibold">{doc.title}</h1>
+      <h1 className="w-56 text-[13px] font-semibold">
+        <CommitText
+          label="Session name"
+          value={doc.title}
+          maxLength={300}
+          onCommit={(v) =>
+            useSessionStore.getState().apply((d) => renameSession(d, v), { history: false })
+          }
+          className="border-transparent bg-transparent font-semibold hover:border-line"
+        />
+      </h1>
       <Badge tone={doc.status === 'completed' ? 'ok' : 'neutral'}>
         {doc.status === 'completed' ? 'Completed' : 'In progress'}
       </Badge>

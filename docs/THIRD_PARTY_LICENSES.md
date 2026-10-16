@@ -30,6 +30,12 @@ DesignGrill is MIT licensed. It depends on the open-source packages below. Licen
 
 Transitive dependencies carry their own licenses; none are intended to impose terms stricter than these.
 
+## Fonts
+
+| Font                                                                                            | License                                                                                                |
+| ----------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
+| Excalifont (Latin subset, copied unmodified from the official `@excalidraw/excalidraw` package) | SIL Open Font License 1.1, Copyright (c) 2024 by Excalidraw. License text: `src/assets/fonts/OFL.txt`. |
+
 ## Content
 
 Interview problem content under `content/` and prompts under `src/ai/prompts/` are original works released under the project's MIT License.

@@ -1,5 +1,7 @@
 import type { InterviewMode, Requirement, RequirementKind, SessionDocument } from '@/types/session';
 import type { ProblemPack } from '@/features/problem-library/schema';
+import { CUSTOM_PROBLEM_ID } from '@/features/problem-library/custom';
+import { describeDrawings, type DrawingDescription } from '@/features/architecture/annotations';
 import { computeChanges } from './changes';
 
 const MAX_SNAPSHOT_CHARS = 60_000;
@@ -29,6 +31,9 @@ export function buildReferenceMaterial(
   mode: InterviewMode | 'answer-evaluation',
 ): string {
   const p = pack.problem;
+  if (p.id === CUSTOM_PROBLEM_ID) {
+    return 'No reference material: this is a custom problem defined by the candidate. Judge the design only against the requirements and constraints they have written, and ask about missing ones.';
+  }
   const lines: string[] = [];
   const decisions = () =>
     p.keyDecisions.map(
@@ -80,6 +85,8 @@ export interface InterviewSnapshot {
   architecture: {
     nodes: Record<string, unknown>[];
     edges: Record<string, unknown>[];
+    // Free-form shapes, arrows and labels the candidate drew beyond the component types.
+    annotations: DrawingDescription[];
   };
   decisions: Record<string, unknown>[];
   recentMessages: { role: string; mode?: string; content: string }[];
@@ -104,8 +111,8 @@ export function buildSnapshot(
       generatedAt: now,
       problem: {
         id: pack.problem.id,
-        title: pack.problem.title,
-        statement: pack.problem.statement,
+        title: doc.title,
+        statement: doc.problemStatement || pack.problem.statement || '(no statement written yet)',
       },
       requirements: {
         functional: group(doc, 'functional', compact),
@@ -140,6 +147,9 @@ export function buildSnapshot(
           mode: e.mode,
           dataFlow: e.dataFlow,
         })),
+        annotations: describeDrawings(doc.architecture).map((a) =>
+          compact && a.text ? { ...a, text: a.text.slice(0, 300) } : a,
+        ),
       },
       decisions: doc.decisions.map((d) => ({
         id: d.id,

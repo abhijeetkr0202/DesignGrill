@@ -1,3 +1,4 @@
+import { describeDrawings, drawingFingerprint } from '@/features/architecture/annotations';
 import type { ReviewBaseline, SessionDocument } from '@/types/session';
 
 // Fingerprints deliberately exclude node positions so dragging never counts as a design change.
@@ -41,11 +42,25 @@ export function takeBaseline(doc: SessionDocument, takenAt: string): ReviewBasel
   for (const n of doc.architecture.nodes) labels[n.id] = n.label;
   for (const r of doc.requirements) labels[r.id] = r.title;
   for (const d of doc.decisions) labels[d.id] = d.title;
-  return { revision: doc.revision, takenAt, nodes, edges, requirements, decisions, labels };
+  const drawings: Record<string, string> = {};
+  for (const d of describeDrawings(doc.architecture)) {
+    drawings[d.id] = drawingFingerprint(d);
+    labels[d.id] = d.text ?? d.kind;
+  }
+  return {
+    revision: doc.revision,
+    takenAt,
+    nodes,
+    edges,
+    requirements,
+    decisions,
+    drawings,
+    labels,
+  };
 }
 
 export type ChangeKind = 'added' | 'removed' | 'modified';
-export type ChangeSubject = 'component' | 'connection' | 'requirement' | 'decision';
+export type ChangeSubject = 'component' | 'connection' | 'requirement' | 'decision' | 'annotation';
 
 export interface ChangeEntry {
   kind: ChangeKind;
@@ -103,6 +118,13 @@ export function computeChanges(doc: SessionDocument): ChangeSummary {
     entries,
   );
   diff(base?.decisions ?? {}, current.decisions, 'decision', (id) => nameOf(id, decLabel), entries);
+  diff(
+    base?.drawings ?? {},
+    current.drawings,
+    'annotation',
+    (id) => current.labels[id] ?? old[id] ?? 'removed annotation',
+    entries,
+  );
 
   return { hasBaseline: base !== null, entries, significant: base !== null && entries.length > 0 };
 }
