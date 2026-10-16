@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <title>DesignGrill</title>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#222838" />
+      <stop offset="1" stop-color="#0d1017" />
+    </linearGradient>
+    <linearGradient id="flame" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffd35a" />
+      <stop offset="0.55" stop-color="#ff8a24" />
+      <stop offset="1" stop-color="#e0431c" />
+    </linearGradient>
+    <linearGradient id="edge" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffb347" />
+      <stop offset="1" stop-color="#ff6a1f" />
+    </linearGradient>
+    <radialGradient id="glow" cx="0.5" cy="1" r="0.7">
+      <stop offset="0" stop-color="#ff7a1f" stop-opacity="0.45" />
+      <stop offset="1" stop-color="#ff7a1f" stop-opacity="0" />
+    </radialGradient>
+  </defs>
+
+  <rect width="1024" height="1024" rx="224" fill="url(#bg)" />
+  <rect width="1024" height="1024" rx="224" fill="url(#glow)" />
+
+  <!-- Architecture diagram being grilled: one service fanning out to two -->
+  <g fill="none" stroke="url(#edge)" stroke-width="26" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M512 300 V352 M282 352 H742 M282 352 V404 M742 352 V404" />
+    <rect x="382" y="168" width="260" height="132" rx="34" />
+    <rect x="162" y="404" width="240" height="126" rx="32" />
+    <rect x="622" y="404" width="240" height="126" rx="32" />
+  </g>
+
+  <!-- Grill grate -->
+  <g fill="#d5dae5">
+    <rect x="130" y="582" width="764" height="26" rx="13" />
+    <rect x="130" y="642" width="764" height="26" rx="13" />
+    <rect x="130" y="702" width="764" height="26" rx="13" />
+  </g>
+
+  <!-- Flames -->
+  <g fill="url(#flame)">
+    <path d="M312 772 C318 806 382 822 382 872 C382 904 352 924 312 924 C272 924 242 904 242 872 C242 842 264 828 274 804 C280 826 292 834 302 836 C292 810 304 790 312 772 Z" />
+    <path d="M512 736 C520 782 600 802 600 866 C600 906 564 928 512 928 C460 928 424 906 424 866 C424 828 450 810 464 782 C470 812 488 824 502 826 C488 792 504 760 512 736 Z" />
+    <path d="M712 772 C718 806 782 822 782 872 C782 904 752 924 712 924 C672 924 642 904 642 872 C642 842 664 828 674 804 C680 826 692 834 702 836 C692 810 704 790 712 772 Z" />
+  </g>
+  <g fill="#ffe08a" opacity="0.9">
+    <path d="M512 840 C520 862 552 870 552 894 C552 912 534 922 512 922 C490 922 472 912 472 894 C472 874 500 864 512 840 Z" />
+  </g>
+</svg>
