@@ -6,6 +6,12 @@ DesignGrill is an open-source, local-first desktop app for practicing system des
 
 It is not a chatbot beside a diagram editor. The interviewer works from a structured, validated snapshot of your session, not a screenshot and not just the problem title.
 
+## Screenshots
+
+![DesignGrill landing page](docs/screenshots/Screenshot%202026-10-17%20at%204.15.57%E2%80%AFPM.png)
+
+![DesignGrill architecture canvas](docs/screenshots/Screenshot%202026-10-17%20at%204.16.24%E2%80%AFPM.png)
+
 ## Status
 
 Early development (v0.1). Below is what is implemented today versus planned.
