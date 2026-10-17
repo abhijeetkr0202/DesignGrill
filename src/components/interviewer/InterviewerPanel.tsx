@@ -5,9 +5,10 @@ import { getInterviewService, useAiStore } from '@/features/interview-session/ai
 import { useChangeSummary } from '@/features/design-review/use-change-summary';
 import { useSettingsStore } from '@/features/settings/settings-store';
 import { useSessionStore } from '@/store/session-store';
-import type { InterviewMode, Message } from '@/types/session';
-import { Badge, Button, Notice, Spinner, fieldClass } from '@/components/shared/ui';
+import type { InterviewMode } from '@/types/session';
+import { Button, Notice, fieldClass } from '@/components/shared/ui';
 import { AiContextPreview } from './AiContextPreview';
+import { ChatMessage, GreetingBubble, TypingIndicator } from './ChatMessages';
 import { HistorySummaryControl } from './HistorySummaryControl';
 import { ContextSizeNotice } from './ContextSizeNotice';
 
@@ -33,14 +34,6 @@ const ACTIONS: { mode: InterviewMode; label: string; hint: string }[] = [
     hint: 'A hypothetical incident to reason through.',
   },
 ];
-
-const MODE_LABELS: Record<InterviewMode, string> = {
-  'requirements-discovery': 'Requirements',
-  'architecture-interview': 'Interview',
-  'architecture-review': 'Review',
-  'failure-scenario': 'Scenario',
-  'session-summary': 'Summary',
-};
 
 export function InterviewerPanel() {
   const doc = useSessionStore((s) => s.doc);
@@ -143,31 +136,17 @@ export function InterviewerPanel() {
       </div>
 
       <div className="min-h-0 flex-1 overflow-y-auto p-2" aria-live="polite">
-        {doc.messages.length === 0 && (
-          <p className="p-2 text-xs text-muted">
-            Start by writing requirements and sketching components. Then ask for a question or a
-            review. The interviewer reads your actual requirements and architecture, not just the
-            problem title.
-          </p>
-        )}
-        <ul className="space-y-2">
+        {doc.messages.length === 0 && <GreetingBubble />}
+        <ul className="space-y-3">
           {doc.messages.map((m) => (
-            <MessageBubble
+            <ChatMessage
               key={m.id}
               message={m}
               outdated={outdated && m.id === lastInterviewer?.id}
             />
           ))}
         </ul>
-        {running && (
-          <div className="mt-2 flex items-center gap-2 text-xs text-muted">
-            <Spinner label="Waiting for the interviewer" />
-            Interviewer is thinking. You can keep editing.
-            <Button size="sm" onClick={() => service.cancel()}>
-              Cancel
-            </Button>
-          </div>
-        )}
+        {running && <TypingIndicator onCancel={() => service.cancel()} />}
         {ai.status === 'error' && ai.error && (
           <div className="mt-2">
             <Notice
@@ -227,27 +206,5 @@ export function InterviewerPanel() {
         </div>
       </form>
     </div>
-  );
-}
-
-function MessageBubble({ message: m, outdated }: { message: Message; outdated: boolean }) {
-  const mine = m.role === 'candidate';
-  return (
-    <li
-      className={`rounded border p-2 ${mine ? 'ml-6 border-line bg-surface-2' : 'mr-6 border-line bg-surface'}`}
-    >
-      <div className="mb-1 flex items-center gap-1.5 text-[11px] text-muted">
-        <span className="font-semibold">
-          {mine ? 'You' : m.role === 'system' ? 'System' : 'Interviewer'}
-        </span>
-        {m.mode && !mine && <Badge>{MODE_LABELS[m.mode]}</Badge>}
-        {outdated && (
-          <Badge tone="warn" title="You changed the design after this was written">
-            based on an earlier version
-          </Badge>
-        )}
-      </div>
-      <p className="text-xs leading-relaxed whitespace-pre-wrap">{m.content}</p>
-    </li>
   );
 }
