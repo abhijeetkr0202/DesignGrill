@@ -12,6 +12,7 @@ import { getRepositories } from '@/data/repositories';
 import { useUiStore } from '@/store/ui-store';
 import type { SessionMeta } from '@/types/session';
 import { Badge, Button, ConfirmDialog, Notice, Spinner, fieldClass } from '@/components/shared/ui';
+import { AiConnectionBar } from './AiConnectionBar';
 
 export function LibraryView() {
   const [problems, setProblems] = useState<ProblemListing[] | null>(null);
@@ -103,6 +104,8 @@ export function LibraryView() {
             <Button onClick={() => useUiStore.getState().setView('settings')}>Settings</Button>
           </div>
         </header>
+
+        <AiConnectionBar />
 
         {!getRepositories().durable && (
           <div className="mb-4">
