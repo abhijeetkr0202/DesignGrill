@@ -36,7 +36,32 @@ See [Known limitations](#known-limitations).
 
 ## Quick start
 
-Prerequisites: Node.js 20.19+ or 22.12+, Rust stable, and the [Tauri prerequisites](https://tauri.app/start/prerequisites/) for your OS.
+### One-step setup
+
+The setup script checks that everything the desktop app needs is installed (Node.js, Rust and its build tools, the OS libraries Tauri uses), installs whatever is missing after asking, runs `npm install`, and finally checks that Cargo can read the project.
+
+macOS (and Linux, best effort):
+
+```bash
+git clone <repository-url> && cd DesignGrill
+bash scripts/setup.sh
+```
+
+Windows (PowerShell):
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\setup.ps1
+```
+
+Options: `--check` (`-CheckOnly` on Windows) only reports what is missing without installing anything, and `--yes` (`-Yes`) skips the confirmation prompts. If the script installs something, open a new terminal afterwards so it is on your PATH, then run `npm run dev:desktop`.
+
+If `npm run dev:desktop` fails with `failed to run 'cargo metadata' ... No such file or directory`, Rust is not installed or `cargo` is not on your PATH. Run the setup script; it reports where cargo is and how to add it.
+
+The Windows script and the installation paths of the shell script have only been exercised on a machine that already had the tools, so please report any problems.
+
+### Manual setup
+
+Prerequisites: Node.js 20.19+ or 22.12+, Rust 1.90+ (stable), and the [Tauri prerequisites](https://tauri.app/start/prerequisites/) for your OS.
 
 ```bash
 npm install
