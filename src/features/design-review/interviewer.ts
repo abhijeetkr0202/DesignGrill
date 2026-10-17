@@ -22,6 +22,7 @@ import type {
 } from '@/types/session';
 import { defaultContext, type Context } from '@/utils/context';
 import { buildSnapshot, snapshotToUserMessage } from './snapshot';
+import { buildIdNames, humanizeDeep, humanizeIds } from './humanize-ids';
 
 export interface TurnInput {
   mode: InterviewMode;
@@ -124,7 +125,7 @@ export function sanitizeFindings(
   return { findings, dropped };
 }
 
-export async function runInterviewerTurn(input: TurnInput): Promise<TurnResult> {
+async function runTurn(input: TurnInput): Promise<TurnResult> {
   const { mode, doc, pack, provider, model } = input;
   const ctx = input.ctx ?? defaultContext;
   const answering = input.candidateAnswer !== undefined && input.candidateAnswer.trim() !== '';
@@ -237,4 +238,46 @@ export async function runInterviewerTurn(input: TurnInput): Promise<TurnResult> 
       };
     }
   }
+}
+
+// The model sometimes writes internal ids such as "(req_1a2b...)" into its prose. Candidates
+// should only ever see names, so text is cleaned here; id fields are left untouched.
+export async function runInterviewerTurn(input: TurnInput): Promise<TurnResult> {
+  const result = await runTurn(input);
+  const names = buildIdNames(input.doc);
+  const clean = (s: string) => humanizeIds(s, names);
+  const cleanOptional = (s: string | undefined) => (s === undefined ? s : clean(s));
+  return {
+    ...result,
+    content: clean(result.content),
+    pendingQuestion: result.pendingQuestion
+      ? {
+          ...result.pendingQuestion,
+          text: clean(result.pendingQuestion.text),
+          reason: cleanOptional(result.pendingQuestion.reason),
+        }
+      : null,
+    review: result.review
+      ? {
+          ...result.review,
+          review: {
+            ...result.review.review,
+            overview: clean(result.review.review.overview),
+            missingInformation: result.review.review.missingInformation.map(clean),
+          },
+          findings: result.review.findings.map((f) => ({
+            ...f,
+            title: clean(f.title),
+            reasoning: clean(f.reasoning),
+            conditions: cleanOptional(f.conditions),
+            impact: cleanOptional(f.impact),
+            mitigations: f.mitigations.map((m) => ({
+              description: clean(m.description),
+              tradeoffs: cleanOptional(m.tradeoffs),
+            })),
+          })),
+        }
+      : undefined,
+    summary: result.summary ? humanizeDeep(result.summary, names) : undefined,
+  };
 }

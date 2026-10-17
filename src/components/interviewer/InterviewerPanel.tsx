@@ -1,8 +1,9 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { PROVIDER_INFO } from '@/ai/provider-registry';
 import { useUiStore } from '@/store/ui-store';
 import { getInterviewService, useAiStore } from '@/features/interview-session/ai-store';
 import { useChangeSummary } from '@/features/design-review/use-change-summary';
+import { buildIdNames, humanizeIds } from '@/features/design-review/humanize-ids';
 import { useSettingsStore } from '@/features/settings/settings-store';
 import { useSessionStore } from '@/store/session-store';
 import { clearChat, setGrowthStage } from '@/features/interview-session/commands';
@@ -51,6 +52,7 @@ export function InterviewerPanel() {
   const listEnd = useRef<HTMLDivElement>(null);
   const service = getInterviewService();
   const messageCount = doc?.messages.length ?? 0;
+  const idNames = useMemo(() => (doc ? buildIdNames(doc) : null), [doc]);
 
   useEffect(() => {
     listEnd.current?.scrollIntoView?.({ block: 'end' });
@@ -161,6 +163,7 @@ export function InterviewerPanel() {
               key={m.id}
               message={m}
               outdated={outdated && m.id === lastInterviewer?.id}
+              humanize={(text) => (idNames ? humanizeIds(text, idNames) : text)}
             />
           ))}
         </ul>

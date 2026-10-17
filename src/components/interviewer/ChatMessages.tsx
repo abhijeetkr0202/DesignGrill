@@ -85,7 +85,16 @@ export function TypingIndicator({ onCancel }: { onCancel: () => void }) {
   );
 }
 
-export function ChatMessage({ message: m, outdated }: { message: Message; outdated: boolean }) {
+export function ChatMessage({
+  message: m,
+  outdated,
+  humanize,
+}: {
+  message: Message;
+  outdated: boolean;
+  // Hides internal ids that older replies may still contain.
+  humanize?: (text: string) => string;
+}) {
   if (m.role === 'system') {
     return (
       <li className="chat-pop flex justify-center">
@@ -115,7 +124,7 @@ export function ChatMessage({ message: m, outdated }: { message: Message; outdat
           {mine ? (
             <p className="break-words whitespace-pre-wrap">{m.content}</p>
           ) : (
-            <MessageBody text={m.content} />
+            <MessageBody text={humanize ? humanize(m.content) : m.content} />
           )}
         </div>
         {outdated && (

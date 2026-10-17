@@ -11,7 +11,7 @@ import type { InterviewMode } from '@/types/session';
 
 export type TaskKind = InterviewMode | 'answer-evaluation';
 
-export const PROMPT_VERSION = 3;
+export const PROMPT_VERSION = 4;
 
 const TASKS: Record<TaskKind, string> = {
   'requirements-discovery': discovery,
