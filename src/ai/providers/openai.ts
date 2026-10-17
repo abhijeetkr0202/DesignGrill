@@ -15,16 +15,16 @@ import {
 } from './shared';
 
 export interface OpenAICompatConfig {
-  id: 'openai' | 'custom';
+  id: 'openai' | 'openrouter' | 'custom';
   displayName: string;
-  // Required for the custom provider; the built-in one has a fixed host.
+  // Required for the custom provider; the built-in ones have fixed hosts.
   baseUrl?: string;
 }
 
 // Uses the Chat Completions endpoint, which is accepted across OpenAI model families
 // and by most OpenAI-compatible servers (OpenRouter, Groq, Together, Ollama, LM Studio).
 export class OpenAIProvider implements AIProvider {
-  readonly id: 'openai' | 'custom';
+  readonly id: 'openai' | 'openrouter' | 'custom';
   readonly displayName: string;
   readonly capabilities: { streaming: boolean; nativeJsonMode: boolean };
   private readonly baseUrl?: string;
@@ -39,15 +39,29 @@ export class OpenAIProvider implements AIProvider {
     this.capabilities = { streaming: false, nativeJsonMode: config.id === 'openai' };
   }
 
-  private target(): { provider: 'openai' | 'custom'; baseUrl?: string } {
+  private target(): { provider: 'openai' | 'openrouter' | 'custom'; baseUrl?: string } {
     if (this.id === 'custom') {
       if (!this.baseUrl) throw new AIError('invalid-endpoint');
       return { provider: 'custom', baseUrl: this.baseUrl };
     }
-    return { provider: 'openai' };
+    return { provider: this.id };
   }
 
   async testConnection(options?: CallOptions): Promise<void> {
+    if (this.id === 'openrouter') {
+      // OpenRouter's model list is public, so it cannot tell a bad key from a good one.
+      const res = await this.transport.send({
+        ...this.target(),
+        method: 'GET',
+        path: '/v1/auth/key',
+        ...callOptions(options),
+      });
+      // Fall back to the model list if this endpoint is ever moved.
+      if (res.status !== 404) {
+        ensureOk(res);
+        return;
+      }
+    }
     await this.listModels(options);
   }
 
@@ -67,8 +81,8 @@ export class OpenAIProvider implements AIProvider {
       messages: [{ role: 'system', content: request.system }, ...request.messages],
     };
     // Compatible servers generally accept max_tokens but not always max_completion_tokens.
-    if (this.id === 'custom') body.max_tokens = request.maxOutputTokens;
-    else body.max_completion_tokens = request.maxOutputTokens;
+    if (this.id === 'openai') body.max_completion_tokens = request.maxOutputTokens;
+    else body.max_tokens = request.maxOutputTokens;
     // JSON mode is not universal among compatible servers; the prompt asks for JSON anyway.
     if (request.json && this.id === 'openai') body.response_format = { type: 'json_object' };
 

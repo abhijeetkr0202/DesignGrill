@@ -42,6 +42,7 @@ const blank = (): ProviderState => ({ status: 'unknown', error: null, availableM
 const defaultModels = (): Record<ProviderId, string> => ({
   openai: PROVIDER_INFO.openai.defaultModel,
   anthropic: PROVIDER_INFO.anthropic.defaultModel,
+  openrouter: PROVIDER_INFO.openrouter.defaultModel,
   custom: PROVIDER_INFO.custom.defaultModel,
 });
 
@@ -55,7 +56,7 @@ export const useSettingsStore = create<SettingsState>((set, get) => {
     loaded: false,
     provider: 'openai',
     models: defaultModels(),
-    providers: { openai: blank(), anthropic: blank(), custom: blank() },
+    providers: { openai: blank(), anthropic: blank(), openrouter: blank(), custom: blank() },
     customBaseUrl: '',
     progressive: true,
 

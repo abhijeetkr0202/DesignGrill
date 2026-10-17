@@ -1,4 +1,4 @@
-export type ProviderId = 'openai' | 'anthropic' | 'custom';
+export type ProviderId = 'openai' | 'anthropic' | 'openrouter' | 'custom';
 
 export interface ChatMessage {
   role: 'user' | 'assistant';

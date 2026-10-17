@@ -62,6 +62,7 @@ mod tests {
 
     #[test]
     fn rejects_unknown_providers_and_malformed_keys() {
+        assert!(validate_provider("openrouter").is_ok());
         assert!(set_key("evil", "sk-123").is_err());
         assert!(set_key("openai", "").is_err());
         assert!(set_key("openai", "has space inside").is_err());

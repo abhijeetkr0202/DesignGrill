@@ -39,6 +39,14 @@ pub fn provider_spec(provider: &str) -> Option<ProviderSpec> {
             auth_header: Some("x-api-key"),
             extra_headers: &[("anthropic-version", "2023-06-01")],
         }),
+        "openrouter" => Some(ProviderSpec {
+            // OpenRouter serves its OpenAI-compatible API under /api/v1; the caller supplies /v1/....
+            base_url: "https://openrouter.ai/api",
+            custom: false,
+            auth_header: None,
+            // Optional app attribution shown on OpenRouter's rankings and activity pages.
+            extra_headers: &[("x-title", "DesignGrill")],
+        }),
         "custom" => Some(ProviderSpec {
             base_url: "",
             custom: true,
@@ -318,12 +326,16 @@ mod tests {
     fn only_known_providers_have_specs() {
         assert!(provider_spec("openai").is_some());
         assert!(provider_spec("anthropic").is_some());
+        assert!(provider_spec("openrouter").is_some());
         assert!(provider_spec("custom").is_some());
         assert!(provider_spec("example").is_none());
         assert!(provider_spec("openai")
             .unwrap()
             .base_url
             .starts_with("https://"));
+        let openrouter = provider_spec("openrouter").unwrap();
+        assert_eq!(openrouter.base_url, "https://openrouter.ai/api");
+        assert!(!openrouter.custom);
     }
 
     #[test]

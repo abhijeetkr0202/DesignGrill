@@ -282,6 +282,7 @@ function ProviderForm({ id }: { id: ProviderId }) {
             ? 'Enter the model identifier your endpoint expects, or run a connection test to list its models.'
             : 'The default may be outdated; run a connection test to list the models your key can use, or type any model identifier.'}
         </p>
+        {info.modelHint && <p className="mt-0.5 text-[11px] text-muted">{info.modelHint}</p>}
       </div>
 
       {(localError || state.error) && <Notice tone="danger">{localError ?? state.error}</Notice>}

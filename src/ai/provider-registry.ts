@@ -9,6 +9,8 @@ export interface ProviderInfo {
   // Suggested starting points. Model names change; the settings screen lists what the key can use.
   defaultModel: string;
   consoleUrl: string;
+  // Extra guidance shown under the model field.
+  modelHint?: string;
   // The user supplies the API base URL (any OpenAI-compatible server).
   requiresEndpoint?: boolean;
 }
@@ -25,6 +27,14 @@ export const PROVIDER_INFO: Record<ProviderId, ProviderInfo> = {
     displayName: 'Anthropic',
     defaultModel: 'claude-sonnet-4-5',
     consoleUrl: 'https://console.anthropic.com/settings/keys',
+  },
+  openrouter: {
+    id: 'openrouter',
+    displayName: 'OpenRouter',
+    defaultModel: 'openai/gpt-4.1',
+    consoleUrl: 'https://openrouter.ai/settings/keys',
+    modelHint:
+      'OpenRouter model names look like "vendor/model", for example "anthropic/claude-sonnet-4.5" or "openai/gpt-4.1". One key gives access to many providers, billed through OpenRouter.',
   },
   custom: {
     id: 'custom',
@@ -51,6 +61,11 @@ export function createProvider(
       return new OpenAIProvider(transport);
     case 'anthropic':
       return new AnthropicProvider(transport);
+    case 'openrouter':
+      return new OpenAIProvider(transport, {
+        id: 'openrouter',
+        displayName: PROVIDER_INFO.openrouter.displayName,
+      });
     case 'custom':
       return new OpenAIProvider(transport, {
         id: 'custom',
