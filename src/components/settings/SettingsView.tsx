@@ -1,7 +1,9 @@
 import { useState } from 'react';
+import { isTauri } from '@tauri-apps/api/core';
 import type { ProviderId } from '@/ai/provider-interface';
 import { PROVIDER_IDS, PROVIDER_INFO } from '@/ai/provider-registry';
 import { useSettingsStore, type ConnectionStatus } from '@/features/settings/settings-store';
+import { MAX_ZOOM_LEVEL, MIN_ZOOM_LEVEL, setZoomLevel, zoomPercent } from '@/features/ui/zoom';
 import { useSessionStore } from '@/store/session-store';
 import { useUiStore } from '@/store/ui-store';
 import { getRepositories } from '@/data/repositories';
@@ -23,6 +25,7 @@ export function SettingsView() {
   const provider = useSettingsStore((s) => s.provider);
   const progressive = useSettingsStore((s) => s.progressive);
   const theme = useUiStore((s) => s.theme);
+  const zoomLevel = useUiStore((s) => s.zoomLevel);
   const hasSession = useSessionStore((s) => s.doc !== null);
 
   return (
@@ -109,6 +112,36 @@ export function SettingsView() {
             </Button>
           ))}
         </div>
+        {isTauri() && (
+          <div className="mt-3">
+            <div className="mb-1 text-[11px] font-medium text-muted">Zoom</div>
+            <div className="flex items-center gap-2">
+              <Button
+                aria-label="Zoom out"
+                disabled={zoomLevel <= MIN_ZOOM_LEVEL}
+                onClick={() => setZoomLevel(zoomLevel - 1)}
+              >
+                &minus;
+              </Button>
+              <span className="w-12 text-center text-xs tabular-nums" aria-live="polite">
+                {zoomPercent(zoomLevel)}%
+              </span>
+              <Button
+                aria-label="Zoom in"
+                disabled={zoomLevel >= MAX_ZOOM_LEVEL}
+                onClick={() => setZoomLevel(zoomLevel + 1)}
+              >
+                +
+              </Button>
+              <Button disabled={zoomLevel === 0} onClick={() => setZoomLevel(0)}>
+                Reset
+              </Button>
+            </div>
+            <p className="mt-1 text-[11px] text-muted">
+              Shortcuts: Cmd or Ctrl with + to zoom in, - to zoom out, and 0 to reset.
+            </p>
+          </div>
+        )}
       </section>
 
       <section aria-labelledby="privacy-heading">

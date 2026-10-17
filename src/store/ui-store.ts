@@ -13,6 +13,8 @@ export type Theme = 'light' | 'dark';
 interface UiState {
   view: View;
   theme: Theme;
+  // Zoom steps from the default size; 0 is 100%.
+  zoomLevel: number;
   leftTab: LeftTab;
   rightTab: RightTab;
   leftCollapsed: boolean;
@@ -28,6 +30,7 @@ interface UiState {
   editingDrawingId: string | null;
   setView(view: View): void;
   setTheme(theme: Theme): void;
+  setZoomLevel(level: number): void;
   setLeftTab(tab: LeftTab): void;
   setRightTab(tab: RightTab): void;
   toggleLeft(): void;
@@ -49,6 +52,7 @@ const sameSet = (a: string[], b: string[]) =>
 export const useUiStore = create<UiState>((set, get) => ({
   view: 'library',
   theme: 'dark',
+  zoomLevel: 0,
   leftTab: 'problem',
   rightTab: 'interview',
   leftCollapsed: false,
@@ -64,6 +68,7 @@ export const useUiStore = create<UiState>((set, get) => ({
   editingDrawingId: null,
   setView: (view) => set({ view }),
   setTheme: (theme) => set({ theme }),
+  setZoomLevel: (zoomLevel) => set({ zoomLevel }),
   setLeftTab: (leftTab) => set({ leftTab, leftCollapsed: false }),
   setRightTab: (rightTab) => set({ rightTab, rightCollapsed: false }),
   toggleLeft: () => set((s) => ({ leftCollapsed: !s.leftCollapsed })),

@@ -6,6 +6,7 @@ import { PROVIDER_IDS, PROVIDER_INFO, isProviderId } from '@/ai/provider-registr
 import { getProvider, setCustomBaseUrl } from '@/ai/runtime';
 import { getRepositories } from '@/data/repositories';
 import { deleteApiKey, hasApiKey, saveApiKey } from './credentials';
+import { ZOOM_PREFERENCE, clampZoomLevel } from '@/features/ui/zoom';
 import { useUiStore, type Theme } from '@/store/ui-store';
 
 export type ConnectionStatus =
@@ -76,6 +77,9 @@ export const useSettingsStore = create<SettingsState>((set, get) => {
       setCustomBaseUrl(customBaseUrl || undefined);
       if (values.theme === 'light' || values.theme === 'dark')
         useUiStore.getState().setTheme(values.theme);
+      if (values[ZOOM_PREFERENCE] !== undefined) {
+        useUiStore.getState().setZoomLevel(clampZoomLevel(Number(values[ZOOM_PREFERENCE])));
+      }
       set({
         loaded: true,
         provider,

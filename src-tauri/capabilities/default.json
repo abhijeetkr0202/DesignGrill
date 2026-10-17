@@ -15,6 +15,7 @@
     "allow-credential-status",
     "allow-credential-delete",
     "allow-ai-http-request",
-    "allow-ai-cancel"
+    "allow-ai-cancel",
+    "core:webview:allow-set-webview-zoom"
   ]
 }
