@@ -12,7 +12,7 @@ import type {
   SessionDocument,
   SessionSummary,
 } from '@/types/session';
-import { SCHEMA_VERSION } from '@/types/session';
+import { EMPTY_HISTORY_SUMMARY, SCHEMA_VERSION } from '@/types/session';
 import { defaultContext, type Context } from '@/utils/context';
 
 export interface NewSessionInput {
@@ -53,6 +53,7 @@ export function createSession(
     pendingQuestion: null,
     reviewBaseline: null,
     problemStatement: input.problemStatement ?? '',
+    historySummary: { ...EMPTY_HISTORY_SUMMARY },
   };
 }
 
@@ -586,6 +587,61 @@ export function setReviewBaseline(
   ctx: Context = defaultContext,
 ): SessionDocument {
   return touch({ ...doc, reviewBaseline: baseline }, ctx, false);
+}
+
+// ---------- Chat history summary ----------
+
+export function setHistorySummaryEnabled(
+  doc: SessionDocument,
+  enabled: boolean,
+  ctx: Context = defaultContext,
+): SessionDocument {
+  if (doc.historySummary.enabled === enabled) return doc;
+  return touch({ ...doc, historySummary: { ...doc.historySummary, enabled } }, ctx, false);
+}
+
+export function setHistorySummary(
+  doc: SessionDocument,
+  update: { text: string; coversThroughMessageId: string | null },
+  ctx: Context = defaultContext,
+): SessionDocument {
+  const text = update.text.trim().slice(0, 6000);
+  const next = {
+    ...doc.historySummary,
+    text,
+    coversThroughMessageId: update.coversThroughMessageId,
+  };
+  return touch({ ...doc, historySummary: { ...next, updatedAt: ctx.now() } }, ctx, false);
+}
+
+// Keeps the covered range; used when the user corrects the generated text by hand.
+export function editHistorySummaryText(
+  doc: SessionDocument,
+  text: string,
+  ctx: Context = defaultContext,
+): SessionDocument {
+  const next = text.trim().slice(0, 6000);
+  if (next === doc.historySummary.text) return doc;
+  return setHistorySummary(
+    doc,
+    { text: next, coversThroughMessageId: doc.historySummary.coversThroughMessageId },
+    ctx,
+  );
+}
+
+// Dropping the summary makes the full recent chat window apply again until a new one is built.
+export function resetHistorySummary(
+  doc: SessionDocument,
+  ctx: Context = defaultContext,
+): SessionDocument {
+  return touch(
+    {
+      ...doc,
+      historySummary: { ...EMPTY_HISTORY_SUMMARY, enabled: doc.historySummary.enabled },
+    },
+    ctx,
+    false,
+  );
 }
 
 export function setSessionStatus(

@@ -59,6 +59,7 @@ export function toRecord(doc: SessionDocument): SessionRecord {
         pendingQuestion: doc.pendingQuestion,
         reviewBaseline: doc.reviewBaseline,
         problemStatement: doc.problemStatement,
+        historySummary: doc.historySummary,
       },
     },
     architecture: doc.architecture,
@@ -92,6 +93,7 @@ export function fromRecord(record: SessionRecord): SessionDocument {
     pendingQuestion: extra.success ? extra.data.pendingQuestion : null,
     reviewBaseline: extra.success ? extra.data.reviewBaseline : null,
     problemStatement: extra.success ? extra.data.problemStatement : '',
+    historySummary: extra.success ? extra.data.historySummary : undefined,
   });
   if (!parsed.success) {
     throw new StorageError(

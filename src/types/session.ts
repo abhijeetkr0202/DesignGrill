@@ -312,11 +312,28 @@ export const ReviewBaselineSchema = z.object({
 });
 export type ReviewBaseline = z.infer<typeof ReviewBaselineSchema>;
 
+// Optional condensed record of older chat, sent instead of those messages when `enabled`.
+export const HistorySummarySchema = z.object({
+  enabled: z.boolean().default(false),
+  text: z.string().max(6000).default(''),
+  // Messages up to and including this one are folded into `text`.
+  coversThroughMessageId: id.nullable().default(null),
+  updatedAt: isoDate.nullable().default(null),
+});
+export type HistorySummary = z.infer<typeof HistorySummarySchema>;
+export const EMPTY_HISTORY_SUMMARY: HistorySummary = {
+  enabled: false,
+  text: '',
+  coversThroughMessageId: null,
+  updatedAt: null,
+};
+
 export const SessionExtraSchema = z.object({
   pendingQuestion: PendingQuestionSchema.nullable().default(null),
   reviewBaseline: ReviewBaselineSchema.nullable().default(null),
   // Written by the user for custom problems; empty for bundled problems.
   problemStatement: longText.default(''),
+  historySummary: HistorySummarySchema.default(EMPTY_HISTORY_SUMMARY),
 });
 export type SessionExtra = z.infer<typeof SessionExtraSchema>;
 
@@ -344,5 +361,6 @@ export const SessionDocumentSchema = SessionMetaSchema.extend({
   pendingQuestion: PendingQuestionSchema.nullable().default(null),
   reviewBaseline: ReviewBaselineSchema.nullable().default(null),
   problemStatement: longText.default(''),
+  historySummary: HistorySummarySchema.default(EMPTY_HISTORY_SUMMARY),
 });
 export type SessionDocument = z.infer<typeof SessionDocumentSchema>;

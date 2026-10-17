@@ -4,11 +4,36 @@ import { CUSTOM_PROBLEM_ID } from '@/features/problem-library/custom';
 import { describeDrawings, type DrawingDescription } from '@/features/architecture/annotations';
 import { computeChanges } from './changes';
 
-const MAX_SNAPSHOT_CHARS = 60_000;
+export const SNAPSHOT_LIMIT_CHARS = 60_000;
+// Warn once the full-detail snapshot is this close to the limit.
+export const SNAPSHOT_WARN_CHARS = 45_000;
 const MAX_KNOWLEDGE_CHARS = 5_000;
+const CLIP_MESSAGE_CHARS = 600;
+const CLIP_REQUIREMENT_CHARS = 400;
+const CLIP_DRAWING_CHARS = 300;
+
+// Cumulative levels, tried in order until the snapshot fits. Chat is cut first and the
+// candidate's own design text last, because that is the material the interviewer must judge.
+interface ShrinkLevel {
+  messages: number;
+  clipMessages: boolean;
+  notesChars: number;
+  clipDesign: boolean;
+}
+const SHRINK_LEVELS: ShrinkLevel[] = [
+  { messages: 14, clipMessages: false, notesChars: MAX_KNOWLEDGE_CHARS, clipDesign: false },
+  { messages: 6, clipMessages: false, notesChars: MAX_KNOWLEDGE_CHARS, clipDesign: false },
+  { messages: 4, clipMessages: true, notesChars: MAX_KNOWLEDGE_CHARS, clipDesign: false },
+  { messages: 4, clipMessages: true, notesChars: 1_500, clipDesign: false },
+  { messages: 4, clipMessages: true, notesChars: 1_500, clipDesign: true },
+];
+
+function usesInterviewerNotes(mode: InterviewMode | 'answer-evaluation'): boolean {
+  return mode === 'architecture-review' || mode === 'architecture-interview';
+}
 
 function requirementView(r: Requirement, compact: boolean) {
-  const clip = (s: string | undefined) => (compact && s ? s.slice(0, 400) : s);
+  const clip = (s: string | undefined) => (compact && s ? s.slice(0, CLIP_REQUIREMENT_CHARS) : s);
   return {
     id: r.id,
     title: r.title,
@@ -29,6 +54,7 @@ function group(doc: SessionDocument, kind: RequirementKind, compact: boolean) {
 export function buildReferenceMaterial(
   pack: ProblemPack,
   mode: InterviewMode | 'answer-evaluation',
+  notesChars: number = MAX_KNOWLEDGE_CHARS,
 ): string {
   const p = pack.problem;
   if (p.id === CUSTOM_PROBLEM_ID) {
@@ -71,15 +97,64 @@ export function buildReferenceMaterial(
       );
   }
   const text = lines.join('\n');
-  const notes = pack.knowledge.slice(0, MAX_KNOWLEDGE_CHARS);
-  return mode === 'architecture-review' || mode === 'architecture-interview'
-    ? `${text}\n\nInterviewer notes:\n${notes}`
-    : text;
+  const notes = pack.knowledge.slice(0, notesChars);
+  return usesInterviewerNotes(mode) ? `${text}\n\nInterviewer notes:\n${notes}` : text;
+}
+
+export interface InterviewProgress {
+  // Earliest stage that still looks unfinished; guidance for question choice, not a verdict.
+  suggestedPhase: InterviewPhase;
+  functionalRequirements: number;
+  nonFunctionalRequirements: number;
+  components: number;
+  connections: number;
+  decisions: number;
+  reviewsDone: number;
+  openSeriousConcerns: number;
+}
+
+export type InterviewPhase =
+  'requirements' | 'high-level-design' | 'deep-dive' | 'failure-and-scale';
+
+export function computeProgress(doc: SessionDocument): InterviewProgress {
+  const count = (kind: RequirementKind) => doc.requirements.filter((r) => r.kind === kind).length;
+  const functionalRequirements = count('functional');
+  const nonFunctionalRequirements = count('nonFunctional');
+  const components = doc.architecture.nodes.length;
+  const connections = doc.architecture.edges.length;
+  const openSeriousConcerns = doc.findings.filter(
+    (f) =>
+      f.status === 'open' &&
+      f.kind !== 'strength' &&
+      (f.severity === 'critical' || f.severity === 'high'),
+  ).length;
+
+  let suggestedPhase: InterviewPhase;
+  if (functionalRequirements === 0 || nonFunctionalRequirements === 0) {
+    suggestedPhase = 'requirements';
+  } else if (components < 3 || connections < 2) {
+    suggestedPhase = 'high-level-design';
+  } else if (doc.reviews.length === 0 || doc.decisions.length === 0 || openSeriousConcerns > 0) {
+    suggestedPhase = 'deep-dive';
+  } else {
+    suggestedPhase = 'failure-and-scale';
+  }
+  return {
+    suggestedPhase,
+    functionalRequirements,
+    nonFunctionalRequirements,
+    components,
+    connections,
+    decisions: doc.decisions.length,
+    reviewsDone: doc.reviews.length,
+    openSeriousConcerns,
+  };
 }
 
 export interface InterviewSnapshot {
   snapshotRevision: number;
   generatedAt: string;
+  progress: InterviewProgress;
   problem: { id: string; title: string; statement: string };
   requirements: Record<RequirementKind, ReturnType<typeof requirementView>[]>;
   architecture: {
@@ -89,11 +164,24 @@ export interface InterviewSnapshot {
     annotations: DrawingDescription[];
   };
   decisions: Record<string, unknown>[];
+  // Present only when the candidate turned on summarised history and a summary exists.
+  conversationSummary?: { note: string; text: string };
   recentMessages: { role: string; mode?: string; content: string }[];
   unresolvedFindings: { id: string; severity: string; kind: string; title: string }[];
   pendingQuestion: { id: string; text: string; mode: string } | null;
   changesSinceLastReview: { hasPreviousReview: boolean; changes: string[] };
   referenceMaterial: string;
+  // Present only when something was shortened to fit the size limit.
+  trimmedForSize?: string[];
+}
+
+export interface SnapshotBuild {
+  snapshot: InterviewSnapshot;
+  // Characters of the JSON actually sent, and of the same snapshot with nothing trimmed.
+  chars: number;
+  fullChars: number;
+  // What was really shortened to fit; empty when nothing was.
+  trimmed: string[];
 }
 
 export function buildSnapshot(
@@ -102,13 +190,62 @@ export function buildSnapshot(
   mode: InterviewMode | 'answer-evaluation',
   now: string,
 ): InterviewSnapshot {
-  const build = (compact: boolean): InterviewSnapshot => {
+  return buildSnapshotDetailed(doc, pack, mode, now).snapshot;
+}
+
+export function buildSnapshotDetailed(
+  doc: SessionDocument,
+  pack: ProblemPack,
+  mode: InterviewMode | 'answer-evaluation',
+  now: string,
+): SnapshotBuild {
+  const build = (level: ShrinkLevel): { snapshot: InterviewSnapshot; applied: string[] } => {
+    const compact = level.clipDesign;
     const nodeName = new Map(doc.architecture.nodes.map((n) => [n.id, n.label]));
     const changes = computeChanges(doc);
-    const messageLimit = compact ? 4 : 14;
-    return {
+    const drawings = describeDrawings(doc.architecture);
+    const { enabled, text: summaryText, coversThroughMessageId } = doc.historySummary;
+    const useSummary = enabled && summaryText.trim() !== '';
+    const chat = doc.messages.filter((m) => m.role !== 'system');
+    // Messages already folded into the summary are not sent a second time.
+    const covered =
+      useSummary && coversThroughMessageId
+        ? chat.findIndex((m) => m.id === coversThroughMessageId)
+        : -1;
+    const sentMessages = covered >= 0 ? chat.slice(covered + 1) : chat;
+    const windowed = sentMessages.slice(-level.messages);
+
+    const applied: string[] = [];
+    if (level.messages < SHRINK_LEVELS[0]!.messages && sentMessages.length > windowed.length) {
+      applied.push(`Chat limited to the newest ${windowed.length} messages`);
+    }
+    if (level.clipMessages && windowed.some((m) => m.content.length > CLIP_MESSAGE_CHARS)) {
+      applied.push(`Chat messages shortened to ${CLIP_MESSAGE_CHARS} characters`);
+    }
+    if (
+      usesInterviewerNotes(mode) &&
+      level.notesChars < MAX_KNOWLEDGE_CHARS &&
+      pack.knowledge.length > level.notesChars
+    ) {
+      applied.push('Reference notes shortened');
+    }
+    if (
+      level.clipDesign &&
+      (doc.requirements.some(
+        (r) =>
+          (r.detail?.length ?? 0) > CLIP_REQUIREMENT_CHARS ||
+          (r.notes?.length ?? 0) > CLIP_REQUIREMENT_CHARS,
+      ) ||
+        doc.decisions.some((d) => d.rationale.length > CLIP_REQUIREMENT_CHARS) ||
+        drawings.some((a) => (a.text?.length ?? 0) > CLIP_DRAWING_CHARS))
+    ) {
+      applied.push('Requirement, decision and drawing text shortened');
+    }
+
+    const snapshot: InterviewSnapshot = {
       snapshotRevision: doc.revision,
       generatedAt: now,
+      progress: computeProgress(doc),
       problem: {
         id: pack.problem.id,
         title: doc.title,
@@ -147,28 +284,31 @@ export function buildSnapshot(
           mode: e.mode,
           dataFlow: e.dataFlow,
         })),
-        annotations: describeDrawings(doc.architecture).map((a) =>
-          compact && a.text ? { ...a, text: a.text.slice(0, 300) } : a,
+        annotations: drawings.map((a) =>
+          compact && a.text ? { ...a, text: a.text.slice(0, CLIP_DRAWING_CHARS) } : a,
         ),
       },
       decisions: doc.decisions.map((d) => ({
         id: d.id,
         title: d.title,
-        rationale: compact ? d.rationale.slice(0, 400) : d.rationale,
+        rationale: compact ? d.rationale.slice(0, CLIP_REQUIREMENT_CHARS) : d.rationale,
         alternatives: d.alternatives,
         relatedNodeIds: d.relatedNodeIds,
         relatedRequirementIds: d.relatedRequirementIds,
         status: d.status,
         reevaluationReason: d.reevaluationReason,
       })),
-      recentMessages: doc.messages
-        .filter((m) => m.role !== 'system')
-        .slice(-messageLimit)
-        .map((m) => ({
-          role: m.role,
-          mode: m.mode,
-          content: compact ? m.content.slice(0, 600) : m.content,
-        })),
+      conversationSummary: useSummary
+        ? {
+            note: 'Condensed record of the chat before recentMessages. Machine-written and may be incomplete; recentMessages and the design above take precedence.',
+            text: summaryText,
+          }
+        : undefined,
+      recentMessages: windowed.map((m) => ({
+        role: m.role,
+        mode: m.mode,
+        content: level.clipMessages ? m.content.slice(0, CLIP_MESSAGE_CHARS) : m.content,
+      })),
       unresolvedFindings: doc.findings
         .filter((f) => f.status === 'open' && f.kind !== 'strength')
         .slice(-20)
@@ -184,12 +324,28 @@ export function buildSnapshot(
         hasPreviousReview: changes.hasBaseline,
         changes: changes.entries.map((c) => `${c.kind} ${c.subject}: ${c.label}`),
       },
-      referenceMaterial: buildReferenceMaterial(pack, mode),
+      referenceMaterial: buildReferenceMaterial(pack, mode, level.notesChars),
     };
+    return { snapshot, applied };
   };
 
-  const full = build(false);
-  return JSON.stringify(full).length > MAX_SNAPSHOT_CHARS ? build(true) : full;
+  const last = SHRINK_LEVELS.length - 1;
+  let index = 0;
+  let built = build(SHRINK_LEVELS[0]!);
+  let chars = JSON.stringify(built.snapshot).length;
+  const fullChars = chars;
+  while (chars > SNAPSHOT_LIMIT_CHARS && index < last) {
+    index++;
+    built = build(SHRINK_LEVELS[index]!);
+    chars = JSON.stringify(built.snapshot).length;
+  }
+  const trimmed = built.applied;
+  return {
+    snapshot: trimmed.length ? { ...built.snapshot, trimmedForSize: trimmed } : built.snapshot,
+    chars,
+    fullChars,
+    trimmed,
+  };
 }
 
 // The candidate's text is untrusted; keep it from closing the delimiter it is wrapped in.

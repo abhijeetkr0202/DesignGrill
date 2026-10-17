@@ -95,3 +95,7 @@ export const SummaryResponseSchema = z.object({
     .default([]),
 });
 export type SummaryResponse = z.infer<typeof SummaryResponseSchema>;
+
+export const HistorySummaryResponseSchema = z.object({
+  summary: str(6000).pipe(z.string().min(1)),
+});

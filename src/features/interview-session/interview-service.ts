@@ -2,6 +2,12 @@ import { AIError, isAIError } from '@/ai/errors';
 import type { AIProvider, ProviderId } from '@/ai/provider-interface';
 import { takeBaseline } from '@/features/design-review/changes';
 import { runInterviewerTurn, type TurnResult } from '@/features/design-review/interviewer';
+import {
+  foldHistory,
+  planFold,
+  summaryTargetWords,
+} from '@/features/design-review/history-summary';
+import { SNAPSHOT_WARN_CHARS, buildSnapshotDetailed } from '@/features/design-review/snapshot';
 import type { ProblemPack } from '@/features/problem-library/schema';
 import type { InterviewMode, SessionDocument } from '@/types/session';
 import { defaultContext, type Context } from '@/utils/context';
@@ -9,6 +15,7 @@ import {
   addReview,
   addSummary,
   appendMessage,
+  setHistorySummary,
   setPendingQuestion,
   setReviewBaseline,
 } from './commands';
@@ -41,6 +48,8 @@ export interface InterviewService {
   submitAnswer(text: string): Promise<void>;
   retry(): Promise<void>;
   cancel(): void;
+  // Folds older chat into the stored summary when it is enabled and enough has piled up.
+  refreshSummary(): Promise<void>;
 }
 
 // Orchestrates one interviewer turn. UI-independent so the workflow can be tested without rendering.
@@ -48,6 +57,52 @@ export function createInterviewService(deps: InterviewDeps): InterviewService {
   const ctx = deps.ctx ?? defaultContext;
   let controller: AbortController | null = null;
   let last: LastRequest | null = null;
+  let summarizing: Promise<void> | null = null;
+
+  const refreshSummary = (): Promise<void> => {
+    if (summarizing) return summarizing;
+    summarizing = (async () => {
+      const doc = deps.getDoc();
+      if (!doc?.historySummary.enabled) return;
+      const pack = deps.getPack();
+      const nearLimit =
+        pack !== null &&
+        buildSnapshotDetailed(doc, pack, 'architecture-review', ctx.now()).fullChars >=
+          SNAPSHOT_WARN_CHARS;
+      const plan = planFold(doc, { early: nearLimit });
+      if (!plan) return;
+      const { provider: providerId, model } = deps.getSettings();
+      if (!model.trim()) return;
+      const coveredBefore = doc.historySummary.coversThroughMessageId;
+      try {
+        if (!(await deps.hasKey(providerId))) return;
+        const folded = await foldHistory({
+          provider: deps.getProvider(providerId),
+          model,
+          previousSummary: doc.historySummary.text,
+          messages: plan.messages,
+          targetWords: summaryTargetWords(plan.totalFolded),
+        });
+        const through = plan.messages[folded.foldedMessages - 1];
+        if (!through) return;
+        // Skip if the session changed or the summary was reset while the call ran.
+        deps.update((d) =>
+          d.id === doc.id && d.historySummary.coversThroughMessageId === coveredBefore
+            ? setHistorySummary(
+                d,
+                { text: folded.summary, coversThroughMessageId: through.id },
+                ctx,
+              )
+            : d,
+        );
+      } catch {
+        // The normal recent-message window keeps being used until a later attempt succeeds.
+      }
+    })().finally(() => {
+      summarizing = null;
+    });
+    return summarizing;
+  };
 
   const fail = (mode: InterviewMode, e: unknown) => {
     const err = isAIError(e) ? e : new AIError('unknown');
@@ -128,6 +183,7 @@ export function createInterviewService(deps: InterviewDeps): InterviewService {
       commit(snapshotDoc, result);
       last = null;
       deps.onState({ status: 'idle' });
+      void refreshSummary();
     } catch (e) {
       fail(request.mode, e);
     } finally {
@@ -145,5 +201,6 @@ export function createInterviewService(deps: InterviewDeps): InterviewService {
     },
     retry: () => (last ? run(last) : Promise.resolve()),
     cancel: () => controller?.abort(),
+    refreshSummary,
   };
 }

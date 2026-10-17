@@ -8,6 +8,8 @@ import { useSessionStore } from '@/store/session-store';
 import type { InterviewMode, Message } from '@/types/session';
 import { Badge, Button, Notice, Spinner, fieldClass } from '@/components/shared/ui';
 import { AiContextPreview } from './AiContextPreview';
+import { HistorySummaryControl } from './HistorySummaryControl';
+import { ContextSizeNotice } from './ContextSizeNotice';
 
 const ACTIONS: { mode: InterviewMode; label: string; hint: string }[] = [
   {
@@ -103,15 +105,18 @@ export function InterviewerPanel() {
             </Button>
           ))}
         </div>
+        <ContextSizeNotice doc={doc} pack={pack} />
+        <HistorySummaryControl />
         <details className="text-[11px] text-muted">
           <summary className="cursor-pointer">What is sent to {info.displayName}?</summary>
           <p className="mt-1">
             Each AI action sends your problem statement, requirements, architecture (components,
             connections, properties), diagram drawings (text, shapes, arrows and which components
-            they relate to), design decisions, open findings, recent chat messages, and illustrative
-            reference notes for this problem, directly to {info.displayName} using model{' '}
-            <code>{model}</code>. Nothing is sent until you click an action or send an answer. Your
-            API key never leaves the OS credential store and native layer.
+            they relate to), design decisions, open findings, recent chat messages (or, if you turn
+            on summarised history, a short summary of older chat plus the newest messages), and
+            illustrative reference notes for this problem, directly to {info.displayName} using
+            model <code>{model}</code>. Nothing is sent until you click an action or send an answer.
+            Your API key never leaves the OS credential store and native layer.
           </p>
         </details>
         <AiContextPreview doc={doc} pack={pack} isCustomEndpoint={provider === 'custom'} />

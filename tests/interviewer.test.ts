@@ -1,7 +1,12 @@
 import { describe, expect, it } from 'vitest';
+import { buildSystemPrompt } from '@/ai/prompts';
 import { takeBaseline } from '@/features/design-review/changes';
 import { runInterviewerTurn } from '@/features/design-review/interviewer';
-import { buildSnapshot, wrapCandidateAnswer } from '@/features/design-review/snapshot';
+import {
+  buildSnapshot,
+  computeProgress,
+  wrapCandidateAnswer,
+} from '@/features/design-review/snapshot';
 import {
   addComponent,
   addRequirement,
@@ -85,6 +90,52 @@ describe('snapshot', () => {
     );
     expect(wrapped.match(/<\/candidate_answer>/g)).toHaveLength(1);
     expect(wrapped.match(/<candidate_answer>/g)).toHaveLength(1);
+  });
+});
+
+describe('interview progress and guidance', () => {
+  it('suggests the earliest unfinished phase from what the candidate has built', async () => {
+    const ctx = makeCtx();
+    expect(computeProgress(newDoc(ctx)).suggestedPhase).toBe('requirements');
+
+    const { doc, ctx: dctx } = await design();
+    // Non-functional target only: functional scope is still missing.
+    expect(computeProgress(doc)).toMatchObject({
+      suggestedPhase: 'requirements',
+      nonFunctionalRequirements: 1,
+      components: 3,
+      connections: 2,
+    });
+
+    const withFunctional = addRequirement(
+      doc,
+      { kind: 'functional', title: 'Redirect short links' },
+      dctx,
+    ).doc;
+    expect(computeProgress(withFunctional).suggestedPhase).toBe('deep-dive');
+
+    const sparse = addRequirement(
+      addRequirement(newDoc(ctx), { kind: 'functional', title: 'Redirect' }, ctx).doc,
+      { kind: 'nonFunctional', title: 'Fast', category: 'latency' },
+      ctx,
+    ).doc;
+    expect(computeProgress(sparse).suggestedPhase).toBe('high-level-design');
+  });
+
+  it('puts progress in the snapshot the model receives', async () => {
+    const { pack, doc } = await design();
+    const snap = buildSnapshot(doc, pack, 'architecture-interview', 'now');
+    expect(snap.progress.suggestedPhase).toBe('requirements');
+  });
+
+  it('tells the model to challenge, then offer alternatives, and to follow the phase', () => {
+    const interview = buildSystemPrompt('architecture-interview');
+    expect(interview).toMatch(/Challenge, then offer alternatives/);
+    expect(interview).toMatch(/progress\.suggestedPhase/);
+    expect(interview).toMatch(/never as the single correct answer/);
+    const evaluation = buildSystemPrompt('answer-evaluation');
+    expect(evaluation).toMatch(/one or two realistic alternatives/);
+    expect(evaluation).toMatch(/do not offer alternatives for the sake of it/);
   });
 });
 

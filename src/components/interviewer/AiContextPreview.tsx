@@ -1,6 +1,10 @@
 import { useMemo, useState } from 'react';
 import { buildSystemPrompt } from '@/ai/prompts';
-import { buildSnapshot, snapshotToUserMessage } from '@/features/design-review/snapshot';
+import {
+  SNAPSHOT_LIMIT_CHARS,
+  buildSnapshotDetailed,
+  snapshotToUserMessage,
+} from '@/features/design-review/snapshot';
 import type { ProblemPack } from '@/features/problem-library/schema';
 import type { InterviewMode, SessionDocument } from '@/types/session';
 import { defaultContext } from '@/utils/context';
@@ -32,8 +36,9 @@ export function AiContextPreview({
   const request = useMemo(() => {
     if (!open || !pack) return null;
     const system = buildSystemPrompt(mode);
-    const user = snapshotToUserMessage(buildSnapshot(doc, pack, mode, defaultContext.now()));
-    return { system, user };
+    const built = buildSnapshotDetailed(doc, pack, mode, defaultContext.now());
+    const user = snapshotToUserMessage(built.snapshot);
+    return { system, user, trimmed: built.trimmed };
   }, [open, pack, doc, mode]);
 
   return (
@@ -63,6 +68,12 @@ export function AiContextPreview({
             {isCustomEndpoint &&
               ' If your server context window is smaller than this, the start of the request, which holds the instructions, can be cut off silently.'}
           </p>
+          {request.trimmed.length > 0 && (
+            <p className="text-warn">
+              Shortened to fit the {SNAPSHOT_LIMIT_CHARS.toLocaleString()} character limit:{' '}
+              {request.trimmed.join('; ')}.
+            </p>
+          )}
           <PreviewBlock title="Instructions (system prompt)" text={request.system} />
           <PreviewBlock title="Your design as sent (snapshot)" text={request.user} />
         </div>
