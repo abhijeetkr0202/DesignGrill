@@ -646,6 +646,23 @@ export function resetHistorySummary(
   );
 }
 
+// Starts the conversation over. The design, decisions, findings and reviews are kept; the
+// current stage is kept too but will be announced again by the next reply.
+export function clearChat(doc: SessionDocument, ctx: Context = defaultContext): SessionDocument {
+  if (doc.messages.length === 0 && doc.pendingQuestion === null) return doc;
+  return touch(
+    {
+      ...doc,
+      messages: [],
+      pendingQuestion: null,
+      historySummary: { ...EMPTY_HISTORY_SUMMARY, enabled: doc.historySummary.enabled },
+      growthStage: { ...doc.growthStage, introduced: false },
+    },
+    ctx,
+    false,
+  );
+}
+
 export function setSessionStatus(
   doc: SessionDocument,
   status: SessionDocument['status'],

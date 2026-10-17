@@ -5,9 +5,9 @@ import { getInterviewService, useAiStore } from '@/features/interview-session/ai
 import { useChangeSummary } from '@/features/design-review/use-change-summary';
 import { useSettingsStore } from '@/features/settings/settings-store';
 import { useSessionStore } from '@/store/session-store';
-import { setGrowthStage } from '@/features/interview-session/commands';
+import { clearChat, setGrowthStage } from '@/features/interview-session/commands';
 import type { InterviewMode } from '@/types/session';
-import { Button, Notice, fieldClass } from '@/components/shared/ui';
+import { Button, ConfirmDialog, Notice, fieldClass } from '@/components/shared/ui';
 import { AiContextPreview } from './AiContextPreview';
 import { StageBar } from './StageBar';
 import { ChatMessage, GreetingBubble, TypingIndicator } from './ChatMessages';
@@ -47,6 +47,7 @@ export function InterviewerPanel() {
   const status = useSettingsStore((s) => s.providers[s.provider].status);
   const changes = useChangeSummary();
   const [answer, setAnswer] = useState('');
+  const [confirmingClear, setConfirmingClear] = useState(false);
   const listEnd = useRef<HTMLDivElement>(null);
   const service = getInterviewService();
   const messageCount = doc?.messages.length ?? 0;
@@ -217,11 +218,36 @@ export function InterviewerPanel() {
           <span className="text-[11px] text-muted">
             {PROVIDER_INFO[provider].displayName} · {model}
           </span>
-          <Button type="submit" variant="primary" disabled={running || !answer.trim()}>
-            Send answer
-          </Button>
+          <div className="flex gap-1.5">
+            <Button
+              variant="ghost"
+              disabled={running || (doc.messages.length === 0 && !doc.pendingQuestion)}
+              title="Remove the conversation and start over. Your design is kept."
+              onClick={() => setConfirmingClear(true)}
+            >
+              Clear chat
+            </Button>
+            <Button type="submit" variant="primary" disabled={running || !answer.trim()}>
+              Send answer
+            </Button>
+          </div>
         </div>
       </form>
+
+      {confirmingClear && (
+        <ConfirmDialog
+          title="Clear the chat?"
+          confirmLabel="Clear chat"
+          message="This removes the conversation with the interviewer from this session, including any chat summary, so you can start the conversation again. Your requirements, diagram, decisions, findings and reviews are kept."
+          onCancel={() => setConfirmingClear(false)}
+          onConfirm={() => {
+            setConfirmingClear(false);
+            setAnswer('');
+            useSessionStore.getState().apply((d) => clearChat(d), { history: false });
+            useAiStore.getState().set({ status: 'idle' });
+          }}
+        />
+      )}
     </div>
   );
 }
