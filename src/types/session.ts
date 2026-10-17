@@ -328,12 +328,22 @@ export const EMPTY_HISTORY_SUMMARY: HistorySummary = {
   updatedAt: null,
 };
 
+// Position in a progressive interview. `introduced` turns true once the interviewer has spoken
+// at this stage, so the first reply after a stage change knows to announce it.
+export const GrowthStageStateSchema = z.object({
+  index: z.number().int().min(0).max(20).default(0),
+  introduced: z.boolean().default(false),
+});
+export type GrowthStageState = z.infer<typeof GrowthStageStateSchema>;
+export const INITIAL_GROWTH_STAGE: GrowthStageState = { index: 0, introduced: false };
+
 export const SessionExtraSchema = z.object({
   pendingQuestion: PendingQuestionSchema.nullable().default(null),
   reviewBaseline: ReviewBaselineSchema.nullable().default(null),
   // Written by the user for custom problems; empty for bundled problems.
   problemStatement: longText.default(''),
   historySummary: HistorySummarySchema.default(EMPTY_HISTORY_SUMMARY),
+  growthStage: GrowthStageStateSchema.default(INITIAL_GROWTH_STAGE),
 });
 export type SessionExtra = z.infer<typeof SessionExtraSchema>;
 
@@ -362,5 +372,6 @@ export const SessionDocumentSchema = SessionMetaSchema.extend({
   reviewBaseline: ReviewBaselineSchema.nullable().default(null),
   problemStatement: longText.default(''),
   historySummary: HistorySummarySchema.default(EMPTY_HISTORY_SUMMARY),
+  growthStage: GrowthStageStateSchema.default(INITIAL_GROWTH_STAGE),
 });
 export type SessionDocument = z.infer<typeof SessionDocumentSchema>;

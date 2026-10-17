@@ -1,4 +1,5 @@
 import { useDeferredValue, useMemo } from 'react';
+import { useSettingsStore } from '@/features/settings/settings-store';
 import {
   SNAPSHOT_LIMIT_CHARS,
   SNAPSHOT_WARN_CHARS,
@@ -18,9 +19,13 @@ export function ContextSizeNotice({
   pack: ProblemPack | null;
 }) {
   const deferredDoc = useDeferredValue(doc);
+  const progressive = useSettingsStore((s) => s.progressive);
   const size = useMemo(
-    () => (pack ? buildSnapshotDetailed(deferredDoc, pack, 'architecture-review', '') : null),
-    [deferredDoc, pack],
+    () =>
+      pack
+        ? buildSnapshotDetailed(deferredDoc, pack, 'architecture-review', '', { progressive })
+        : null,
+    [deferredDoc, pack, progressive],
   );
   if (!size) return null;
 

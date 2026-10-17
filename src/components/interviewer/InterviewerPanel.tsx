@@ -5,9 +5,11 @@ import { getInterviewService, useAiStore } from '@/features/interview-session/ai
 import { useChangeSummary } from '@/features/design-review/use-change-summary';
 import { useSettingsStore } from '@/features/settings/settings-store';
 import { useSessionStore } from '@/store/session-store';
+import { setGrowthStage } from '@/features/interview-session/commands';
 import type { InterviewMode } from '@/types/session';
 import { Button, Notice, fieldClass } from '@/components/shared/ui';
 import { AiContextPreview } from './AiContextPreview';
+import { StageBar } from './StageBar';
 import { ChatMessage, GreetingBubble, TypingIndicator } from './ChatMessages';
 import { HistorySummaryControl } from './HistorySummaryControl';
 import { ContextSizeNotice } from './ContextSizeNotice';
@@ -38,6 +40,7 @@ const ACTIONS: { mode: InterviewMode; label: string; hint: string }[] = [
 export function InterviewerPanel() {
   const doc = useSessionStore((s) => s.doc);
   const pack = useSessionStore((s) => s.pack);
+  const progressive = useSettingsStore((s) => s.progressive);
   const ai = useAiStore((s) => s.state);
   const provider = useSettingsStore((s) => s.provider);
   const model = useSettingsStore((s) => s.models[s.provider]);
@@ -66,6 +69,12 @@ export function InterviewerPanel() {
     if (!text || running) return;
     setAnswer('');
     void service.submitAnswer(text);
+  };
+
+  const goToStage = (index: number, announce: boolean) => {
+    useSessionStore.getState().apply((d) => setGrowthStage(d, index), { history: false });
+    // Moving up a stage makes the interviewer introduce it right away, like a real interview.
+    if (announce) void service.request('architecture-interview');
   };
 
   return (
@@ -98,6 +107,14 @@ export function InterviewerPanel() {
             </Button>
           ))}
         </div>
+        {progressive && (
+          <StageBar
+            index={doc.growthStage.index}
+            busy={running}
+            onNext={() => goToStage(doc.growthStage.index + 1, true)}
+            onBack={() => goToStage(doc.growthStage.index - 1, false)}
+          />
+        )}
         <ContextSizeNotice doc={doc} pack={pack} />
         <HistorySummaryControl />
         <details className="text-[11px] text-muted">

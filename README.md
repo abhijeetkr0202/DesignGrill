@@ -21,6 +21,7 @@ Early development (v0.1). Below is what is implemented today versus planned.
 - Local persistence in SQLite (platform app-data directory) with migrations and pre-migration backups, autosave, resume, and session deletion.
 - AI providers: OpenAI, Anthropic, and any OpenAI-compatible endpoint (OpenRouter, Groq, Together, Ollama, a company gateway) through a provider-independent interface. API keys are stored in the OS credential store and read only by the native layer.
 - Interviewer modes: requirements discovery, architecture question, architecture review with structured findings, failure-scenario challenge, answer evaluation, and a session summary with a documented rubric.
+- Progressive interview (on by default, switch it off in Settings): the design is built brick by brick across four stages (baseline, growth, scale, resilience). A simple design is treated as fine for the current stage; Next stage raises the load and the interviewer asks what breaks first, how you would evolve the design, and what fails next.
 - Change tracking since the last review, outdated-response markers, bounded retry, cancellation, and validation of all model output.
 - Automated tests (Vitest and Rust) and CI for macOS and Windows.
 
@@ -85,7 +86,7 @@ The app is fully usable for requirements and diagrams without a provider. For AI
 
 1. Pick a problem and read the statement.
 2. Clarify requirements and record assumptions and capacity estimates.
-3. Build the architecture; fill in responsibilities, failure behaviour, and scaling notes where useful.
+3. Build the architecture; fill in responsibilities, failure behaviour, and scaling notes where useful. In the default progressive mode, start with the simplest design that works, then use Next stage in the chat panel to grow the load and evolve the design.
 4. Ask the interviewer for a question, a requirements discovery prompt, a review, or a failure scenario. Answer in the chat; the interviewer evaluates your reasoning and may ask a deeper follow-up.
 5. Change the design or requirements; the next review uses the updated state and highlights what changed.
 6. Generate a summary with risks, trade-offs, and topics to practise.

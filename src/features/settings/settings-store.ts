@@ -24,10 +24,13 @@ interface SettingsState {
   providers: Record<ProviderId, ProviderState>;
   // Base URL of the custom OpenAI-compatible endpoint; not a secret, so it lives in preferences.
   customBaseUrl: string;
+  // Staged interview that builds the design brick by brick; on unless the user opts out.
+  progressive: boolean;
   load(): Promise<void>;
   setProvider(id: ProviderId): Promise<void>;
   setModel(id: ProviderId, model: string): Promise<void>;
   setCustomBaseUrl(url: string): Promise<void>;
+  setProgressive(on: boolean): Promise<void>;
   setTheme(theme: Theme): Promise<void>;
   saveKey(id: ProviderId, key: string): Promise<void>;
   removeKey(id: ProviderId): Promise<void>;
@@ -54,6 +57,7 @@ export const useSettingsStore = create<SettingsState>((set, get) => {
     models: defaultModels(),
     providers: { openai: blank(), anthropic: blank(), custom: blank() },
     customBaseUrl: '',
+    progressive: true,
 
     async load() {
       const values = await getRepositories()
@@ -71,7 +75,14 @@ export const useSettingsStore = create<SettingsState>((set, get) => {
       setCustomBaseUrl(customBaseUrl || undefined);
       if (values.theme === 'light' || values.theme === 'dark')
         useUiStore.getState().setTheme(values.theme);
-      set({ loaded: true, provider, models, customBaseUrl });
+      set({
+        loaded: true,
+        provider,
+        models,
+        customBaseUrl,
+        // Only an explicit opt-out turns it off.
+        progressive: values['interview.progressive'] !== 'false',
+      });
       for (const id of PROVIDER_IDS) {
         const present = await hasApiKey(id).catch(() => false);
         patchProvider(id, { status: present ? 'key-saved' : 'no-key' });
@@ -97,6 +108,11 @@ export const useSettingsStore = create<SettingsState>((set, get) => {
       setCustomBaseUrl(result.url);
       patchProvider('custom', { error: null, availableModels: [] });
       await pref('ai.baseUrl.custom', result.url).catch(() => undefined);
+    },
+
+    async setProgressive(on) {
+      set({ progressive: on });
+      await pref('interview.progressive', on ? 'true' : 'false').catch(() => undefined);
     },
 
     async setTheme(theme) {

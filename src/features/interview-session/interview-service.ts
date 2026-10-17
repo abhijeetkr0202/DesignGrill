@@ -15,6 +15,7 @@ import {
   addReview,
   addSummary,
   appendMessage,
+  markStageIntroduced,
   setHistorySummary,
   setPendingQuestion,
   setReviewBaseline,
@@ -36,7 +37,7 @@ export interface InterviewDeps {
   getDoc(): SessionDocument | null;
   getPack(): ProblemPack | null;
   update(mutator: (doc: SessionDocument) => SessionDocument): void;
-  getSettings(): { provider: ProviderId; model: string };
+  getSettings(): { provider: ProviderId; model: string; progressive?: boolean };
   getProvider(id: ProviderId): AIProvider;
   hasKey(id: ProviderId): Promise<boolean>;
   onState(state: AiRequestState): void;
@@ -67,8 +68,9 @@ export function createInterviewService(deps: InterviewDeps): InterviewService {
       const pack = deps.getPack();
       const nearLimit =
         pack !== null &&
-        buildSnapshotDetailed(doc, pack, 'architecture-review', ctx.now()).fullChars >=
-          SNAPSHOT_WARN_CHARS;
+        buildSnapshotDetailed(doc, pack, 'architecture-review', ctx.now(), {
+          progressive: deps.getSettings().progressive,
+        }).fullChars >= SNAPSHOT_WARN_CHARS;
       const plan = planFold(doc, { early: nearLimit });
       if (!plan) return;
       const { provider: providerId, model } = deps.getSettings();
@@ -117,7 +119,7 @@ export function createInterviewService(deps: InterviewDeps): InterviewService {
     });
   };
 
-  const commit = (snapshotDoc: SessionDocument, result: TurnResult) => {
+  const commit = (snapshotDoc: SessionDocument, result: TurnResult, progressive: boolean) => {
     deps.update((doc) => {
       let next = appendMessage(
         doc,
@@ -135,7 +137,12 @@ export function createInterviewService(deps: InterviewDeps): InterviewService {
         next = setReviewBaseline(next, takeBaseline(snapshotDoc, ctx.now()), ctx);
       }
       if (result.summary) next = addSummary(next, result.summary, ctx);
-      return setPendingQuestion(next, result.pendingQuestion, ctx);
+      next = setPendingQuestion(next, result.pendingQuestion, ctx);
+      // Only if the stage did not change while the reply was being written.
+      if (progressive && doc.growthStage.index === snapshotDoc.growthStage.index) {
+        next = markStageIntroduced(next, ctx);
+      }
+      return next;
     });
   };
 
@@ -144,7 +151,7 @@ export function createInterviewService(deps: InterviewDeps): InterviewService {
     const pack = deps.getPack();
     if (!doc || !pack) return;
     last = request;
-    const { provider: providerId, model } = deps.getSettings();
+    const { provider: providerId, model, progressive = false } = deps.getSettings();
 
     try {
       if (!(await deps.hasKey(providerId))) throw new AIError('missing-key');
@@ -177,10 +184,11 @@ export function createInterviewService(deps: InterviewDeps): InterviewService {
         provider: deps.getProvider(providerId),
         model,
         candidateAnswer: request.answer,
+        progressive,
         options: { signal: controller.signal },
         ctx,
       });
-      commit(snapshotDoc, result);
+      commit(snapshotDoc, result, progressive);
       last = null;
       deps.onState({ status: 'idle' });
       void refreshSummary();

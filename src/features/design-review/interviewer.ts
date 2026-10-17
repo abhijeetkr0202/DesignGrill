@@ -30,6 +30,8 @@ export interface TurnInput {
   provider: AIProvider;
   model: string;
   candidateAnswer?: string;
+  // Staged interview: adds the stage to the snapshot and the progressive rules to the prompt.
+  progressive?: boolean;
   options?: StructuredOptions;
   ctx?: Context;
 }
@@ -127,10 +129,10 @@ export async function runInterviewerTurn(input: TurnInput): Promise<TurnResult> 
   const ctx = input.ctx ?? defaultContext;
   const answering = input.candidateAnswer !== undefined && input.candidateAnswer.trim() !== '';
   const task: TaskKind = answering ? 'answer-evaluation' : mode;
-  const snapshot = buildSnapshot(doc, pack, task, ctx.now());
+  const snapshot = buildSnapshot(doc, pack, task, ctx.now(), { progressive: input.progressive });
   const request = {
     model,
-    system: buildSystemPrompt(task),
+    system: buildSystemPrompt(task, { progressive: input.progressive }),
     messages: [
       {
         role: 'user' as const,

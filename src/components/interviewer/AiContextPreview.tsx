@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { useSettingsStore } from '@/features/settings/settings-store';
 import { buildSystemPrompt } from '@/ai/prompts';
 import {
   SNAPSHOT_LIMIT_CHARS,
@@ -31,15 +32,16 @@ export function AiContextPreview({
 }) {
   const [open, setOpen] = useState(false);
   const [mode, setMode] = useState<InterviewMode>('architecture-review');
+  const progressive = useSettingsStore((s) => s.progressive);
 
   // Built only while expanded so a collapsed panel costs nothing on every edit.
   const request = useMemo(() => {
     if (!open || !pack) return null;
-    const system = buildSystemPrompt(mode);
-    const built = buildSnapshotDetailed(doc, pack, mode, defaultContext.now());
+    const system = buildSystemPrompt(mode, { progressive });
+    const built = buildSnapshotDetailed(doc, pack, mode, defaultContext.now(), { progressive });
     const user = snapshotToUserMessage(built.snapshot);
     return { system, user, trimmed: built.trimmed };
-  }, [open, pack, doc, mode]);
+  }, [open, pack, doc, mode, progressive]);
 
   return (
     <details className="text-[11px] text-muted" onToggle={(e) => setOpen(e.currentTarget.open)}>

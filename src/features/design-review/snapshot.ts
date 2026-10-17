@@ -3,6 +3,37 @@ import type { ProblemPack } from '@/features/problem-library/schema';
 import { CUSTOM_PROBLEM_ID } from '@/features/problem-library/custom';
 import { describeDrawings, type DrawingDescription } from '@/features/architecture/annotations';
 import { computeChanges } from './changes';
+import { GROWTH_STAGES, stageAt } from './stages';
+
+export interface SnapshotOptions {
+  // Staged interview; adds `stage` to the snapshot.
+  progressive?: boolean;
+}
+
+export interface StageInfo {
+  number: number;
+  of: number;
+  id: string;
+  label: string;
+  description: string;
+  // True until the interviewer has spoken at this stage, so the next reply announces it.
+  justEntered: boolean;
+  next: string | null;
+}
+
+function stageInfo(doc: SessionDocument): StageInfo {
+  const index = Math.min(doc.growthStage.index, GROWTH_STAGES.length - 1);
+  const stage = stageAt(index);
+  return {
+    number: index + 1,
+    of: GROWTH_STAGES.length,
+    id: stage.id,
+    label: stage.label,
+    description: stage.description,
+    justEntered: !doc.growthStage.introduced,
+    next: GROWTH_STAGES[index + 1]?.label ?? null,
+  };
+}
 
 export const SNAPSHOT_LIMIT_CHARS = 60_000;
 // Warn once the full-detail snapshot is this close to the limit.
@@ -155,6 +186,8 @@ export interface InterviewSnapshot {
   snapshotRevision: number;
   generatedAt: string;
   progress: InterviewProgress;
+  // Present only in progressive interview mode.
+  stage?: StageInfo;
   problem: { id: string; title: string; statement: string };
   requirements: Record<RequirementKind, ReturnType<typeof requirementView>[]>;
   architecture: {
@@ -189,8 +222,9 @@ export function buildSnapshot(
   pack: ProblemPack,
   mode: InterviewMode | 'answer-evaluation',
   now: string,
+  options: SnapshotOptions = {},
 ): InterviewSnapshot {
-  return buildSnapshotDetailed(doc, pack, mode, now).snapshot;
+  return buildSnapshotDetailed(doc, pack, mode, now, options).snapshot;
 }
 
 export function buildSnapshotDetailed(
@@ -198,6 +232,7 @@ export function buildSnapshotDetailed(
   pack: ProblemPack,
   mode: InterviewMode | 'answer-evaluation',
   now: string,
+  options: SnapshotOptions = {},
 ): SnapshotBuild {
   const build = (level: ShrinkLevel): { snapshot: InterviewSnapshot; applied: string[] } => {
     const compact = level.clipDesign;
@@ -246,6 +281,7 @@ export function buildSnapshotDetailed(
       snapshotRevision: doc.revision,
       generatedAt: now,
       progress: computeProgress(doc),
+      stage: options.progressive ? stageInfo(doc) : undefined,
       problem: {
         id: pack.problem.id,
         title: doc.title,

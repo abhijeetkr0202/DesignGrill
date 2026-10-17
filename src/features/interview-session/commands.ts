@@ -12,7 +12,8 @@ import type {
   SessionDocument,
   SessionSummary,
 } from '@/types/session';
-import { EMPTY_HISTORY_SUMMARY, SCHEMA_VERSION } from '@/types/session';
+import { EMPTY_HISTORY_SUMMARY, INITIAL_GROWTH_STAGE, SCHEMA_VERSION } from '@/types/session';
+import { GROWTH_STAGES } from '@/features/design-review/stages';
 import { defaultContext, type Context } from '@/utils/context';
 
 export interface NewSessionInput {
@@ -54,6 +55,7 @@ export function createSession(
     reviewBaseline: null,
     problemStatement: input.problemStatement ?? '',
     historySummary: { ...EMPTY_HISTORY_SUMMARY },
+    growthStage: { ...INITIAL_GROWTH_STAGE },
   };
 }
 
@@ -650,6 +652,26 @@ export function setSessionStatus(
   ctx: Context = defaultContext,
 ): SessionDocument {
   return touch({ ...doc, status }, ctx, false);
+}
+
+// ---------- Progressive interview ----------
+
+export function setGrowthStage(
+  doc: SessionDocument,
+  index: number,
+  ctx: Context = defaultContext,
+): SessionDocument {
+  const next = Math.max(0, Math.min(GROWTH_STAGES.length - 1, Math.trunc(index)));
+  if (next === doc.growthStage.index) return doc;
+  return touch({ ...doc, growthStage: { index: next, introduced: false } }, ctx, false);
+}
+
+export function markStageIntroduced(
+  doc: SessionDocument,
+  ctx: Context = defaultContext,
+): SessionDocument {
+  if (doc.growthStage.introduced) return doc;
+  return touch({ ...doc, growthStage: { ...doc.growthStage, introduced: true } }, ctx, false);
 }
 
 export function renameSession(

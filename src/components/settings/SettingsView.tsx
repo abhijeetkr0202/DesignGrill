@@ -21,6 +21,7 @@ const STATUS: Record<
 
 export function SettingsView() {
   const provider = useSettingsStore((s) => s.provider);
+  const progressive = useSettingsStore((s) => s.progressive);
   const theme = useUiStore((s) => s.theme);
   const hasSession = useSessionStore((s) => s.doc !== null);
 
@@ -58,6 +59,39 @@ export function SettingsView() {
           ))}
         </div>
         <ProviderForm key={provider} id={provider} />
+      </section>
+
+      <section aria-labelledby="interview-heading" className="mb-8">
+        <h2 id="interview-heading" className="mb-1 text-sm font-semibold">
+          Interview style
+        </h2>
+        <label className="flex cursor-pointer items-start gap-2 rounded-lg border border-line bg-surface p-3">
+          <input
+            type="checkbox"
+            className="mt-0.5"
+            checked={progressive}
+            onChange={(e) => void useSettingsStore.getState().setProgressive(e.target.checked)}
+          />
+          <span className="text-xs">
+            <span className="block text-[13px] font-semibold">
+              Progressive interview (recommended, on by default)
+            </span>
+            <span className="mt-1 block text-muted">
+              Runs like a real interview that builds the design brick by brick. You start with the
+              simplest design that meets your requirements, and the interviewer treats a basic
+              design as fine for the current stage. When you click Next stage, the load grows (about
+              100 times, then 10,000 times, then multiple regions and outages), and the interviewer
+              asks what breaks first, how you would evolve the design, and what would fail next.
+              Questions, reviews and failure scenarios are all judged against the stage you are on,
+              so a simple design is not criticised for missing scaling it does not yet need.
+            </span>
+            <span className="mt-1 block text-muted">
+              Turn it off for a free-form interview: no stages, and the interviewer judges the whole
+              design at once and picks topics on its own. Your choice applies to every session and
+              can be changed at any time.
+            </span>
+          </span>
+        </label>
       </section>
 
       <section aria-labelledby="appearance-heading" className="mb-8">

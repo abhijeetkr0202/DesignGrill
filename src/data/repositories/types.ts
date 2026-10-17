@@ -60,6 +60,7 @@ export function toRecord(doc: SessionDocument): SessionRecord {
         reviewBaseline: doc.reviewBaseline,
         problemStatement: doc.problemStatement,
         historySummary: doc.historySummary,
+        growthStage: doc.growthStage,
       },
     },
     architecture: doc.architecture,
@@ -94,6 +95,7 @@ export function fromRecord(record: SessionRecord): SessionDocument {
     reviewBaseline: extra.success ? extra.data.reviewBaseline : null,
     problemStatement: extra.success ? extra.data.problemStatement : '',
     historySummary: extra.success ? extra.data.historySummary : undefined,
+    growthStage: extra.success ? extra.data.growthStage : undefined,
   });
   if (!parsed.success) {
     throw new StorageError(

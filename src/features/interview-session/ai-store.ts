@@ -27,8 +27,8 @@ export function getInterviewService(): InterviewService {
     getPack: () => useSessionStore.getState().pack,
     update: (mutator) => useSessionStore.getState().apply(mutator, { history: false }),
     getSettings: () => {
-      const { provider, models } = useSettingsStore.getState();
-      return { provider, model: models[provider] };
+      const { provider, models, progressive } = useSettingsStore.getState();
+      return { provider, model: models[provider], progressive };
     },
     getProvider,
     hasKey: hasApiKey,
