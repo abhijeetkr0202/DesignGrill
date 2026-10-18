@@ -16,6 +16,7 @@ import type {
   Finding,
   InterviewMode,
   PendingQuestion,
+  RelatedRefs,
   Review,
   SessionDocument,
   SessionSummary,
@@ -23,6 +24,7 @@ import type {
 import { defaultContext, type Context } from '@/utils/context';
 import { buildSnapshot, snapshotToUserMessage } from './snapshot';
 import { buildIdNames, humanizeDeep, humanizeIds } from './humanize-ids';
+import { focusRefs, mergeRefs, refsFromFindings, resolveRefs } from './references';
 
 export interface TurnInput {
   mode: InterviewMode;
@@ -33,6 +35,8 @@ export interface TurnInput {
   candidateAnswer?: string;
   // Staged interview: adds the stage to the snapshot and the progressive rules to the prompt.
   progressive?: boolean;
+  // Components or connections the candidate selected and asked about.
+  focus?: { nodeIds: string[]; edgeIds: string[] };
   options?: StructuredOptions;
   ctx?: Context;
 }
@@ -42,6 +46,8 @@ export interface TurnResult {
   content: string;
   pendingQuestion: PendingQuestion | null;
   basedOnRevision: number;
+  // Diagram elements and requirements the reply is about; ids that exist in the session only.
+  related?: RelatedRefs;
   review?: { review: Review; findings: Finding[]; droppedReferences: number };
   summary?: SessionSummary;
 }
@@ -130,10 +136,13 @@ async function runTurn(input: TurnInput): Promise<TurnResult> {
   const ctx = input.ctx ?? defaultContext;
   const answering = input.candidateAnswer !== undefined && input.candidateAnswer.trim() !== '';
   const task: TaskKind = answering ? 'answer-evaluation' : mode;
-  const snapshot = buildSnapshot(doc, pack, task, ctx.now(), { progressive: input.progressive });
+  const snapshot = buildSnapshot(doc, pack, task, ctx.now(), {
+    progressive: input.progressive,
+    focus: input.focus,
+  });
   const request = {
     model,
-    system: buildSystemPrompt(task, { progressive: input.progressive }),
+    system: buildSystemPrompt(task, { progressive: input.progressive, coaching: doc.coaching }),
     messages: [
       {
         role: 'user' as const,
@@ -183,6 +192,7 @@ async function runTurn(input: TurnInput): Promise<TurnResult> {
         mode,
         basedOnRevision: revision,
         pendingQuestion: toPending(r.question, mode, revision, ctx),
+        related: mergeRefs(resolveRefs(doc, r.groundedIn)),
         content: joinParts(r.commentary, questionText(r.question)),
       };
     }
@@ -213,6 +223,7 @@ async function runTurn(input: TurnInput): Promise<TurnResult> {
         basedOnRevision: revision,
         pendingQuestion: toPending(r.followUpQuestion, mode, revision, ctx),
         review: { review, findings, droppedReferences: dropped },
+        related: mergeRefs(refsFromFindings(findings)),
         content: joinParts(
           r.overview,
           `Recorded ${concerns} concern${concerns === 1 ? '' : 's'} and ${findings.length - concerns} strength${findings.length - concerns === 1 ? '' : 's'} in the Findings tab.`,
@@ -249,6 +260,8 @@ export async function runInterviewerTurn(input: TurnInput): Promise<TurnResult> 
   const cleanOptional = (s: string | undefined) => (s === undefined ? s : clean(s));
   return {
     ...result,
+    // What the candidate asked about is shown as a reference even if the model did not cite it.
+    related: mergeRefs(result.related, focusRefs(input.doc, input.focus)),
     content: clean(result.content),
     pendingQuestion: result.pendingQuestion
       ? {

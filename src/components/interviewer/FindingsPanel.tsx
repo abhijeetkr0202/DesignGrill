@@ -1,9 +1,21 @@
 import { useState } from 'react';
+import { focusOnCanvas } from '@/features/architecture/focus';
 import { setFindingStatus } from '@/features/interview-session/commands';
 import { useSessionStore } from '@/store/session-store';
 import { useUiStore } from '@/store/ui-store';
 import type { Finding, Severity } from '@/types/session';
 import { Badge, Button } from '@/components/shared/ui';
+
+const STATUS_LABEL: Record<Finding['status'], string> = {
+  open: 'open',
+  resolved: 'resolved',
+  dismissed: 'dismissed',
+  accepted: 'accepted trade-off',
+  'needs-clarification': 'needs clarification',
+};
+
+// Findings still waiting on the candidate; the rest are closed.
+const isActive = (f: Finding) => f.status === 'open' || f.status === 'needs-clarification';
 
 const ORDER: Severity[] = ['critical', 'high', 'medium', 'low', 'info'];
 const TONE: Record<Severity, 'danger' | 'warn' | 'accent' | 'neutral'> = {
@@ -20,7 +32,7 @@ export function FindingsPanel() {
   if (!doc) return null;
 
   const visible = doc.findings
-    .filter((f) => showClosed || f.status === 'open')
+    .filter((f) => showClosed || isActive(f))
     .sort((a, b) => ORDER.indexOf(a.severity) - ORDER.indexOf(b.severity));
   const latestReview = doc.reviews[doc.reviews.length - 1];
 
@@ -40,7 +52,7 @@ export function FindingsPanel() {
             checked={showClosed}
             onChange={(e) => setShowClosed(e.target.checked)}
           />
-          Show resolved
+          Show closed
         </label>
       </div>
       {latestReview && (
@@ -65,11 +77,20 @@ export function FindingsPanel() {
 
 function FindingCard({ finding: f }: { finding: Finding }) {
   const nodes = useSessionStore((s) => s.doc?.architecture.nodes);
+  const edges = useSessionStore((s) => s.doc?.architecture.edges);
   const requirements = useSessionStore((s) => s.doc?.requirements);
-  const closed = f.status !== 'open';
+  const stale = useSessionStore((s) => {
+    const review = s.doc?.reviews.find((r) => r.id === f.reviewId);
+    return !!s.doc && !!review && review.basedOnRevision < s.doc.revision;
+  });
+  const closed = !isActive(f);
   const set = (status: Finding['status']) =>
     useSessionStore.getState().apply((d) => setFindingStatus(d, f.id, status), { history: false });
   const labelOf = (id: string) => nodes?.find((n) => n.id === id)?.label ?? 'removed component';
+  const edgeLabel = (id: string) => {
+    const edge = edges?.find((e) => e.id === id);
+    return edge ? `${labelOf(edge.source)} → ${labelOf(edge.target)}` : 'removed connection';
+  };
   const reqOf = (id: string) =>
     requirements?.find((r) => r.id === id)?.title ?? 'removed requirement';
 
@@ -79,29 +100,50 @@ function FindingCard({ finding: f }: { finding: Finding }) {
         <Badge tone={f.kind === 'strength' ? 'ok' : TONE[f.severity]}>{f.severity}</Badge>
         <Badge>{f.kind}</Badge>
         <Badge title="How sure the interviewer is">{f.confidence} confidence</Badge>
-        {closed && <Badge>{f.status}</Badge>}
+        {f.status !== 'open' && <Badge>{STATUS_LABEL[f.status]}</Badge>}
+        {stale && !closed && (
+          <Badge
+            tone="warn"
+            title="The design changed after this was found, so it may no longer apply"
+          >
+            from an earlier version
+          </Badge>
+        )}
       </div>
       <h4 className="text-[13px] font-semibold">{f.title}</h4>
-      {(f.affectedNodeIds.length > 0 || f.relatedRequirementIds.length > 0) && (
+      {(f.affectedNodeIds.length > 0 ||
+        f.affectedEdgeIds.length > 0 ||
+        f.relatedRequirementIds.length > 0) && (
         <div className="mt-1 flex flex-wrap gap-1 text-[11px]">
           {f.affectedNodeIds.map((id) => (
             <button
               key={id}
               type="button"
               className="rounded border border-line px-1.5 py-px hover:bg-surface-2"
-              onClick={() => {
-                useUiStore.getState().setSelection([id], []);
-                useUiStore.getState().setFocusNodes([id]);
-                setTimeout(() => useUiStore.getState().setFocusNodes([]), 2500);
-              }}
+              onClick={() => focusOnCanvas({ nodeIds: [id] })}
             >
               ◎ {labelOf(id)}
             </button>
           ))}
+          {f.affectedEdgeIds.map((id) => (
+            <button
+              key={id}
+              type="button"
+              className="rounded border border-line px-1.5 py-px hover:bg-surface-2"
+              onClick={() => focusOnCanvas({ edgeIds: [id] })}
+            >
+              ◎ {edgeLabel(id)}
+            </button>
+          ))}
           {f.relatedRequirementIds.map((id) => (
-            <span key={id} className="rounded border border-line px-1.5 py-px text-muted">
+            <button
+              key={id}
+              type="button"
+              className="rounded border border-line px-1.5 py-px text-muted hover:bg-surface-2"
+              onClick={() => useUiStore.getState().setLeftTab('requirements')}
+            >
               Req: {reqOf(id)}
-            </span>
+            </button>
           ))}
         </div>
       )}
@@ -121,7 +163,7 @@ function FindingCard({ finding: f }: { finding: Finding }) {
           </ul>
         </div>
       )}
-      <div className="mt-2 flex gap-1.5">
+      <div className="mt-2 flex flex-wrap gap-1.5">
         {closed ? (
           <Button size="sm" onClick={() => set('open')}>
             Reopen
@@ -131,6 +173,26 @@ function FindingCard({ finding: f }: { finding: Finding }) {
             <Button size="sm" onClick={() => set('resolved')}>
               Mark resolved
             </Button>
+            <Button
+              size="sm"
+              title="A deliberate choice you are happy to live with; it will not be raised again"
+              onClick={() => set('accepted')}
+            >
+              Accept trade-off
+            </Button>
+            {f.status === 'open' ? (
+              <Button
+                size="sm"
+                title="Mark that this depends on information you have not given yet"
+                onClick={() => set('needs-clarification')}
+              >
+                Needs clarification
+              </Button>
+            ) : (
+              <Button size="sm" onClick={() => set('open')}>
+                Back to open
+              </Button>
+            )}
             <Button size="sm" variant="ghost" onClick={() => set('dismissed')}>
               Dismiss
             </Button>

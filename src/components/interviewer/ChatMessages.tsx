@@ -1,4 +1,7 @@
-import type { InterviewMode, Message } from '@/types/session';
+import type { InterviewMode, Message, RelatedRefs } from '@/types/session';
+import { focusOnCanvas } from '@/features/architecture/focus';
+import { useSessionStore } from '@/store/session-store';
+import { useUiStore } from '@/store/ui-store';
 import { Badge, Button } from '@/components/shared/ui';
 
 const MODE_LABELS: Record<InterviewMode, string> = {
@@ -114,6 +117,11 @@ export function ChatMessage({
         <div className="mb-0.5 flex items-center gap-1.5 text-[11px] text-muted">
           <span className="font-semibold">{mine ? 'You' : 'Interviewer'}</span>
           {m.mode && !mine && <Badge>{MODE_LABELS[m.mode]}</Badge>}
+          {m.coaching && !mine && (
+            <Badge tone="accent" title="Written in coaching mode">
+              Coaching
+            </Badge>
+          )}
           {time && <time dateTime={m.createdAt}>{time}</time>}
         </div>
         <div
@@ -127,6 +135,7 @@ export function ChatMessage({
             <MessageBody text={humanize ? humanize(m.content) : m.content} />
           )}
         </div>
+        {!mine && m.related && <ReferenceChips related={m.related} />}
         {outdated && (
           <div className="mt-1">
             <Badge tone="warn" title="You changed the design after this was written">
@@ -198,5 +207,69 @@ function BulletList({ lines }: { lines: string[] }) {
         <li key={i}>{line.slice(2)}</li>
       ))}
     </ul>
+  );
+}
+
+// Components, connections, and requirements a reply is about. Clicking one shows it on the real
+// canvas; elements deleted since the reply was written are left out.
+function ReferenceChips({ related }: { related: RelatedRefs }) {
+  const architecture = useSessionStore((s) => s.doc?.architecture);
+  const requirements = useSessionStore((s) => s.doc?.requirements);
+  if (!architecture) return null;
+
+  const label = new Map(architecture.nodes.map((n) => [n.id, n.label]));
+  const nodeIds = related.nodeIds.filter((id) => label.has(id));
+  const edges = architecture.edges.filter((e) => related.edgeIds.includes(e.id));
+  const reqs = (requirements ?? []).filter((r) => related.requirementIds.includes(r.id));
+  const onCanvas = nodeIds.length + edges.length;
+  if (onCanvas + reqs.length === 0) return null;
+
+  const chip =
+    'rounded-full border border-line bg-surface px-2 py-0.5 text-[11px] hover:bg-surface-2';
+  return (
+    <div className="mt-1 flex flex-wrap gap-1" role="group" aria-label="Related to this message">
+      {nodeIds.map((id) => (
+        <button
+          key={id}
+          type="button"
+          className={chip}
+          title="Show on the canvas"
+          onClick={() => focusOnCanvas({ nodeIds: [id] })}
+        >
+          ◎ {label.get(id)}
+        </button>
+      ))}
+      {edges.map((e) => (
+        <button
+          key={e.id}
+          type="button"
+          className={chip}
+          title="Show on the canvas"
+          onClick={() => focusOnCanvas({ edgeIds: [e.id] })}
+        >
+          ◎ {label.get(e.source) ?? 'Component'} → {label.get(e.target) ?? 'Component'}
+        </button>
+      ))}
+      {reqs.map((r) => (
+        <button
+          key={r.id}
+          type="button"
+          className={chip}
+          title="Open the requirements"
+          onClick={() => useUiStore.getState().setLeftTab('requirements')}
+        >
+          Req: {r.title}
+        </button>
+      ))}
+      {onCanvas > 1 && (
+        <button
+          type="button"
+          className={`${chip} text-accent`}
+          onClick={() => focusOnCanvas({ nodeIds, edgeIds: edges.map((e) => e.id) })}
+        >
+          Show all
+        </button>
+      )}
+    </div>
   );
 }
