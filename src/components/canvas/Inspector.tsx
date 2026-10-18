@@ -18,9 +18,31 @@ import {
   type ComponentType,
   type Drawing,
 } from '@/types/session';
+import { getInterviewService, useAiStore } from '@/features/interview-session/ai-store';
+import type { InterviewMode } from '@/types/session';
 import { CommitText, LabeledField } from '@/components/shared/CommitText';
 import { Button, fieldClass } from '@/components/shared/ui';
 import { StylePicker } from './StylePicker';
+
+// Lets the candidate point the interviewer at what they have selected.
+function AskAbout({ nodeIds, edgeIds }: { nodeIds: string[]; edgeIds: string[] }) {
+  const running = useAiStore((s) => s.state.status === 'running');
+  const ask = (mode: InterviewMode) => {
+    useUiStore.getState().setRightTab('interview');
+    void getInterviewService().request(mode, { focus: { nodeIds, edgeIds } });
+  };
+  return (
+    <div className="flex flex-wrap items-center gap-1.5 border-b border-line px-3 py-1.5 text-xs">
+      <span className="text-muted">Interviewer:</span>
+      <Button size="sm" disabled={running} onClick={() => ask('architecture-interview')}>
+        Ask about this
+      </Button>
+      <Button size="sm" disabled={running} onClick={() => ask('architecture-review')}>
+        Review this
+      </Button>
+    </div>
+  );
+}
 
 export function Inspector() {
   const selectedNodeIds = useUiStore((s) => s.selectedNodeIds);
@@ -41,17 +63,23 @@ export function Inspector() {
 
   if (node)
     return (
-      <NodeForm
-        node={node}
-        decisionTitles={(decisions ?? [])
-          .filter((d) => node.relatedDecisionIds.includes(d.id))
-          .map((d) => d.title)}
-      />
+      <>
+        <AskAbout nodeIds={[node.id]} edgeIds={[]} />
+        <NodeForm
+          node={node}
+          decisionTitles={(decisions ?? [])
+            .filter((d) => node.relatedDecisionIds.includes(d.id))
+            .map((d) => d.title)}
+        />
+      </>
     );
   if (edge) {
     const label = (id: string) => architecture.nodes.find((n) => n.id === id)?.label ?? 'Unknown';
     return (
-      <EdgeForm edge={edge} sourceLabel={label(edge.source)} targetLabel={label(edge.target)} />
+      <>
+        <AskAbout nodeIds={[]} edgeIds={[edge.id]} />
+        <EdgeForm edge={edge} sourceLabel={label(edge.source)} targetLabel={label(edge.target)} />
+      </>
     );
   }
   const drawing =

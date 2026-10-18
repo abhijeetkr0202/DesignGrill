@@ -4,10 +4,13 @@ import { CUSTOM_PROBLEM_ID } from '@/features/problem-library/custom';
 import { describeDrawings, type DrawingDescription } from '@/features/architecture/annotations';
 import { computeChanges } from './changes';
 import { GROWTH_STAGES, stageAt } from './stages';
+import { INTERVIEW_PHASES, phaseIndex, type InterviewPhase } from './phases';
 
 export interface SnapshotOptions {
   // Staged interview; adds `stage` to the snapshot.
   progressive?: boolean;
+  // Components or connections the candidate selected and is asking about.
+  focus?: { nodeIds: string[]; edgeIds: string[] };
 }
 
 export interface StageInfo {
@@ -19,6 +22,31 @@ export interface StageInfo {
   // True until the interviewer has spoken at this stage, so the next reply announces it.
   justEntered: boolean;
   next: string | null;
+}
+
+function focusInfo(
+  doc: SessionDocument,
+  focus: SnapshotOptions['focus'],
+): InterviewSnapshot['candidateFocus'] {
+  if (!focus) return undefined;
+  const label = new Map(doc.architecture.nodes.map((n) => [n.id, n.label]));
+  const components = doc.architecture.nodes
+    .filter((n) => focus.nodeIds.includes(n.id))
+    .map((n) => ({ id: n.id, label: n.label, type: n.type }));
+  const connections = doc.architecture.edges
+    .filter((e) => focus.edgeIds.includes(e.id))
+    .map((e) => ({
+      id: e.id,
+      from: label.get(e.source) ?? e.source,
+      to: label.get(e.target) ?? e.target,
+      label: e.label,
+    }));
+  if (components.length === 0 && connections.length === 0) return undefined;
+  return {
+    note: 'The candidate selected these and asked about them. Make your question or review about them.',
+    components,
+    connections,
+  };
 }
 
 function stageInfo(doc: SessionDocument): StageInfo {
@@ -133,8 +161,11 @@ export function buildReferenceMaterial(
 }
 
 export interface InterviewProgress {
-  // Earliest stage that still looks unfinished; guidance for question choice, not a verdict.
+  // Earliest stage that still looks unfinished, or the one the candidate chose to move on to if
+  // later; guidance for question choice, not a verdict.
   suggestedPhase: InterviewPhase;
+  // True when the candidate moved past what the session facts alone would suggest.
+  candidateMovedOn: boolean;
   functionalRequirements: number;
   nonFunctionalRequirements: number;
   components: number;
@@ -144,8 +175,7 @@ export interface InterviewProgress {
   openSeriousConcerns: number;
 }
 
-export type InterviewPhase =
-  'requirements' | 'high-level-design' | 'deep-dive' | 'failure-and-scale';
+export type { InterviewPhase } from './phases';
 
 export function computeProgress(doc: SessionDocument): InterviewProgress {
   const count = (kind: RequirementKind) => doc.requirements.filter((r) => r.kind === kind).length;
@@ -170,8 +200,12 @@ export function computeProgress(doc: SessionDocument): InterviewProgress {
   } else {
     suggestedPhase = 'failure-and-scale';
   }
+  const chosen = INTERVIEW_PHASES[doc.phaseFloor] ?? 'requirements';
+  const candidateMovedOn = phaseIndex(chosen) > phaseIndex(suggestedPhase);
+  if (candidateMovedOn) suggestedPhase = chosen;
   return {
     suggestedPhase,
+    candidateMovedOn,
     functionalRequirements,
     nonFunctionalRequirements,
     components,
@@ -188,6 +222,14 @@ export interface InterviewSnapshot {
   progress: InterviewProgress;
   // Present only in progressive interview mode.
   stage?: StageInfo;
+  // Whether the candidate wants an interview or coaching; never changes without their choice.
+  style: 'interview' | 'coaching';
+  // Present only when the candidate selected specific elements and asked about them.
+  candidateFocus?: {
+    note: string;
+    components: { id: string; label: string; type: string }[];
+    connections: { id: string; from: string; to: string; label?: string }[];
+  };
   problem: { id: string; title: string; statement: string };
   requirements: Record<RequirementKind, ReturnType<typeof requirementView>[]>;
   architecture: {
@@ -200,7 +242,17 @@ export interface InterviewSnapshot {
   // Present only when the candidate turned on summarised history and a summary exists.
   conversationSummary?: { note: string; text: string };
   recentMessages: { role: string; mode?: string; content: string }[];
-  unresolvedFindings: { id: string; severity: string; kind: string; title: string }[];
+  unresolvedFindings: {
+    id: string;
+    severity: string;
+    kind: string;
+    title: string;
+    status: string;
+  }[];
+  // Findings the candidate accepted as a deliberate trade-off; do not raise them again.
+  acceptedTradeOffs?: string[];
+  // Questions asked earlier in the session, newest last, so none is repeated.
+  questionsAlreadyAsked?: string[];
   pendingQuestion: { id: string; text: string; mode: string } | null;
   changesSinceLastReview: { hasPreviousReview: boolean; changes: string[] };
   referenceMaterial: string;
@@ -249,6 +301,11 @@ export function buildSnapshotDetailed(
         : -1;
     const sentMessages = covered >= 0 ? chat.slice(covered + 1) : chat;
     const windowed = sentMessages.slice(-level.messages);
+    const acceptedTradeOffs = doc.findings
+      .filter((f) => f.status === 'accepted')
+      .slice(-10)
+      .map((f) => f.title);
+    const asked = doc.questionsAsked.slice(-15).map((q) => q.text.slice(0, 200));
 
     const applied: string[] = [];
     if (level.messages < SHRINK_LEVELS[0]!.messages && sentMessages.length > windowed.length) {
@@ -282,6 +339,8 @@ export function buildSnapshotDetailed(
       generatedAt: now,
       progress: computeProgress(doc),
       stage: options.progressive ? stageInfo(doc) : undefined,
+      style: doc.coaching ? 'coaching' : 'interview',
+      candidateFocus: focusInfo(doc, options.focus),
       problem: {
         id: pack.problem.id,
         title: doc.title,
@@ -346,9 +405,20 @@ export function buildSnapshotDetailed(
         content: level.clipMessages ? m.content.slice(0, CLIP_MESSAGE_CHARS) : m.content,
       })),
       unresolvedFindings: doc.findings
-        .filter((f) => f.status === 'open' && f.kind !== 'strength')
+        .filter(
+          (f) =>
+            (f.status === 'open' || f.status === 'needs-clarification') && f.kind !== 'strength',
+        )
         .slice(-20)
-        .map((f) => ({ id: f.id, severity: f.severity, kind: f.kind, title: f.title })),
+        .map((f) => ({
+          id: f.id,
+          severity: f.severity,
+          kind: f.kind,
+          title: f.title,
+          status: f.status,
+        })),
+      acceptedTradeOffs: acceptedTradeOffs.length ? acceptedTradeOffs : undefined,
+      questionsAlreadyAsked: asked.length ? asked : undefined,
       pendingQuestion: doc.pendingQuestion
         ? {
             id: doc.pendingQuestion.id,

@@ -11,6 +11,7 @@ import type { InterviewMode } from '@/types/session';
 import { Button, ConfirmDialog, Notice, fieldClass } from '@/components/shared/ui';
 import { AiContextPreview } from './AiContextPreview';
 import { StageBar } from './StageBar';
+import { InterviewHeader } from './InterviewHeader';
 import { ChatMessage, GreetingBubble, TypingIndicator } from './ChatMessages';
 import { HistorySummaryControl } from './HistorySummaryControl';
 import { ContextSizeNotice } from './ContextSizeNotice';
@@ -110,6 +111,7 @@ export function InterviewerPanel() {
             </Button>
           ))}
         </div>
+        <InterviewHeader />
         {progressive && (
           <StageBar
             index={doc.growthStage.index}

@@ -193,6 +193,13 @@ export const INTERVIEW_MODES = [
 export const InterviewModeSchema = z.enum(INTERVIEW_MODES);
 export type InterviewMode = z.infer<typeof InterviewModeSchema>;
 
+export const RelatedRefsSchema = z.object({
+  nodeIds: z.array(id).default([]),
+  edgeIds: z.array(id).default([]),
+  requirementIds: z.array(id).default([]),
+});
+export type RelatedRefs = z.infer<typeof RelatedRefsSchema>;
+
 export const MessageSchema = z.object({
   id,
   role: z.enum(['interviewer', 'candidate', 'system']),
@@ -202,6 +209,10 @@ export const MessageSchema = z.object({
   // Which model/version of the design this message was written against.
   basedOnRevision: z.number().int().optional(),
   questionId: id.optional(),
+  // Diagram elements and requirements this message is about, for click-through from the chat.
+  related: RelatedRefsSchema.optional(),
+  // True when written in coaching mode, so it is not mistaken for an interview reply.
+  coaching: z.boolean().optional(),
 });
 export type Message = z.infer<typeof MessageSchema>;
 
@@ -245,7 +256,9 @@ export const FindingSchema = z.object({
     .array(z.object({ description: longText, tradeoffs: longText.optional() }))
     .default([]),
   confidence: z.enum(['high', 'medium', 'low']),
-  status: z.enum(['open', 'resolved', 'dismissed']).default('open'),
+  status: z
+    .enum(['open', 'resolved', 'dismissed', 'accepted', 'needs-clarification'])
+    .default('open'),
   createdAt: isoDate,
 });
 export type Finding = z.infer<typeof FindingSchema>;
@@ -337,6 +350,16 @@ export const GrowthStageStateSchema = z.object({
 export type GrowthStageState = z.infer<typeof GrowthStageStateSchema>;
 export const INITIAL_GROWTH_STAGE: GrowthStageState = { index: 0, introduced: false };
 
+// Every question the interviewer has asked, kept beyond the chat window so none is repeated.
+export const AskedQuestionSchema = z.object({
+  id,
+  text: z.string().max(4000),
+  mode: InterviewModeSchema,
+  askedAt: isoDate,
+});
+export type AskedQuestion = z.infer<typeof AskedQuestionSchema>;
+export const MAX_ASKED_QUESTIONS = 60;
+
 export const SessionExtraSchema = z.object({
   pendingQuestion: PendingQuestionSchema.nullable().default(null),
   reviewBaseline: ReviewBaselineSchema.nullable().default(null),
@@ -344,6 +367,11 @@ export const SessionExtraSchema = z.object({
   problemStatement: longText.default(''),
   historySummary: HistorySummarySchema.default(EMPTY_HISTORY_SUMMARY),
   growthStage: GrowthStageStateSchema.default(INITIAL_GROWTH_STAGE),
+  // Earliest interview phase the candidate chose to move on to, as an index into the phase list.
+  phaseFloor: z.number().int().min(0).max(3).default(0),
+  questionsAsked: z.array(AskedQuestionSchema).max(MAX_ASKED_QUESTIONS).default([]),
+  // Coaching mode: the interviewer explains and hints instead of only questioning.
+  coaching: z.boolean().default(false),
 });
 export type SessionExtra = z.infer<typeof SessionExtraSchema>;
 
@@ -373,5 +401,8 @@ export const SessionDocumentSchema = SessionMetaSchema.extend({
   problemStatement: longText.default(''),
   historySummary: HistorySummarySchema.default(EMPTY_HISTORY_SUMMARY),
   growthStage: GrowthStageStateSchema.default(INITIAL_GROWTH_STAGE),
+  phaseFloor: z.number().int().min(0).max(3).default(0),
+  questionsAsked: z.array(AskedQuestionSchema).max(MAX_ASKED_QUESTIONS).default([]),
+  coaching: z.boolean().default(false),
 });
 export type SessionDocument = z.infer<typeof SessionDocumentSchema>;

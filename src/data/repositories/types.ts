@@ -61,6 +61,9 @@ export function toRecord(doc: SessionDocument): SessionRecord {
         problemStatement: doc.problemStatement,
         historySummary: doc.historySummary,
         growthStage: doc.growthStage,
+        phaseFloor: doc.phaseFloor,
+        questionsAsked: doc.questionsAsked,
+        coaching: doc.coaching,
       },
     },
     architecture: doc.architecture,
@@ -96,6 +99,9 @@ export function fromRecord(record: SessionRecord): SessionDocument {
     problemStatement: extra.success ? extra.data.problemStatement : '',
     historySummary: extra.success ? extra.data.historySummary : undefined,
     growthStage: extra.success ? extra.data.growthStage : undefined,
+    phaseFloor: extra.success ? extra.data.phaseFloor : undefined,
+    questionsAsked: extra.success ? extra.data.questionsAsked : undefined,
+    coaching: extra.success ? extra.data.coaching : undefined,
   });
   if (!parsed.success) {
     throw new StorageError(

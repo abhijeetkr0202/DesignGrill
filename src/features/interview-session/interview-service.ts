@@ -16,6 +16,7 @@ import {
   addSummary,
   appendMessage,
   markStageIntroduced,
+  recordAskedQuestion,
   setHistorySummary,
   setPendingQuestion,
   setReviewBaseline,
@@ -31,6 +32,12 @@ interface LastRequest {
   mode: InterviewMode;
   answer?: string;
   answerRecorded: boolean;
+  focus?: RequestOptions['focus'];
+}
+
+export interface RequestOptions {
+  // Components or connections the candidate selected and wants the interviewer to address.
+  focus?: { nodeIds: string[]; edgeIds: string[] };
 }
 
 export interface InterviewDeps {
@@ -45,7 +52,7 @@ export interface InterviewDeps {
 }
 
 export interface InterviewService {
-  request(mode: InterviewMode): Promise<void>;
+  request(mode: InterviewMode, options?: RequestOptions): Promise<void>;
   submitAnswer(text: string): Promise<void>;
   retry(): Promise<void>;
   cancel(): void;
@@ -57,6 +64,8 @@ export interface InterviewService {
 export function createInterviewService(deps: InterviewDeps): InterviewService {
   const ctx = deps.ctx ?? defaultContext;
   let controller: AbortController | null = null;
+  // Set synchronously so a duplicate request made in the same moment cannot start a second call.
+  let busy = false;
   let last: LastRequest | null = null;
   let summarizing: Promise<void> | null = null;
 
@@ -128,6 +137,8 @@ export function createInterviewService(deps: InterviewDeps): InterviewService {
           mode: result.mode,
           content: result.content,
           basedOnRevision: result.basedOnRevision,
+          related: result.related,
+          coaching: doc.coaching ? true : undefined,
         },
         ctx,
       );
@@ -138,6 +149,10 @@ export function createInterviewService(deps: InterviewDeps): InterviewService {
       }
       if (result.summary) next = addSummary(next, result.summary, ctx);
       next = setPendingQuestion(next, result.pendingQuestion, ctx);
+      if (result.pendingQuestion) {
+        const { id, text, mode, askedAt } = result.pendingQuestion;
+        next = recordAskedQuestion(next, { id, text, mode, askedAt }, ctx);
+      }
       // Only if the stage did not change while the reply was being written.
       if (progressive && doc.growthStage.index === snapshotDoc.growthStage.index) {
         next = markStageIntroduced(next, ctx);
@@ -149,7 +164,8 @@ export function createInterviewService(deps: InterviewDeps): InterviewService {
   const run = async (request: LastRequest): Promise<void> => {
     const doc = deps.getDoc();
     const pack = deps.getPack();
-    if (!doc || !pack) return;
+    if (!doc || !pack || busy) return;
+    busy = true;
     last = request;
     const { provider: providerId, model, progressive = false } = deps.getSettings();
 
@@ -185,9 +201,15 @@ export function createInterviewService(deps: InterviewDeps): InterviewService {
         model,
         candidateAnswer: request.answer,
         progressive,
+        focus: request.focus,
         options: { signal: controller.signal },
         ctx,
       });
+      // A different session may have been opened while the reply was being written.
+      if (deps.getDoc()?.id !== snapshotDoc.id) {
+        deps.onState({ status: 'idle' });
+        return;
+      }
       commit(snapshotDoc, result, progressive);
       last = null;
       deps.onState({ status: 'idle' });
@@ -196,11 +218,12 @@ export function createInterviewService(deps: InterviewDeps): InterviewService {
       fail(request.mode, e);
     } finally {
       controller = null;
+      busy = false;
     }
   };
 
   return {
-    request: (mode) => run({ mode, answerRecorded: false }),
+    request: (mode, options) => run({ mode, answerRecorded: false, focus: options?.focus }),
     submitAnswer: (text) => {
       const trimmed = text.trim();
       if (!trimmed) return Promise.resolve();

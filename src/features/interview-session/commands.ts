@@ -1,6 +1,7 @@
 import type {
   ArchEdge,
   ArchNode,
+  AskedQuestion,
   ComponentType,
   Decision,
   Drawing,
@@ -12,7 +13,13 @@ import type {
   SessionDocument,
   SessionSummary,
 } from '@/types/session';
-import { EMPTY_HISTORY_SUMMARY, INITIAL_GROWTH_STAGE, SCHEMA_VERSION } from '@/types/session';
+import {
+  EMPTY_HISTORY_SUMMARY,
+  INITIAL_GROWTH_STAGE,
+  MAX_ASKED_QUESTIONS,
+  SCHEMA_VERSION,
+} from '@/types/session';
+import { INTERVIEW_PHASES } from '@/features/design-review/phases';
 import { GROWTH_STAGES } from '@/features/design-review/stages';
 import { defaultContext, type Context } from '@/utils/context';
 
@@ -56,6 +63,9 @@ export function createSession(
     problemStatement: input.problemStatement ?? '',
     historySummary: { ...EMPTY_HISTORY_SUMMARY },
     growthStage: { ...INITIAL_GROWTH_STAGE },
+    phaseFloor: 0,
+    questionsAsked: [],
+    coaching: false,
   };
 }
 
@@ -689,6 +699,37 @@ export function markStageIntroduced(
 ): SessionDocument {
   if (doc.growthStage.introduced) return doc;
   return touch({ ...doc, growthStage: { ...doc.growthStage, introduced: true } }, ctx, false);
+}
+
+// ---------- Interview phase, question ledger, coaching ----------
+
+// The candidate chooses to move on; the interviewer will not hold them in an earlier phase.
+export function setPhaseFloor(
+  doc: SessionDocument,
+  phase: number,
+  ctx: Context = defaultContext,
+): SessionDocument {
+  const next = Math.max(0, Math.min(INTERVIEW_PHASES.length - 1, Math.trunc(phase)));
+  if (next === doc.phaseFloor) return doc;
+  return touch({ ...doc, phaseFloor: next }, ctx, false);
+}
+
+export function setCoaching(
+  doc: SessionDocument,
+  coaching: boolean,
+  ctx: Context = defaultContext,
+): SessionDocument {
+  if (doc.coaching === coaching) return doc;
+  return touch({ ...doc, coaching }, ctx, false);
+}
+
+export function recordAskedQuestion(
+  doc: SessionDocument,
+  question: AskedQuestion,
+  ctx: Context = defaultContext,
+): SessionDocument {
+  const questionsAsked = [...doc.questionsAsked, question].slice(-MAX_ASKED_QUESTIONS);
+  return touch({ ...doc, questionsAsked }, ctx, false);
 }
 
 export function renameSession(
